@@ -211,6 +211,10 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 			for (EventLink link : this.linkList) {
 				link.getVehiclePositionsEquil(positions, time, this.snapshotInfoFactory);
 			}
+		} else if (this.snapshotStyle == SnapshotStyle.withHoles){
+			for (EventLink link : this.linkList) {
+				link.getVehiclePositionsHoles(positions, time, this.snapshotInfoFactory);
+			}
 		} else {
 			throw new RuntimeException("The snapshotStyle \"" + this.snapshotStyle + "\" is not supported.");
 		}
@@ -304,6 +308,12 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 			this.waitingQueue.remove(agent);
 			this.buffer.remove(agent);
 			agent.currentLink = null;
+		}
+		
+		public void getVehiclePositionsHoles(Collection<AgentSnapshotInfo> positions, double time,
+				AgentSnapshotInfoFactory snapshotInfoFactory) {
+			// ZZ_TODO Auto-generated method stub
+			
 		}
 
 		/**
