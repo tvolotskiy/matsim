@@ -61,22 +61,23 @@ public class AgentPositionWriter {
 
 	public static void main(String[] args) 
 	{
-		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car/";
+		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "events[40]";
+		final String prefix = "events[4]";
 		final String eventsFile = dir+"/events/"+prefix+".xml";
+		final SnapshotStyle snapshotStyle = SnapshotStyle.withHoles;
 		
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
 
-		sc.getConfig().qsim().setSnapshotStyle(SnapshotStyle.withHoles);
+		sc.getConfig().qsim().setSnapshotStyle(snapshotStyle);
 		sc.getConfig().qsim().setSnapshotPeriod(SANPSOHOT_PERIOD);
 		sc.getConfig().qsim().setLinkWidthForVis((float)0);
 		((NetworkImpl)sc.getNetwork()).setEffectiveLaneWidth(0.);
 		
 		sc.getConfig().controler().setSnapshotFormat(Arrays.asList("transims"));
 		
-		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+".txt", sc, eventsFile); 
+		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc, eventsFile); 
 		apw.run();
 	}
 
@@ -157,7 +158,7 @@ public class AgentPositionWriter {
 									+ (northing- prevNorthing.get(agentId))*(northing- prevNorthing.get(agentId)) );
 							
 							double velocity = currentDist / (SANPSOHOT_PERIOD); // denominator should be equal to snapshot period.
-							if(velocity > maxSpeed ) { // person arriving (vehicle leaving traffic) are falling in this category
+							if(Math.round(velocity) > Math.round(maxSpeed) ) { // person arriving (vehicle leaving traffic) are falling in this category
 								return;
 							}else if (velocity < 0.0) throw new RuntimeException("Speed can not be negative. Aborting ...");
 						
