@@ -69,8 +69,7 @@ public class AgentPositionWriter {
 		
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
 
-		//sc.getConfig().qsim().setSnapshotStyle(SnapshotStyle.withHoles);// not supported
-		sc.getConfig().qsim().setSnapshotStyle(SnapshotStyle.queue);
+		sc.getConfig().qsim().setSnapshotStyle(SnapshotStyle.withHoles);
 		sc.getConfig().qsim().setSnapshotPeriod(SANPSOHOT_PERIOD);
 		sc.getConfig().qsim().setLinkWidthForVis((float)0);
 		((NetworkImpl)sc.getNetwork()).setEffectiveLaneWidth(0.);

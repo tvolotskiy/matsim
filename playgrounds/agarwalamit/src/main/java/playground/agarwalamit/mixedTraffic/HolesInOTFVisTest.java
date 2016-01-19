@@ -41,27 +41,31 @@ import org.matsim.contrib.otfvis.OTFVis;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
+import org.matsim.core.config.ConfigWriter;
 import org.matsim.core.config.groups.QSimConfigGroup.SnapshotStyle;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
 import org.matsim.core.events.EventsUtils;
+import org.matsim.core.events.algorithms.EventWriterXML;
 import org.matsim.core.mobsim.qsim.QSim;
 import org.matsim.core.mobsim.qsim.QSimUtils;
 import org.matsim.core.network.NetworkImpl;
+import org.matsim.core.network.NetworkWriter;
 import org.matsim.core.population.routes.LinkNetworkRouteFactory;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.vis.otfvis.OTFClientLive;
 import org.matsim.vis.otfvis.OTFVisConfigGroup;
-import org.matsim.vis.otfvis.OnTheFlyServer;
 import org.matsim.vis.otfvis.OTFVisConfigGroup.ColoringScheme;
+import org.matsim.vis.otfvis.OnTheFlyServer;
 
 /**
  * @author amit
  */
 public class HolesInOTFVisTest {
 
-	private static final boolean IS_USING_OTFVIS = true;
-	
+	private static final boolean IS_USING_OTFVIS = false;
+	private static final boolean IS_WRITING_FILES = true;
+
 	public static void main(String[] args) {
 
 		SimpleNetwork net = new SimpleNetwork();
@@ -102,9 +106,17 @@ public class HolesInOTFVisTest {
 				stuckEvents.add(event);
 			}
 		});
+		EventWriterXML 	ew;
 		
+		if(IS_WRITING_FILES){
+			ew = new EventWriterXML("./output/events.xml");	
+			new ConfigWriter(sc.getConfig()).write("./output/config.xml");
+			new NetworkWriter(sc.getNetwork()).write("./output/network.xml");
+			manager.addHandler(ew);
+		}
+
 		QSim qSim = QSimUtils.createDefaultQSim(sc, manager);
-		
+
 		if ( IS_USING_OTFVIS ) {
 			// otfvis configuration.  There is more you can do here than via file!
 			final OTFVisConfigGroup otfVisConfig = ConfigUtils.addOrGetModule(qSim.getScenario().getConfig(), OTFVisConfigGroup.GROUP_NAME, OTFVisConfigGroup.class);
@@ -116,8 +128,9 @@ public class HolesInOTFVisTest {
 			OTFClientLive.run(sc.getConfig(), server);
 		}
 		qSim.run();
-		
-//		Assert.assertEquals("There should not be any stuck events.", 0, stuckEvents.size(), MatsimTestUtils.EPSILON);
+
+		if(IS_WRITING_FILES) ew.closeFile();
+		//		Assert.assertEquals("There should not be any stuck events.", 0, stuckEvents.size(), MatsimTestUtils.EPSILON);
 	}
 
 	private static final class SimpleNetwork{
