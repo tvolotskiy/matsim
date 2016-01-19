@@ -77,7 +77,8 @@ public class PatnaCadytsControler {
 			plansFile = "../../../../repos/runs-svn/patnaIndia/run108/input/cordonOutput_plans_10pct_selected.xml.gz";
 			
 			SelectedPlansFilter spf = new SelectedPlansFilter();
-			spf.run(inPlans, plansFile);
+			spf.run(inPlans);
+			spf.writePlans(plansFile);
 			
 			outputDir = "../../../../repos/runs-svn/patnaIndia/run108/outerCordonOutput_10pct_ctd/";
 			patnaVehicles = "../../../../repos/runs-svn/patnaIndia/run108/input/patnaVehicles_outerCordon_ctd.xml.gz";
@@ -87,7 +88,7 @@ public class PatnaCadytsControler {
 		final Config config = pcc.getConfig();
 
 		PatnaVehiclesGenerator pvg = new PatnaVehiclesGenerator(plansFile);
-		pvg.createVehicles();
+		pvg.createVehicles(PatnaUtils.EXT_MAIN_MODES);
 		
 		new VehicleWriterV1(pvg.getPatnaVehicles()).writeFile(patnaVehicles);
 		config.vehicles().setVehiclesFile(patnaVehicles);
@@ -156,7 +157,7 @@ public class PatnaCadytsControler {
 
 		config.qsim().setFlowCapFactor(OuterCordonUtils.SAMPLE_SIZE);
 		config.qsim().setStorageCapFactor(3*OuterCordonUtils.SAMPLE_SIZE);
-		config.qsim().setMainModes(PatnaUtils.ALL_MAIN_MODES);
+		config.qsim().setMainModes(PatnaUtils.EXT_MAIN_MODES);
 		config.qsim().setLinkDynamics(LinkDynamics.PassingQ.name());
 		config.qsim().setEndTime(36*3600);
 		config.qsim().setSnapshotStyle(SnapshotStyle.queue);
@@ -231,7 +232,7 @@ public class PatnaCadytsControler {
 		truck.setMarginalUtilityOfTraveling(0.0);
 		config.planCalcScore().addModeParams(truck);
 
-		config.plansCalcRoute().setNetworkModes(PatnaUtils.ALL_MAIN_MODES);
+		config.plansCalcRoute().setNetworkModes(PatnaUtils.EXT_MAIN_MODES);
 
 		//following is necessary to override all defaults for teleportation.
 		ModeRoutingParams mrp = new ModeRoutingParams("pt");
