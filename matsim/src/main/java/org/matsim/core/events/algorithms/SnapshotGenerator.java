@@ -32,15 +32,15 @@ import org.matsim.api.core.v01.events.LinkLeaveEvent;
 import org.matsim.api.core.v01.events.PersonArrivalEvent;
 import org.matsim.api.core.v01.events.PersonDepartureEvent;
 import org.matsim.api.core.v01.events.PersonStuckEvent;
-import org.matsim.api.core.v01.events.VehicleLeavesTrafficEvent;
 import org.matsim.api.core.v01.events.VehicleEntersTrafficEvent;
+import org.matsim.api.core.v01.events.VehicleLeavesTrafficEvent;
 import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
 import org.matsim.api.core.v01.events.handler.LinkLeaveEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonArrivalEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonDepartureEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonStuckEventHandler;
-import org.matsim.api.core.v01.events.handler.VehicleLeavesTrafficEventHandler;
 import org.matsim.api.core.v01.events.handler.VehicleEntersTrafficEventHandler;
+import org.matsim.api.core.v01.events.handler.VehicleLeavesTrafficEventHandler;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
@@ -72,6 +72,8 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 	private double skipUntil = 0.0;
 	private final SnapshotLinkWidthCalculator linkWidthCalculator = new SnapshotLinkWidthCalculator();
 	private final AgentSnapshotInfoFactory snapshotInfoFactory = new AgentSnapshotInfoFactory(linkWidthCalculator);
+	
+	private static final double HOLE_SPEED = 15 * 1000. / 3600.; //the default value in qsim, however, one can set a different value in qsim. amit Jan 2015.
 	
 	private Vehicle2DriverEventHandler delegate = new Vehicle2DriverEventHandler();
 	
@@ -245,7 +247,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		private final List<EventAgent> parkingQueue;
 		private final List<EventAgent> waitingQueue;
 		private final List<EventAgent> buffer;
-
+		private final List<EventAgent> leftAgentsList; // needed for holes
 		private final double euklideanDist;
 		private final double freespeedTravelTime;
 		private final double spaceCap;
@@ -261,6 +263,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 			this.parkingQueue = new ArrayList<EventAgent>();
 			this.waitingQueue = new ArrayList<EventAgent>();
 			this.buffer = new ArrayList<EventAgent>();
+			this.leftAgentsList = new ArrayList<EventAgent>();
 			this.euklideanDist = CoordUtils.calcDistance(link2.getFromNode().getCoord(), link2.getToNode().getCoord());
 			this.freespeedTravelTime = Math.ceil( this.link.getLength() / this.link.getFreespeed() ) + 1; 
 			this.timeCap = this.link.getCapacity() * capCorrectionFactor;
@@ -281,6 +284,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		private void leave(final EventAgent agent) {
 			this.drivingQueue.remove(agent);
 			this.buffer.remove(agent);
+			this.leftAgentsList.add(agent);
 			agent.currentLink = null;
 		}
 
@@ -312,8 +316,110 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		
 		public void getVehiclePositionsHoles(Collection<AgentSnapshotInfo> positions, double time,
 				AgentSnapshotInfoFactory snapshotInfoFactory) {
-			// ZZ_TODO Auto-generated method stub
+			double queueEnd = this.link.getLength(); // the length of the queue jammed vehicles build at the end of the link
+			double vehLen = Math.min(	// the length of a vehicle in visualization
+					this.euklideanDist / this.spaceCap, // all vehicles must have place on the link
+					this.effectiveCellSize / this.storageCapFactor); // a vehicle should not be larger than it's actual size
+			// put all cars in the buffer one after the other
+			for (EventAgent agent : this.buffer) { //agents, who have entered the traffic but still on the departure link. 
+
+				int lane = 1 + (agent.intId % NetworkUtils.getNumberOfLanesAsInt(time, this.link));
+
+				int cmp = (int) (agent.time + this.freespeedTravelTime + this.inverseTimeCap + 2.0);
+				double speed = (time > cmp) ? 0.0 : this.link.getFreespeed(time);
+				agent.speed = speed;
+
+				AgentSnapshotInfo position = snapshotInfoFactory.createAgentSnapshotInfo(agent.id, this.link, queueEnd/* + NetworkLayer.CELL_LENGTH*/, lane);
+				position.setColorValueBetweenZeroAndOne( agent.speed) ;
+				position.setAgentState(AgentSnapshotInfo.AgentState.PERSON_DRIVING_CAR);
+				positions.add(position);
+				queueEnd -= vehLen;
+			}
+
+			/* place other driving cars according the following rule:
+			 * - calculate the time how long the vehicle is on the link already
+			 * - calculate the position where the vehicle should be if it could drive with freespeed
+			 * - if the position is already within the congestion queue, add it to the queue with slow speed
+			 * - if the position is not within the queue, just place the car with free speed at that place
+			 */
+			double lastDistance = Integer.MAX_VALUE;
 			
+			for (EventAgent agent : this.drivingQueue) { // agents entered but neither left the link nor arrived.
+				double travelTime = time - agent.time;
+				double distanceOnLink = (this.freespeedTravelTime == 0.0 ? 0.0 : ((travelTime / this.freespeedTravelTime) * this.euklideanDist));
+				if (distanceOnLink > queueEnd) { // vehicle is already in queue
+					distanceOnLink = queueEnd;
+					queueEnd -= vehLen;
+				}
+				if (distanceOnLink >= lastDistance) {
+					/* we have a queue, so it should not be possible that one vehicles overtakes another.
+					 * additionally, if two vehicles entered at the same time, they would be drawn on top of each other.
+					 * we don't allow this, so in this case we put one after the other. Theoretically, this could lead to
+					 * vehicles placed at negative distance when a lot of vehicles all enter at the same time on an empty
+					 * link. not sure what to do about this yet... just setting them to 0 currently.
+					 */
+					distanceOnLink = lastDistance - vehLen;
+					if (distanceOnLink < 0) distanceOnLink = 0.0;
+				}
+				
+				//========== following is additional pieces of codes for withHoles. rest is same as in queue =====================//
+				/*
+				 * first check if anyone left and if yes, see where is hole now and update the position,
+				 * else proceed based on last distance (agents which are still traveling on the link.)
+				 */
+				if(lastDistance == Integer.MAX_VALUE) { // if first agent then check for the leaving agents
+					if(! this.leftAgentsList.isEmpty()){
+						EventAgent lastLeftAgent = this.leftAgentsList.get(this.leftAgentsList.size()-1);
+						if(agent.id.toString().equals(lastLeftAgent.id.toString())) {
+							throw new RuntimeException("should not happen.");
+						}
+						
+						double lastAgentLeaveTime =  lastLeftAgent.time;
+						double effectiveTimeHeadway = vehLen / HOLE_SPEED;
+						double timeGap = time - lastAgentLeaveTime;
+						if (timeGap <= effectiveTimeHeadway ){
+							distanceOnLink = Math.min(link.getLength() - (effectiveTimeHeadway - timeGap)*vehLen / effectiveTimeHeadway, distanceOnLink);
+						}
+					} 
+				} else { // else just update the position based on the lastDistance
+					if(distanceOnLink > lastDistance - vehLen){ // space in front is not enough to move
+						distanceOnLink = Math.max(lastDistance - vehLen, 0);
+					}	
+				}
+				//================================================================================================================//
+				
+				int cmp = (int) (agent.time + this.freespeedTravelTime + this.inverseTimeCap + 2.0);
+				double speed = (time > cmp) ? 0.0 : this.link.getFreespeed(time);
+				agent.speed = speed;
+				int lane = 1 + (agent.intId % NetworkUtils.getNumberOfLanesAsInt(org.matsim.core.utils.misc.Time.UNDEFINED_TIME, this.link));
+				AgentSnapshotInfo position = snapshotInfoFactory.createAgentSnapshotInfo(agent.id, this.link, distanceOnLink/* + NetworkLayer.CELL_LENGTH*/, lane);
+				position.setColorValueBetweenZeroAndOne( agent.speed) ;
+				position.setAgentState(AgentSnapshotInfo.AgentState.PERSON_DRIVING_CAR);
+				positions.add(position);
+				lastDistance = distanceOnLink;
+			}
+
+			/* Put the vehicles from the waiting list in positions.
+			 * Their actual position doesn't matter, so they are just placed
+			 * to the coordinates of the from node */
+			int lane = NetworkUtils.getNumberOfLanesAsInt(org.matsim.core.utils.misc.Time.UNDEFINED_TIME, this.link) + 1; // place them next to the link
+			for (EventAgent agent : this.waitingQueue) { // departed but not entered the traffic
+				AgentSnapshotInfo position = snapshotInfoFactory.createAgentSnapshotInfo(agent.id, this.link, this.effectiveCellSize, lane);
+				position.setColorValueBetweenZeroAndOne( 0.0) ;
+				position.setAgentState(AgentSnapshotInfo.AgentState.PERSON_AT_ACTIVITY);
+				positions.add(position);
+			}
+
+			/* put the vehicles from the parking list in positions
+			 * their actual position doesn't matter, so they are just placed
+			 * to the coordinates of the from node */
+			lane = NetworkUtils.getNumberOfLanesAsInt(org.matsim.core.utils.misc.Time.UNDEFINED_TIME, this.link) + 2; // place them next to the link
+			for (EventAgent agent : this.parkingQueue) { // arrived and performing activities
+				AgentSnapshotInfo position = snapshotInfoFactory.createAgentSnapshotInfo(agent.id, this.link, this.effectiveCellSize, lane);
+				position.setColorValueBetweenZeroAndOne(0.0) ;
+				position.setAgentState(AgentSnapshotInfo.AgentState.PERSON_AT_ACTIVITY);
+				positions.add(position);
+			}
 		}
 
 		/**
