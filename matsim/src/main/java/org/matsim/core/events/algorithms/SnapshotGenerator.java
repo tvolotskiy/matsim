@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
@@ -72,7 +73,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 	private double skipUntil = 0.0;
 	private final SnapshotLinkWidthCalculator linkWidthCalculator = new SnapshotLinkWidthCalculator();
 	private final AgentSnapshotInfoFactory snapshotInfoFactory = new AgentSnapshotInfoFactory(linkWidthCalculator);
-	private static EventAgent leavingAgent ;
+	private static Map<Id<Link>, List<EventAgent>> linkId2LeavingAgentsList ; // required for holes
 	
 	private static final double HOLE_SPEED = 15 * 1000. / 3600.; //the default value in qsim, however, one can set a different value in qsim. amit Jan 2015.
 	
@@ -88,6 +89,11 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		this.capCorrectionFactor = config.getFlowCapFactor() / network.getCapacityPeriod();
 		this.storageCapFactor = config.getStorageCapFactor();
 		this.snapshotStyle = config.getSnapshotStyle();
+		
+		linkId2LeavingAgentsList = new HashMap<>();
+		for(Link l : network.getLinks().values()) {
+			linkId2LeavingAgentsList.put( l.getId(), new ArrayList<EventAgent>() );
+		}
 		
 		if (config instanceof QSimConfigGroup  && ! Double.isNaN( ((QSimConfigGroup) config ).getLinkWidthForVis() )  ){
 			this.linkWidthCalculator.setLinkWidthForVis( ((QSimConfigGroup) config ).getLinkWidthForVis() );
@@ -127,7 +133,10 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 
 	@Override
 	public void handleEvent(final LinkLeaveEvent event) {
-		leavingAgent = new EventAgent(delegate.getDriverOfVehicle(event.getVehicleId()),event.getTime());
+		List<EventAgent> leavingAgents = linkId2LeavingAgentsList.get(event.getLinkId());
+		leavingAgents.add(new EventAgent(delegate.getDriverOfVehicle(event.getVehicleId()),event.getTime()));
+		linkId2LeavingAgentsList.put(event.getLinkId(), leavingAgents);
+			
 		testForSnapshot(event.getTime());
 		this.eventLinks.get(event.getLinkId()).leave(getEventAgent(delegate.getDriverOfVehicle(event.getVehicleId()), event.getTime()));
 	}
@@ -249,7 +258,6 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		private final List<EventAgent> parkingQueue;
 		private final List<EventAgent> waitingQueue;
 		private final List<EventAgent> buffer;
-		private final List<EventAgent> leftAgentsList; // needed for holes
 		private final double euklideanDist;
 		private final double freespeedTravelTime;
 		private final double spaceCap;
@@ -265,7 +273,6 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 			this.parkingQueue = new ArrayList<EventAgent>();
 			this.waitingQueue = new ArrayList<EventAgent>();
 			this.buffer = new ArrayList<EventAgent>();
-			this.leftAgentsList = new ArrayList<EventAgent>();
 			this.euklideanDist = CoordUtils.calcDistance(link2.getFromNode().getCoord(), link2.getToNode().getCoord());
 			this.freespeedTravelTime = Math.floor( this.link.getLength() / this.link.getFreespeed() ) + 1; 
 			this.timeCap = this.link.getCapacity() * capCorrectionFactor;
@@ -286,7 +293,6 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		private void leave(final EventAgent agent) {
 			this.drivingQueue.remove(agent);
 			this.buffer.remove(agent);
-			this.leftAgentsList.add(agent);
 			agent.currentLink = null;
 		}
 
@@ -371,21 +377,32 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 				 * else proceed based on last distance (agents which are still traveling on the link.)
 				 */
 				if(lastDistance == Integer.MAX_VALUE) { // if first agent then check for the leaving agents
-					if(! this.leftAgentsList.isEmpty()){
-						EventAgent lastLeftAgent = this.leftAgentsList.get(this.leftAgentsList.size()-1);
-						if(agent.id.toString().equals(lastLeftAgent.id.toString())) {
-							throw new RuntimeException("should not happen.");
+					List<EventAgent> leavingAgentsList = linkId2LeavingAgentsList.get(link.getId());
+					int sizeOfLeavingAgentsList = leavingAgentsList.size();
+					if(sizeOfLeavingAgentsList == 0);
+					else {
+						EventAgent lastLeftAgent = leavingAgentsList.get(sizeOfLeavingAgentsList - 1);
+						if (lastLeftAgent.time >= time) {
+							if(lastLeftAgent.time == time && lastLeftAgent.id.toString().equals(agent.id.toString())) {
+								// agent will leave eventually in this time step, thus, it should be at the end of the link
+								distanceOnLink = link.getLength();
+								lastLeftAgent = null; // dont want to update the distanceOnLink again.
+							} else {
+								// future linkLeaveEvent, update the last left agent
+								lastLeftAgent = sizeOfLeavingAgentsList > 1 ? leavingAgentsList.get(sizeOfLeavingAgentsList - 2) : null;
+							}
+						} 
+
+						if(lastLeftAgent !=null) {
+							//  agent which is already left, update the position based on the time headway based on this.
+							double lastAgentLeaveTime =  lastLeftAgent.time;
+							double effectiveTimeHeadway = vehLen / HOLE_SPEED;
+							double timeGap = time - lastAgentLeaveTime;
+							if (timeGap <= effectiveTimeHeadway	){
+								distanceOnLink = Math.min(link.getLength() - (effectiveTimeHeadway - timeGap)*vehLen / effectiveTimeHeadway, distanceOnLink);
+							}
 						}
-						
-						double lastAgentLeaveTime =  lastLeftAgent.time;
-						double effectiveTimeHeadway = vehLen / HOLE_SPEED;
-						double timeGap = time - lastAgentLeaveTime;
-						if (timeGap <= effectiveTimeHeadway && 
-								!leavingAgent.equals(agent) // forcing agents to reach end of the link at linkLeaveEvent.
-								){
-							distanceOnLink = Math.min(link.getLength() - (effectiveTimeHeadway - timeGap)*vehLen / effectiveTimeHeadway, distanceOnLink);
-						}
-					} 
+					}
 				} else { // else just update the position based on the lastDistance
 					if(distanceOnLink > lastDistance - vehLen){ // space in front is not enough to move
 						distanceOnLink = Math.max(lastDistance - vehLen, 0);
