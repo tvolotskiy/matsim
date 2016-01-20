@@ -73,7 +73,6 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 	private double skipUntil = 0.0;
 	private final SnapshotLinkWidthCalculator linkWidthCalculator = new SnapshotLinkWidthCalculator();
 	private final AgentSnapshotInfoFactory snapshotInfoFactory = new AgentSnapshotInfoFactory(linkWidthCalculator);
-	private static Map<Id<Link>, List<EventAgent>> linkId2LeavingAgentsList ; // required for holes
 	
 	private static final double HOLE_SPEED = 15 * 1000. / 3600.; //the default value in qsim, however, one can set a different value in qsim. amit Jan 2015.
 	
@@ -89,11 +88,6 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		this.capCorrectionFactor = config.getFlowCapFactor() / network.getCapacityPeriod();
 		this.storageCapFactor = config.getStorageCapFactor();
 		this.snapshotStyle = config.getSnapshotStyle();
-		
-		linkId2LeavingAgentsList = new HashMap<>();
-		for(Link l : network.getLinks().values()) {
-			linkId2LeavingAgentsList.put( l.getId(), new ArrayList<EventAgent>() );
-		}
 		
 		if (config instanceof QSimConfigGroup  && ! Double.isNaN( ((QSimConfigGroup) config ).getLinkWidthForVis() )  ){
 			this.linkWidthCalculator.setLinkWidthForVis( ((QSimConfigGroup) config ).getLinkWidthForVis() );
@@ -133,12 +127,11 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 
 	@Override
 	public void handleEvent(final LinkLeaveEvent event) {
-		List<EventAgent> leavingAgents = linkId2LeavingAgentsList.get(event.getLinkId());
-		leavingAgents.add(new EventAgent(delegate.getDriverOfVehicle(event.getVehicleId()),event.getTime()));
-		linkId2LeavingAgentsList.put(event.getLinkId(), leavingAgents);
-			
+		this.eventLinks.get(event.getLinkId()).leavingAgentsList.add( new EventAgent(delegate.getDriverOfVehicle(event.getVehicleId()),event.getTime()) );	
+
 		testForSnapshot(event.getTime());
 		this.eventLinks.get(event.getLinkId()).leave(getEventAgent(delegate.getDriverOfVehicle(event.getVehicleId()), event.getTime()));
+		
 	}
 
 	@Override
@@ -258,6 +251,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 		private final List<EventAgent> parkingQueue;
 		private final List<EventAgent> waitingQueue;
 		private final List<EventAgent> buffer;
+		private final List<EventAgent> leavingAgentsList;
 		private final double euklideanDist;
 		private final double freespeedTravelTime;
 		private final double spaceCap;
@@ -273,6 +267,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 			this.parkingQueue = new ArrayList<EventAgent>();
 			this.waitingQueue = new ArrayList<EventAgent>();
 			this.buffer = new ArrayList<EventAgent>();
+			this.leavingAgentsList = new ArrayList<>();
 			this.euklideanDist = CoordUtils.calcDistance(link2.getFromNode().getCoord(), link2.getToNode().getCoord());
 			this.freespeedTravelTime = Math.floor( this.link.getLength() / this.link.getFreespeed() ) + 1; 
 			this.timeCap = this.link.getCapacity() * capCorrectionFactor;
@@ -377,7 +372,6 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 				 * else proceed based on last distance (agents which are still traveling on the link.)
 				 */
 				if(lastDistance == Integer.MAX_VALUE) { // if first agent then check for the leaving agents
-					List<EventAgent> leavingAgentsList = linkId2LeavingAgentsList.get(link.getId());
 					int sizeOfLeavingAgentsList = leavingAgentsList.size();
 					if(sizeOfLeavingAgentsList == 0);
 					else {
@@ -391,7 +385,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 								// future linkLeaveEvent, update the last left agent
 								lastLeftAgent = sizeOfLeavingAgentsList > 1 ? leavingAgentsList.get(sizeOfLeavingAgentsList - 2) : null;
 							}
-						} 
+						}
 
 						if(lastLeftAgent !=null) {
 							//  agent which is already left, update the position based on the time headway based on this.
