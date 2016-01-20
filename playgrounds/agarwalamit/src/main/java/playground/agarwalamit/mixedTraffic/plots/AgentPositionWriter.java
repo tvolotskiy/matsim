@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.events.PersonDepartureEvent;
@@ -55,18 +56,19 @@ import playground.agarwalamit.utils.LoadMyScenarios;
 
 public class AgentPositionWriter {
 
+	private final static Logger LOGGER = Logger.getLogger(AgentPositionWriter.class);
 	private final static double SANPSOHOT_PERIOD = 1;
 	private final double trackLength = 3000;
 	private final double maxSpeed = 60/3.6;
 
 	public static void main(String[] args) 
 	{
-		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
+		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/withoutHoles/car_SW/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "events[4]";
+		final String prefix = "events[10]";
 		final String eventsFile = dir+"/events/"+prefix+".xml";
-		final SnapshotStyle snapshotStyle = SnapshotStyle.withHoles;
+		final SnapshotStyle snapshotStyle = SnapshotStyle.queue;
 		
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
 
@@ -159,6 +161,7 @@ public class AgentPositionWriter {
 							
 							double velocity = currentDist / (SANPSOHOT_PERIOD); // denominator should be equal to snapshot period.
 							if(Math.round(velocity) > Math.round(maxSpeed) ) { // person arriving (vehicle leaving traffic) are falling in this category
+								LOGGER.error("Maximum speed is "+ maxSpeed+" but calculated speed is "+velocity);
 								return;
 							}else if (velocity < 0.0) throw new RuntimeException("Speed can not be negative. Aborting ...");
 						

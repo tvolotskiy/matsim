@@ -350,6 +350,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 				if (distanceOnLink > queueEnd) { // vehicle is already in queue
 					distanceOnLink = queueEnd;
 					queueEnd -= vehLen;
+					if (distanceOnLink < 0) distanceOnLink = 0.0;
 				}
 				if (distanceOnLink >= lastDistance) {
 					/* we have a queue, so it should not be possible that one vehicles overtakes another.
@@ -465,6 +466,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 				if (distanceOnLink > queueEnd) { // vehicle is already in queue
 					distanceOnLink = queueEnd;
 					queueEnd -= vehLen;
+					if (distanceOnLink < 0) distanceOnLink = 0.0;
 				}
 				if (distanceOnLink >= lastDistance) {
 					/* we have a queue, so it should not be possible that one vehicles overtakes another.
