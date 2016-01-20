@@ -72,6 +72,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 	private double skipUntil = 0.0;
 	private final SnapshotLinkWidthCalculator linkWidthCalculator = new SnapshotLinkWidthCalculator();
 	private final AgentSnapshotInfoFactory snapshotInfoFactory = new AgentSnapshotInfoFactory(linkWidthCalculator);
+	private static EventAgent leavingAgent ;
 	
 	private static final double HOLE_SPEED = 15 * 1000. / 3600.; //the default value in qsim, however, one can set a different value in qsim. amit Jan 2015.
 	
@@ -126,6 +127,7 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 
 	@Override
 	public void handleEvent(final LinkLeaveEvent event) {
+		leavingAgent = new EventAgent(delegate.getDriverOfVehicle(event.getVehicleId()),event.getTime());
 		testForSnapshot(event.getTime());
 		this.eventLinks.get(event.getLinkId()).leave(getEventAgent(delegate.getDriverOfVehicle(event.getVehicleId()), event.getTime()));
 	}
@@ -378,7 +380,9 @@ public class SnapshotGenerator implements PersonDepartureEventHandler, PersonArr
 						double lastAgentLeaveTime =  lastLeftAgent.time;
 						double effectiveTimeHeadway = vehLen / HOLE_SPEED;
 						double timeGap = time - lastAgentLeaveTime;
-						if (timeGap <= effectiveTimeHeadway ){
+						if (timeGap <= effectiveTimeHeadway && 
+								!leavingAgent.equals(agent) // forcing agents to reach end of the link at linkLeaveEvent.
+								){
 							distanceOnLink = Math.min(link.getLength() - (effectiveTimeHeadway - timeGap)*vehLen / effectiveTimeHeadway, distanceOnLink);
 						}
 					} 
