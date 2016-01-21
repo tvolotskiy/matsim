@@ -55,26 +55,29 @@ import org.matsim.testcases.MatsimTestUtils;
  * @author amit
  */
 
-public class MatsimFreeSpeedTravelTime {
+public class MatsimFreeSpeedTravelTimeTest {
 	@Test
 	public void testFreeSpeedTime(){
 		// pass whole (or natural) number as link speed (in m/s), this will return travelTime + 1(matsim sec).
-		double travelTime = runAndReturnTravelTime(20); // --> 1000/20 + 1 = 51
-		Assert.assertEquals("Wrong speed.", 51, travelTime, MatsimTestUtils.EPSILON);
-		
+		double travelTime = runAndGetTravelTime(20); // --> 1000/20 + 1 = 51
+		Assert.assertEquals("Wrong free speed travel time.", 51, travelTime, MatsimTestUtils.EPSILON);
+
 		// now, pass the speed (rational number) in kph 
-		travelTime = runAndReturnTravelTime(60/3.6); //--> 1000*3.6/60 = 60
-		Assert.assertEquals("Wrong speed", 60, travelTime, MatsimTestUtils.EPSILON);
+		travelTime = runAndGetTravelTime(60/3.6); //--> 1000*3.6/60 = 60
+		Assert.assertEquals("Wrong free speed travel time.", 60, travelTime, MatsimTestUtils.EPSILON);
+		
 		/*
-		 * previously (before Jan'16), it was returning 61.0; for e.g. at currentTimeStep = 100
-		 * previously, it was --> currentTimeStep + Math.floor(earliestLinkTime) + 1 = 160
-		 * Math.floor( currentTimeStep + earliestLinkTime ) + 1 = 161
+		 * previously (before Jan'16), the later was returning 61.0 due to java double precision.
+		 * for e.g. at timeStep = 100
+		 * previously, it was -->  Math.floor( currentTimeStep + earliestLinkTime ) + 1 = 161
+		 * now --> currentTimeStep + Math.floor(earliestLinkTime) + 1 = 160
+		 * This will eliminate some of the errors in the post processing.
 		 */
 		System.out.println( Math.floor( 100+1000/(60/3.6) ) + 1 );
 		System.out.println( 100 + Math.floor(1000/(60/3.6)) + 1);
 	}
-	
-	private double runAndReturnTravelTime(double maxLinkSpeed){
+
+	private double runAndGetTravelTime(double maxLinkSpeed){ // returns travel time on link 2 only.
 		SimpleNetwork net = new SimpleNetwork(maxLinkSpeed);
 		EventsManager manager = EventsUtils.createEventsManager();
 		TravelTimeHandler tth = new TravelTimeHandler();
@@ -83,11 +86,11 @@ public class MatsimFreeSpeedTravelTime {
 		qsim.run();
 		return tth.travelTime;
 	}
-	
+
 	private static final class TravelTimeHandler implements LinkEnterEventHandler, LinkLeaveEventHandler {
 		double travelTime = 0;
 		@Override
-		public void reset(int iteration) { }
+		public void reset(int iteration) {}
 		@Override
 		public void handleEvent(LinkLeaveEvent event) {
 			if(event.getLinkId().toString().equals("2")) {
@@ -113,7 +116,7 @@ public class MatsimFreeSpeedTravelTime {
 		final Link link3;
 
 		public SimpleNetwork(double maxLinkSpeed){
-			
+
 			scenario = ScenarioUtils.createScenario(ConfigUtils.createConfig());
 			config = scenario.getConfig();
 			config.qsim().setFlowCapFactor(1.0);
