@@ -19,6 +19,7 @@
 package playground.agarwalamit.mixedTraffic.FDTestSetUp;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -33,10 +34,12 @@ import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.ConfigWriter;
+import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.QSimConfigGroup.LinkDynamics;
 import org.matsim.core.config.groups.QSimConfigGroup.SnapshotStyle;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
 import org.matsim.core.config.groups.VspExperimentalConfigGroup.VspDefaultsCheckingLevel;
+import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.network.NetworkImpl;
 import org.matsim.core.network.NetworkWriter;
 import org.matsim.core.network.VariableIntervalTimeVariantLinkFactory;
@@ -55,7 +58,11 @@ public class InputsForFDTestSetUp {
 	static final double NO_OF_LANES = 1;
 	static final String HOLE_SPEED = "15";
 	static final double MAX_ACT_END_TIME = 1800.0; // agents departs randomly between 0 and MAX_ACT_END_TIME
-
+	
+	// using final here, these can be anyways modified in config at any stage
+	private static final Collection<String> SNAPSHOT_FORMATS = Arrays.asList( "transims", "otfvis" );
+	private static final double SNAPSHOT_PERIOD = 1.0;
+	
 	private final double LINK_CAPACITY = 2700; //in PCU/h
 	private final double END_TIME = 24*3600;
 	private final double FREESPEED = 60.;	//in km/h, maximum authorized velocity on the track
@@ -98,6 +105,7 @@ public class InputsForFDTestSetUp {
 		GenerateFundamentalDiagramData.LOG.info("==========The chosen traffic dynamics is "+trafficDynamics+". ==========");
 
 		config.qsim().setSnapshotStyle(SnapshotStyle.queue);
+		config.qsim().setSnapshotPeriod(SNAPSHOT_PERIOD);
 		
 		if(trafficDynamics.equals(TrafficDynamics.withHoles)) {
 			config.qsim().setSnapshotStyle(SnapshotStyle.withHoles); // to see holes in OTFVis
@@ -110,7 +118,23 @@ public class InputsForFDTestSetUp {
 			config.qsim().setRestrictingSeepage(true);
 		}
 
-		config.vspExperimental().setVspDefaultsCheckingLevel( VspDefaultsCheckingLevel.abort );
+		config.vspExperimental().setVspDefaultsCheckingLevel( VspDefaultsCheckingLevel.warn );
+		
+		// required if using controler
+		ActivityParams home = new ActivityParams("home") ;
+		home.setScoringThisActivityAtAll(false);
+		config.planCalcScore().addActivityParams(home);
+		
+		ActivityParams work = new ActivityParams("work") ;
+		work.setScoringThisActivityAtAll(false);
+		config.planCalcScore().addActivityParams(work);
+		
+		config.controler().setLastIteration(0);
+		config.controler().setSnapshotFormat(SNAPSHOT_FORMATS);
+		config.controler().setOverwriteFileSetting(OverwriteFileSetting.overwriteExistingFiles);
+		config.controler().setCreateGraphs(false);
+		config.controler().setDumpDataAtEnd(false);
+		
 		scenario = ScenarioUtils.createScenario(config);
 	}
 

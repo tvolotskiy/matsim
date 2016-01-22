@@ -46,6 +46,7 @@ import org.matsim.core.config.groups.QSimConfigGroup.LinkDynamics;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.algorithms.EventWriterXML;
 import org.matsim.core.gbl.MatsimRandom;
@@ -121,13 +122,13 @@ public class GenerateFundamentalDiagramData {
 			
 			args = new String [8];
 			
-			String myDir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
+			String myDir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW2/";
 			String outFolder ="/car/";
 			
 			args[0] = myDir + outFolder ;
 			args[1] = "car"; // travel (main) modes
 			args[2] = "5.0"; // modal split in pcu
-			args[3] = TrafficDynamics.queue.toString(); // isUsingHoles
+			args[3] = TrafficDynamics.withHoles.toString(); // isUsingHoles
 			args[4] = LinkDynamics.FIFO.toString(); // isPassingAllowed
 			args[5] = "1"; // reduce number of data points by this factor
 			args[6] = "false"; // is plotting modal split distribution
@@ -383,20 +384,10 @@ public class GenerateFundamentalDiagramData {
 			events.addHandler(eventWriter);
 		}
 		
-		Collection<String> str = Arrays.asList( "transims", "otfvis" ) ;
-		this.scenario.getConfig().controler().setSnapshotFormat(str);
-		
-		this.scenario.getConfig().controler().setLastIteration(0);
-		
-		ActivityParams params = new ActivityParams("home") ;
-		params.setScoringThisActivityAtAll(false);
-		this.scenario.getConfig().planCalcScore().addActivityParams(params);
-		
-		this.scenario.getConfig().qsim().setSnapshotPeriod(1.);
+		this.scenario.getConfig().controler().setOutputDirectory(this.runDir);
 		
 		Controler controler = new Controler( scenario ) ;
 		
-
 		final Netsim qSim = createModifiedQSim(this.scenario, events);
 
 		controler.addOverridingModule(new AbstractModule(){
@@ -405,8 +396,6 @@ public class GenerateFundamentalDiagramData {
 				this.bindMobsim().toInstance( qSim );
 			}
 		});
-
-//		qSim.run();
 		controler.run();
 
 		boolean stableState = true;
@@ -420,7 +409,6 @@ public class GenerateFundamentalDiagramData {
 				LOG.warn("Flow stability is not reached for travel mode "+veh.toString()
 						+" and simulation end time is reached. Output data sheet will have all zeros for such runs."
 						+ "This is " + flowUnstableWarnCount[index]+ "th warning.");
-				//				log.warn("Increasing simulation time could be a possible solution to avoid it.");
 			}
 			if(!mode2FlowData.get(veh).isSpeedStable()) 
 			{
