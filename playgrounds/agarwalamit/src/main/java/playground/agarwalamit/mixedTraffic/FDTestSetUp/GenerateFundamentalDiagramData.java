@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +41,11 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.otfvis.OTFVis;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.ConfigUtils;
+import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.QSimConfigGroup.LinkDynamics;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
+import org.matsim.core.controler.AbstractModule;
+import org.matsim.core.controler.Controler;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.algorithms.EventWriterXML;
 import org.matsim.core.gbl.MatsimRandom;
@@ -378,10 +382,32 @@ public class GenerateFundamentalDiagramData {
 			eventWriter = new EventWriterXML(eventsDir+"/events"+pointToRun.toString()+".xml");
 			events.addHandler(eventWriter);
 		}
+		
+		Collection<String> str = Arrays.asList( "transims", "otfvis" ) ;
+		this.scenario.getConfig().controler().setSnapshotFormat(str);
+		
+		this.scenario.getConfig().controler().setLastIteration(0);
+		
+		ActivityParams params = new ActivityParams("home") ;
+		params.setScoringThisActivityAtAll(false);
+		this.scenario.getConfig().planCalcScore().addActivityParams(params);
+		
+		this.scenario.getConfig().qsim().setSnapshotPeriod(1.);
+		
+		Controler controler = new Controler( scenario ) ;
+		
 
-		Netsim qSim = createModifiedQSim(this.scenario, events);
+		final Netsim qSim = createModifiedQSim(this.scenario, events);
 
-		qSim.run();
+		controler.addOverridingModule(new AbstractModule(){
+			@Override
+			public void install() {
+				this.bindMobsim().toInstance( qSim );
+			}
+		});
+
+//		qSim.run();
+		controler.run();
 
 		boolean stableState = true;
 		for(int index=0;index<travelModes.length;index++){
