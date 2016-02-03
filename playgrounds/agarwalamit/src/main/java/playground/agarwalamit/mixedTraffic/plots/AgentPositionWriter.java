@@ -47,10 +47,11 @@ import org.matsim.vis.snapshotwriters.TransimsSnapshotWriter.Labels;
 import playground.agarwalamit.utils.LoadMyScenarios;
 
 /**
- * Create Transims snapshot file from events and 
- * read it again to write data in simpler form for space time plotting.
- * <b>At the moment, this should be only used for race track experiment. The methodology can work for other scenarios.
- * But, some paraments many need to change and yet to be tested. 
+ * 1) Create Transims snapshot file from events or just existing file. 
+ * 2) read events 
+ * 3) Write data in simpler form for space time plotting.
+ * <b> At the moment, this should be only used for race track experiment. The methodology can work for other scenarios.
+ * But, some parameters many need to change and yet to be tested. 
  * @author amit 
  */
 
@@ -58,36 +59,44 @@ public class AgentPositionWriter {
 
 	private final static Logger LOGGER = Logger.getLogger(AgentPositionWriter.class);
 	private final static double SANPSOHOT_PERIOD = 1;
+	private final static boolean IS_WRITING_TRANSIM_FILE = false;
 	private final double trackLength = 3000;
 	private final double maxSpeed = 60/3.6;
 
 	public static void main(String[] args) 
 	{
-		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
+		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/withoutHoles/car_SW/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "events[80]";
-		final String eventsFile = dir+"/events/"+prefix+".xml";
+		final String prefix = "20";
+		final String eventsFile = dir+"/events/events["+prefix+"].xml";
 		final SnapshotStyle snapshotStyle = SnapshotStyle.withHoles;
 		
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
 
-		sc.getConfig().qsim().setSnapshotStyle(snapshotStyle);
-		sc.getConfig().qsim().setSnapshotPeriod(SANPSOHOT_PERIOD);
-		sc.getConfig().qsim().setLinkWidthForVis((float)0);
-		((NetworkImpl)sc.getNetwork()).setEffectiveLaneWidth(0.);
+		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc);
+		String transimFile;
 		
-		sc.getConfig().controler().setSnapshotFormat(Arrays.asList("transims"));
+		if( ! IS_WRITING_TRANSIM_FILE ){
+			// not sure, if following three lines are required.
+			sc.getConfig().qsim().setLinkWidthForVis((float)0);
+			((NetworkImpl)sc.getNetwork()).setEffectiveLaneWidth(0.);
+			
+			sc.getConfig().controler().setSnapshotFormat(Arrays.asList("transims"));
+			 transimFile = apw.createAndReturnTransimSnapshotFile(sc, eventsFile);
+		} else {
+			transimFile = dir+"/TransVeh/T_["+prefix+"].txt";
+		}
 		
-		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc, eventsFile); 
-		apw.run();
+		apw.storePerson2Modes(eventsFile);
+		apw.readTransimFileAndWriteData(transimFile);
 	}
 
 
 	/**
 	 * Constructor opens writer, creates transims file and stores person 2 mode from events file.
 	 */
-	public AgentPositionWriter(String outFile, Scenario scenario, String eventsFile)
+	public AgentPositionWriter(String outFile, Scenario scenario)
 	{
 		writer = IOUtils.getBufferedWriter(outFile);
 		try {
@@ -95,19 +104,17 @@ public class AgentPositionWriter {
 		} catch (Exception e) {
 			throw new RuntimeException("Data is not written to the file. Reason :"+e);
 		}
-		createTransimSnapshotFile(scenario, eventsFile);
-		storePerson2Modes(eventsFile);
 	}
 
-	private void createTransimSnapshotFile(Scenario sc, String eventsFile)
+	public String createAndReturnTransimSnapshotFile(Scenario sc, String eventsFile)
 	{
 		Events2Snapshot e2s = new Events2Snapshot();
 		File file = new File(eventsFile);
 		e2s.run(file, sc.getConfig(), sc.getNetwork());
-		this.transimFile = file.getParent() + "/" +"T.veh";
+		return file.getParent() + "/" +"T.veh";
 	}
 
-	private void storePerson2Modes(String eventsFile)
+	public void storePerson2Modes(String eventsFile)
 	{
 		EventsManager manager = EventsUtils.createEventsManager();
 		manager.addHandler(new PersonDepartureEventHandler() {
@@ -123,7 +130,6 @@ public class AgentPositionWriter {
 		new MatsimEventsReader(manager).readFile(eventsFile);
 	}
 
-	private String transimFile;
 	private BufferedWriter writer ;
 
 	private Map<Id<Person>,String> person2mode = new HashMap<>();
@@ -132,10 +138,10 @@ public class AgentPositionWriter {
 	private Map<Id<Person>,Double> prevPosition = new HashMap<>();
 	private Map<Id<Person>,Integer> prevCycle = new HashMap<>();
 
-	public void run()
+	public void readTransimFileAndWriteData(String inputFile)
 	{
 		TabularFileParserConfig config = new TabularFileParserConfig() ;
-		config.setFileName( this.transimFile );
+		config.setFileName( inputFile );
 		config.setDelimiterTags( new String []{"\t"} );
 		// ---
 		TabularFileHandler handler = new TabularFileHandler(){
