@@ -65,15 +65,15 @@ public class AgentPositionWriter {
 
 	public static void main(String[] args) 
 	{
-		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/withoutHoles/car_SW/";
+		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "20";
+		final String prefix = "10";
 		final String eventsFile = dir+"/events/events["+prefix+"].xml";
-		final SnapshotStyle snapshotStyle = SnapshotStyle.withHoles;
 		
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
-
+		final SnapshotStyle snapshotStyle = sc.getConfig().qsim().getSnapshotStyle();
+		
 		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc);
 		String transimFile;
 		
