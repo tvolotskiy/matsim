@@ -8,7 +8,6 @@ class TaxiLauncherParams
     static final String NET_FILE = "netFile";
     static final String PLANS_FILE = "plansFile";
 
-    static final String TAXI_CUSTOMERS_FILE = "taxiCustomersFile";
     static final String TAXIS_FILE = "taxisFile";
     static final String RANKS_FILE = "ranksFile";
 
@@ -28,12 +27,11 @@ class TaxiLauncherParams
     static final String TAXI_STATS_FILE = "taxiStatsFile";
     static final String DETAILED_TAXI_STATS_DIR = "detailedTaxiStatsDir";
     static final String E_TAXI_STATS_FILE = "eTaxiStatsFile";
-    static final String MULTI_RUN_STATS_DIR = "multiRunStats";
+    static final String MULTI_RUN_STATS_DIR = "multiRunStatsDir";
 
     final String netFile;
     final String plansFile;
 
-    final String taxiCustomersFile;
     final String taxisFile;
     final String ranksFile;
 
@@ -60,7 +58,6 @@ class TaxiLauncherParams
         netFile = config.getString(NET_FILE);
         plansFile = config.getString(PLANS_FILE);
 
-        taxiCustomersFile = config.getString(TAXI_CUSTOMERS_FILE, null);
         taxisFile = config.getString(TAXIS_FILE);
         ranksFile = config.getString(RANKS_FILE, null);
 

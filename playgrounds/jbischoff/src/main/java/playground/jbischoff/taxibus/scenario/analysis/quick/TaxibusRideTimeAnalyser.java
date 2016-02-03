@@ -21,12 +21,18 @@ package playground.jbischoff.taxibus.scenario.analysis.quick;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.math3.stat.descriptive.summary.Sum;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.ActivityEndEvent;
 import org.matsim.api.core.v01.events.ActivityStartEvent;
@@ -35,6 +41,8 @@ import org.matsim.api.core.v01.events.handler.ActivityStartEventHandler;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.dvrp.data.Vehicle;
 import org.matsim.core.utils.io.IOUtils;
+import org.matsim.core.utils.misc.Time;
+import org.postgresql.jdbc2.TimestampUtils;
 
 /**
  * @author  jbischoff
@@ -49,10 +57,14 @@ public class TaxibusRideTimeAnalyser implements ActivityEndEventHandler, Activit
 	private Map<Id<Vehicle>,Double> lastPickupOnTour = new HashMap<>();
 	private Map<Id<Vehicle>,Double> firstPickupOnTour = new HashMap<>();
 	
+	private double[] hourlyDepartures = new double[24];
+	private double[] hourlyTourDepartures = new double[24];
+	
+
+	
 	
 	@Override
 	public void reset(int iteration) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -91,6 +103,7 @@ public class TaxibusRideTimeAnalyser implements ActivityEndEventHandler, Activit
 	}
 
 	private void handlePickup(ActivityEndEvent event) {
+		int hour = getHour(event.getTime());
 		
 		Id<Vehicle> vid = p2vid(event.getPersonId());
 		int pax = 1;
@@ -99,9 +112,10 @@ public class TaxibusRideTimeAnalyser implements ActivityEndEventHandler, Activit
 		}
 		currentRidePax.put(vid, pax);
 		lastPickupOnTour.put(vid, event.getTime());
-		
+		hourlyDepartures[hour]++;
 		if (!firstPickupOnTour.containsKey(vid)){
 			firstPickupOnTour.put(vid, event.getTime());
+			hourlyTourDepartures[hour]++;
 		}
 	}
 
@@ -110,7 +124,42 @@ public class TaxibusRideTimeAnalyser implements ActivityEndEventHandler, Activit
 	}
 
 	public void writeOutput(String folder){
-		BufferedWriter writer = IOUtils.getAppendingBufferedWriter(folder+"/taxibustours.txt");
+		writeTours(folder+"/taxibus_tours.txt");
+		writeHourlyStats(folder+"/taxibus_hourlyStats.txt");
+	}
+
+	private void writeHourlyStats(String hourlyStats) {
+		
+		Locale.setDefault(Locale.US);
+		DecimalFormat df = new DecimalFormat( "##,##0.00" );
+		DecimalFormat lf = new DecimalFormat( "##,##0" );
+		
+		BufferedWriter writer = IOUtils.getBufferedWriter(hourlyStats);
+		try {
+			writer.append("hour\tDepartures\tRides\tOccupancy");
+			for (int i = 0; i<24; i++){
+				writer.newLine();
+				double occ = 0.0;
+				if (hourlyTourDepartures[i]>0) occ = hourlyDepartures[i]/hourlyTourDepartures[i];
+				
+				String result = df.format(occ);
+				writer.append(i+"\t"+lf.format(hourlyTourDepartures[i])+"\t"+lf.format(hourlyDepartures[i])+"\t"+result);
+								
+			}
+			writer.newLine();
+			double allTourDepartures = new Sum().evaluate(hourlyTourDepartures);
+			double allRides = new Sum().evaluate(hourlyDepartures);
+			writer.append("overall\t"+lf.format(allTourDepartures)+"\t"+lf.format(allRides)+"\t"+df.format(allRides/allTourDepartures));
+			writer.flush();
+			writer.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}		
+	}
+
+	private void writeTours(String toursFile) {
+		BufferedWriter writer = IOUtils.getBufferedWriter(toursFile);
 		try {
 			writer.append("Vehicle\tFirstPickUp\tlastPickup\tOccupancy\tPickUpDuration\tDropOffTime");
 			for (TaxibusTour tour : this.tours){
@@ -129,6 +178,14 @@ public class TaxibusRideTimeAnalyser implements ActivityEndEventHandler, Activit
 	private Id<Vehicle> p2vid (Id<Person> pid){
 		Id<Vehicle> vid = Id.create(pid.toString(), Vehicle.class);
 		return vid;
+	}
+	
+	private int getHour(double time){
+		int hour = (int) Math.floor(time/(3600));
+		if (hour>23){
+			hour = hour%24;
+		}
+		return hour;
 	}
 }
 class TaxibusTour implements Comparable<TaxibusTour>{
@@ -157,9 +214,11 @@ class TaxibusTour implements Comparable<TaxibusTour>{
 
 	@Override
 	public String toString() {
-		return vid + "\t"+ firstPickup + "\t" + lastPickup + "\t" + occupancy
-				+ "\t" + pickUpDuration + "\t" + dropoffTime;
+
+		return vid + "\t"+ Time.writeTime(firstPickup) + "\t" + Time.writeTime(lastPickup) + "\t" + Time.writeTime(occupancy)
+				+ "\t" + Time.writeTime(pickUpDuration) + "\t" + Time.writeTime(dropoffTime);
 	}
+
 
 
 

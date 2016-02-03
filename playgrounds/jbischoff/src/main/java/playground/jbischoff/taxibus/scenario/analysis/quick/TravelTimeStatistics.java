@@ -19,6 +19,7 @@
 
 package playground.jbischoff.taxibus.scenario.analysis.quick;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,9 +48,22 @@ public class TravelTimeStatistics   {
 //		String inputFile = "D:/runs-svn/vw_rufbus/vwTB04/vwTB04.output_events.xml.gz";
 //		String inputFile = "D:/runs-svn/vw_rufbus/vw054/vw054.output_events.xml.gz";
 //		String inputFile = "D:/runs-svn/vw_rufbus/vw057/vw056.output_events.xml.gz";
-		String run = "VW06ML";
+		
+		
+		
+		String run = "vw060TBTW15";
+//		String folder = "D:/runs-svn/vw_rufbus/" + run + "/";
 		String folder = "D:/runs-svn/vw_rufbus/" + run + "/";
 		String inputFile = folder + run + ".output_events.xml.gz";
+		
+		if (args.length>0){
+		inputFile=args[0];	
+		File f = new File (inputFile);
+		folder = f.getParent()+"/";
+		}
+		System.out.println("Processing Events File: " + inputFile);
+		System.out.println("Output will be written to: " + folder);
+		
 
 		EventsManager events = EventsUtils.createEventsManager();
 
