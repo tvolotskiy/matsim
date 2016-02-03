@@ -23,9 +23,10 @@ package playground.agarwalamit.mixedTraffic.FDTestSetUp;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,12 +42,10 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.contrib.otfvis.OTFVis;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 import org.matsim.core.config.groups.QSimConfigGroup.LinkDynamics;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
-import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.algorithms.EventWriterXML;
 import org.matsim.core.gbl.MatsimRandom;
@@ -60,6 +59,7 @@ import org.matsim.core.mobsim.qsim.interfaces.MobsimVehicle;
 import org.matsim.core.mobsim.qsim.interfaces.Netsim;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QNetsimEngine;
 import org.matsim.core.network.NetworkImpl;
+import org.matsim.core.utils.io.IOUtils;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vehicles.VehicleType;
 import org.matsim.vehicles.VehicleUtils;
@@ -397,6 +397,9 @@ public class GenerateFundamentalDiagramData {
 			}
 		});
 		controler.run();
+		
+		//remove and renaming of the files which are generated from controler and not required.
+		modifyFilesFromControler(pointToRun);
 
 		boolean stableState = true;
 		for(int index=0;index<travelModes.length;index++){
@@ -523,6 +526,27 @@ public class GenerateFundamentalDiagramData {
 		}
 
 		return qSim;
+	}
+	
+	private void modifyFilesFromControler(List<Integer> runningPoint) {
+		String outputDir = scenario.getConfig().controler().getOutputDirectory();
+		//Check if Transim veh dir exists, if not create it
+		if(! new File(outputDir+"/TransVeh/").exists() ) new File(outputDir+"/TransVeh/").mkdir();
+		//first, move T.veh.gz file
+		String sourceTVehFile = outputDir+"/ITERS/it.0/0.T.veh.gz"; 
+		String targetTVehFilen = outputDir+"/TransVeh/T_"+runningPoint.toString()+".txt";
+		try {
+			Files.move(new File(sourceTVehFile).toPath(), new File(targetTVehFilen).toPath(), StandardCopyOption.REPLACE_EXISTING);
+			IOUtils.deleteDirectory(new File(outputDir+"/ITERS/"), false);
+			IOUtils.deleteDirectory(new File(outputDir+"/tmp/"), false);
+			new File(outputDir+"/logfile.log").delete();
+			new File(outputDir+"/logfileWarningsErrors.log").delete();
+			new File(outputDir+"/scorestat.txt").delete();
+			new File(outputDir+"/stopwatch.txt").delete();
+			new File(outputDir+"/traveldistancestats.txt").delete();
+		} catch (IOException e) {
+			throw new RuntimeException("File not found.");
+		}
 	}
 
 	private void openFileAndWriteHeader(String dir) {
