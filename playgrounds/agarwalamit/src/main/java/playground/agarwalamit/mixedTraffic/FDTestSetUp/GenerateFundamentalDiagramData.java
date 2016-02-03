@@ -502,6 +502,7 @@ public class GenerateFundamentalDiagramData {
 					String travelMode = person2Mode.get(personId);
 					double randDouble = MatsimRandom.getRandom().nextDouble();
 					double actEndTime = randDouble*InputsForFDTestSetUp.MAX_ACT_END_TIME;
+//					double actEndTime = Integer.valueOf(personId.toString())*2;
 					
 					MobsimAgent agent = new MySimplifiedRoundAndRoundAgent(personId, actEndTime, travelMode);
 					qSim.insertAgentIntoMobsim(agent);
@@ -632,7 +633,7 @@ public class GenerateFundamentalDiagramData {
 		layout.setConversionPattern(conversionPattern);
 		FileAppender appender;
 		try {
-			appender = new FileAppender(layout, runDir+"/logfile.log",false);
+			appender = new FileAppender(layout, runDir+"/fdlogfile.log",false);
 		} catch (IOException e1) {
 			throw new RuntimeException("File not found.");
 		}
