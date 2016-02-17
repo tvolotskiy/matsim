@@ -59,6 +59,11 @@ public class ShockwaveExperiment {
 		Scenario sc = generateFDData.getScenario();
 		sc.getConfig().qsim().setStuckTime(10*3600);
 		
+		// following is necessary to avoid placement on link/lane (2-D) if using the data to plot only one-D space.
+		sc.getConfig().qsim().setLinkWidthForVis((float)0);
+		((NetworkImpl) sc.getNetwork()).setEffectiveLaneWidth(0.);
+		
+		
 		ScenarioUtils.loadScenario(sc);
 		Link desiredLink = sc.getNetwork().getLinks().get(Id.createLinkId(1));//baseLink is not chosen to observe some spillover
 		

@@ -88,10 +88,6 @@ public class InputsForFDTestSetUp {
 		setUpConfig();
 		createTriangularNetwork();
 		fillTravelModeData();
-
-		// following is necessary to avoid placement on link/lane
-		scenario.getConfig().qsim().setLinkWidthForVis((float)0);
-		((NetworkImpl) scenario.getNetwork()).setEffectiveLaneWidth(0.);
 	}
 
 	private void setUpConfig(){
