@@ -808,14 +808,14 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 				if ( !holes.isEmpty() ) {
 					double spacing = snapshotInfoBuilder.calculateVehicleSpacing(length, holes.size(), getStorageCapacity() );
 					double freespeedTraveltime = length / (hole_speed*1000./3600.);
-					double lastDistanceFromFromNode = Double.NaN;
+					double lastDistanceFromToNode = Double.NaN;
 					for (Hole hole : holes) {
-						lastDistanceFromFromNode = createHolePositionAndReturnDistance(snapshotInfoBuilder, now, lastDistanceFromFromNode,
+						lastDistanceFromToNode = createHolePositionAndReturnDistance(snapshotInfoBuilder, now, lastDistanceFromToNode,
 								spacing, freespeedTraveltime, hole);
 						if ( VIS_HOLES ) {
-							addHolePosition( positions, snapshotInfoBuilder, lastDistanceFromFromNode, hole ) ;
+							addHolePosition( positions, snapshotInfoBuilder, lastDistanceFromToNode, hole ) ;
 						}
-						holePositions.put( lastDistanceFromFromNode, hole ) ;
+						holePositions.put( lastDistanceFromToNode, hole ) ;
 					}
 				}
 			}
@@ -841,13 +841,13 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 		}
 
 		private double createHolePositionAndReturnDistance(AbstractAgentSnapshotInfoBuilder snapshotInfoBuilder,
-				double now, double lastDistanceFromFromNode, double spacing, double freespeedTraveltime,
+				double now, double lastDistanceFromToNode, double spacing, double freespeedTraveltime,
 				Hole veh)
 		{
 			double remainingTravelTime = veh.getEarliestLinkExitTime() - now ;
-			double distanceFromFromNode = snapshotInfoBuilder.calculateDistanceOnVectorFromFromNode2(QueueWithBuffer.this.length, spacing,
-					lastDistanceFromFromNode, now, freespeedTraveltime, remainingTravelTime);
-			return distanceFromFromNode;
+			double distanceFromToNode = snapshotInfoBuilder.calculateDistanceOnVectorFromFromNode2(QueueWithBuffer.this.length, spacing,
+					lastDistanceFromToNode, now, freespeedTraveltime, remainingTravelTime);
+			return distanceFromToNode;
 		}
 		
 		private void addHolePosition(final Collection<AgentSnapshotInfo> positions,

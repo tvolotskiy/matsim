@@ -24,11 +24,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
 import java.util.Queue;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.matsim.api.core.v01.Coord;
@@ -44,6 +41,7 @@ import org.matsim.core.mobsim.framework.PassengerAgent;
 import org.matsim.core.mobsim.qsim.interfaces.MobsimVehicle;
 import org.matsim.core.mobsim.qsim.pt.TransitDriverAgent;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QueueWithBuffer.Hole;
+import org.matsim.core.network.NetworkImpl;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfo;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfo.AgentState;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfoFactory;
@@ -195,11 +193,12 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 				while ( iterator.hasNext() ) {
 					Entry<Double, Hole> entry = iterator.next();
 					double size = entry.getValue().getSizeInEquivalents() ;
-					double holePositionFromFromNode = entry.getKey() ;
-					// since hole position here is from fromNode, subtracting it from (curved) length to get the position from toNode. amit Nov'15
-					if ( curvedLength -  holePositionFromFromNode > lastDistanceFromFromNode ) {  // +7.5?  -7.5?  +7.5*size?  -7.5*size?
-//						lastDistanceFromFromNode +=  7.5 * size ; // why dependent on size when a vehicle take 7.5 m? amit Nov 15
-						lastDistanceFromFromNode +=  7.5  ; // where is the magic number coming from?  cellSize??
+					double cellSize = ( (NetworkImpl) this.scenario.getNetwork() ).getEffectiveCellSize();
+					double holePositionFromToNode = entry.getKey() ;
+					// since hole position here is from ToNode, subtracting it from (curved) length to get the position from FromNode. amit Feb'15
+					if (  curvedLength - holePositionFromToNode > lastDistanceFromFromNode ) {  // +7.5?  -7.5?  +7.5*size?  -7.5*size?
+//						lastDistanceFromFromNode +=  cellSize  ; // should be dependent on size of the vehicle. amit Feb'16
+						lastDistanceFromFromNode +=  cellSize  * size;
 					} else {
 						break ;
 					}
