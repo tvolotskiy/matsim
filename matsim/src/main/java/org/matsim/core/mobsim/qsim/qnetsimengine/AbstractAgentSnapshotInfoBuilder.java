@@ -167,7 +167,7 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 			double storageCapacity, double euklideanDistance, Coord upstreamCoord, Coord downstreamCoord, 
 			double inverseFlowCapPerTS, double freeSpeed, int numberOfLanesAsInt)
 	{
-		double spacing = this.calculateVehicleSpacing( curvedLength, vehs.size(), storageCapacity );
+		double spacing = this.calculateVehicleSpacing( curvedLength, vehs.size(), storageCapacity, holePositions );
 		double freespeedTraveltime = curvedLength / freeSpeed ;
 
 		double lastDistanceFromFromNode = Double.NaN;
@@ -283,7 +283,7 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 		return people;
 	}
 
-	public abstract double calculateVehicleSpacing(double linkLength, double numberOfVehiclesOnLink, double overallStorageCapacity);
+	public abstract double calculateVehicleSpacing(double linkLength, double numberOfVehiclesOnLink, double overallStorageCapacity, TreeMap<Double, Hole> holePositions);
 
 	/**
 	 * @param length

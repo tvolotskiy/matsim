@@ -806,7 +806,7 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 			if ( VIS_HOLES ) {
 				// holes:
 				if ( !holes.isEmpty() ) {
-					double spacing = snapshotInfoBuilder.calculateVehicleSpacing(length, holes.size(), getStorageCapacity() );
+					double spacing = snapshotInfoBuilder.calculateVehicleSpacing(length, holes.size(), getStorageCapacity(), holePositions );
 					double freespeedTraveltime = length / (hole_speed*1000./3600.);
 					double lastDistanceFromFromNode = Double.NaN;
 					for (Hole hole : holes) {
