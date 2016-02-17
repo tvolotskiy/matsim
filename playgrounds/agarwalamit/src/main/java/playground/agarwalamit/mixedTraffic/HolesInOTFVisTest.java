@@ -84,10 +84,12 @@ public class HolesInOTFVisTest {
 			plan.addActivity(a1);
 			plan.addLeg(leg);
 			LinkNetworkRouteFactory factory = new LinkNetworkRouteFactory();
-			NetworkRoute route = (NetworkRoute) factory.createRoute(net.link1.getId(), net.link3.getId());
-			route.setLinkIds(net.link1.getId(), Arrays.asList(net.link2.getId()), net.link3.getId());
+			NetworkRoute route = (NetworkRoute) factory.createRoute(net.link1.getId(), net.link4.getId());
+			route.setLinkIds( net.link1.getId(), 
+							Arrays.asList(net.link2.getId(), net.link3.getId()), 
+							net.link4.getId() );
 			leg.setRoute(route);
-			Activity a2 = net.population.getFactory().createActivityFromLinkId("w", net.link3.getId());
+			Activity a2 = net.population.getFactory().createActivityFromLinkId("w", net.link4.getId());
 			plan.addActivity(a2);
 			net.population.addPerson(p);
 
@@ -142,6 +144,7 @@ public class HolesInOTFVisTest {
 		final Link link1;
 		final Link link2;
 		final Link link3;
+		final Link link4;
 
 		public SimpleNetwork(){
 
@@ -160,14 +163,16 @@ public class HolesInOTFVisTest {
 
 			Node node1 = network.createAndAddNode(Id.createNodeId("1"), new Coord(-100., -100.0));
 			Node node2 = network.createAndAddNode(Id.createNodeId("2"), new Coord(0.0, 0.0));
-			Node node3 = network.createAndAddNode(Id.createNodeId("3"), new Coord(1000.0, 0.0));
-			Node node4 = network.createAndAddNode(Id.createNodeId("4"), new Coord(1000.0, 100.0));
+			Node node3 = network.createAndAddNode(Id.createNodeId("3"), new Coord(500.0, 50.0));
+			Node node4 = network.createAndAddNode(Id.createNodeId("4"), new Coord(1000.0, 0.0));
+			Node node5 = network.createAndAddNode(Id.createNodeId("5"), new Coord(1000.0, 100.0));
 
 			Set<String> allowedModes = new HashSet<String>(); allowedModes.addAll(Arrays.asList(TransportMode.car,TransportMode.walk));
 
 			link1 = network.createAndAddLink(Id.createLinkId("1"), node1, node2, 10000, 25, 3600, 1, null, "22"); 
-			link2 = network.createAndAddLink(Id.createLinkId("2"), node2, node3, 1000, 15, 360, 1, null, "22");	//flow capacity is 1 PCU per min.
-			link3 = network.createAndAddLink(Id.createLinkId("3"), node3, node4, 10000, 25, 3600, 1, null, "22");
+			link2 = network.createAndAddLink(Id.createLinkId("2"), node2, node3, 1000, 25, 3600, 1, null, "22");	//flow capacity is 1 PCU per min.
+			link3 = network.createAndAddLink(Id.createLinkId("3"), node3, node4, 1000, 15, 360, 1, null, "22");
+			link4 = network.createAndAddLink(Id.createLinkId("4"), node4, node5, 10000, 25, 3600, 1, null, "22");
 
 			population = scenario.getPopulation();
 		}
