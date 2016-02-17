@@ -19,10 +19,7 @@
  * *********************************************************************** */
 package org.matsim.core.mobsim.qsim.qnetsimengine;
 
-import java.util.TreeMap;
-
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.core.mobsim.qsim.qnetsimengine.QueueWithBuffer.Hole;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfoFactory;
 
 /**
@@ -38,7 +35,7 @@ final class EquiDistAgentSnapshotInfoBuilder extends AbstractAgentSnapshotInfoBu
 	
 	@Override
 	public double calculateVehicleSpacing(double linkLength, double numberOfVehiclesOnLink,
-			double overallStorageCapacity, TreeMap<Double, Hole> holePositions) {
+			double overallStorageCapacity) {
 		return linkLength / numberOfVehiclesOnLink;
 	}
 
