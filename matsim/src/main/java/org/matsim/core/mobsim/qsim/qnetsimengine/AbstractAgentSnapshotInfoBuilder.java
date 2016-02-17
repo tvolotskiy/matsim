@@ -170,7 +170,7 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 
 		double lastDistanceFromFromNode = Double.NaN;
 
-//		Iterator<Entry<Double, Hole>> iterator = holePositions.descendingMap().entrySet().iterator() ;
+		//		Iterator<Entry<Double, Hole>> iterator = holePositions.descendingMap().entrySet().iterator() ;
 		Iterator<Entry<Double, Hole>> iterator = holePositions.entrySet().iterator() ;
 
 
@@ -181,6 +181,23 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 			double distanceFromFromNode = this.calculateDistanceOnVectorFromFromNode2(curvedLength, spacing,
 					lastDistanceFromFromNode, now, freespeedTraveltime, remainingTravelTime);
 
+			if ( QueueWithBuffer.HOLES ) {
+				while ( iterator.hasNext() ) {
+					Entry<Double, Hole> entry = iterator.next();
+					double holePositionFromFromNode = curvedLength - entry.getKey() ;
+					if (  holePositionFromFromNode > lastDistanceFromFromNode ) { // hole is on the right of the vehicle (fromNode---v---h------toNode)  
+						// +7.5?  -7.5?  +7.5*size?  -7.5*size?
+						if (holePositionFromFromNode - lastDistanceFromFromNode < spacing ) { 
+							// hole and vehicle are adjacent, means, there was a vehicle ahead, update position. amit Feb'16
+							lastDistanceFromFromNode -=  spacing ;
+						} else { // enough space, dont update
+							break;
+						}
+					} else {
+						break ;
+					}
+				}
+			}
 			Integer lane = AbstractAgentSnapshotInfoBuilder.guessLane(veh, numberOfLanesAsInt );
 			double speedValue = AbstractAgentSnapshotInfoBuilder.calcSpeedValueBetweenZeroAndOne(veh,
 					inverseFlowCapPerTS, now, freeSpeed);
@@ -188,22 +205,6 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 					curvedLength, euklideanDistance, veh,
 					distanceFromFromNode, lane, speedValue);
 			lastDistanceFromFromNode = distanceFromFromNode;
-
-			if ( QueueWithBuffer.HOLES ) {
-				while ( iterator.hasNext() ) {
-					Entry<Double, Hole> entry = iterator.next();
-					double size = entry.getValue().getSizeInEquivalents() ;
-					double cellSize = ( (NetworkImpl) this.scenario.getNetwork() ).getEffectiveCellSize();
-					double holePositionFromToNode = entry.getKey() ;
-					// since hole position here is from ToNode, subtracting it from (curved) length to get the position from FromNode. amit Feb'15
-					if (  curvedLength - holePositionFromToNode > lastDistanceFromFromNode ) {  // +7.5?  -7.5?  +7.5*size?  -7.5*size?
-//						lastDistanceFromFromNode +=  cellSize  ; // should be dependent on size of the vehicle. amit Feb'16
-						lastDistanceFromFromNode +=  cellSize  * size;
-					} else {
-						break ;
-					}
-				}
-			}
 		}
 	}
 
