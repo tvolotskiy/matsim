@@ -36,38 +36,40 @@ import org.matsim.core.scenario.ScenarioUtils;
  */
 
 public class ShockwaveExperiment {
-	
-	private static final String RUN_DIR = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/withoutHoles/car_SW/";
+
+	private static final String RUN_DIR = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
 
 	public static void main(String[] args) {
+
+		boolean isUsingOTFVis = true;
 
 		InputsForFDTestSetUp inputs = new InputsForFDTestSetUp();
 		inputs.setTravelModes(new String [] {"car"});
 		inputs.setModalSplit(new String [] {"1.0"}); //in pcu
-		inputs.setTrafficDynamics(TrafficDynamics.queue);
+		inputs.setTrafficDynamics(TrafficDynamics.withHoles);
 		inputs.setLinkDynamics(LinkDynamics.FIFO);
 		inputs.setTimeDependentNetwork(true);
-		
+
 		GenerateFundamentalDiagramData generateFDData = new GenerateFundamentalDiagramData(inputs);
 		generateFDData.setRunDirectory(RUN_DIR);
-		generateFDData.setReduceDataPointsByFactor(20);
+		generateFDData.setReduceDataPointsByFactor(140);
 		generateFDData.setIsPlottingDistribution(false);
-		generateFDData.setIsUsingLiveOTFVis(false);
+		generateFDData.setIsUsingLiveOTFVis(isUsingOTFVis);
 		generateFDData.setIsWritingEventsFileForEachIteration(true);
-		
+
 		//set flow capacity of the base link to zero for 1 min.
 		Scenario sc = generateFDData.getScenario();
 		sc.getConfig().qsim().setStuckTime(10*3600);
-		
-		// following is necessary to avoid placement on link/lane (2-D) if using the data to plot only one-D space.
-		sc.getConfig().qsim().setLinkWidthForVis((float)0);
-		((NetworkImpl) sc.getNetwork()).setEffectiveLaneWidth(0.);
-		
-		
+
+		if (! isUsingOTFVis ) { //necessary to avoid placement on link/lane (2-D) if using the data to plot only one-D space.
+			sc.getConfig().qsim().setLinkWidthForVis((float)0);
+			((NetworkImpl) sc.getNetwork()).setEffectiveLaneWidth(0.);		
+		}
+
 		ScenarioUtils.loadScenario(sc);
 		Link desiredLink = sc.getNetwork().getLinks().get(Id.createLinkId(1));//baseLink is not chosen to observe some spillover
-		
-		
+
+
 		double flowCapBefore = desiredLink.getCapacity();
 		NetworkChangeEventFactory cef = new NetworkChangeEventFactoryImpl() ;
 		{
