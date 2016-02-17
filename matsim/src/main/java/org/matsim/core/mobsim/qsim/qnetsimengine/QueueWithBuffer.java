@@ -812,9 +812,7 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 					for (Hole hole : holes) {
 						lastDistanceFromToNode = createHolePositionAndReturnDistance(snapshotInfoBuilder, now, lastDistanceFromToNode,
 								spacing, freespeedTraveltime, hole);
-						if ( VIS_HOLES ) {
-							addHolePosition( positions, snapshotInfoBuilder, lastDistanceFromToNode, hole ) ;
-						}
+						addHolePosition( positions, snapshotInfoBuilder, lastDistanceFromToNode, hole ) ;
 						holePositions.put( lastDistanceFromToNode, hole ) ;
 					}
 				}
