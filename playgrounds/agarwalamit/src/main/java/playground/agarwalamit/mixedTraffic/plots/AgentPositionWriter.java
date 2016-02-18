@@ -68,7 +68,7 @@ public class AgentPositionWriter {
 		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "10";
+		final String prefix = "2";
 		final String eventsFile = dir+"/events/events["+prefix+"].xml";
 		
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
@@ -77,7 +77,7 @@ public class AgentPositionWriter {
 		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc);
 		String transimFile;
 		
-		if( ! IS_WRITING_TRANSIM_FILE ){
+		if( IS_WRITING_TRANSIM_FILE ){
 			// not sure, if following three lines are required.
 			sc.getConfig().qsim().setLinkWidthForVis((float)0);
 			((NetworkImpl)sc.getNetwork()).setEffectiveLaneWidth(0.);
@@ -85,7 +85,7 @@ public class AgentPositionWriter {
 			sc.getConfig().controler().setSnapshotFormat(Arrays.asList("transims"));
 			 transimFile = apw.createAndReturnTransimSnapshotFile(sc, eventsFile);
 		} else {
-			transimFile = dir+"/TransVeh/T_["+prefix+"].txt";
+			transimFile = dir+"/TransVeh/T_["+prefix+"].veh.gz";
 		}
 		
 		apw.storePerson2Modes(eventsFile);

@@ -535,7 +535,7 @@ public class GenerateFundamentalDiagramData {
 		if(! new File(outputDir+"/TransVeh/").exists() ) new File(outputDir+"/TransVeh/").mkdir();
 		//first, move T.veh.gz file
 		String sourceTVehFile = outputDir+"/ITERS/it.0/0.T.veh.gz"; 
-		String targetTVehFilen = outputDir+"/TransVeh/T_"+runningPoint.toString()+".txt";
+		String targetTVehFilen = outputDir+"/TransVeh/T_"+runningPoint.toString()+".veh.gz"; 
 		try {
 			Files.move(new File(sourceTVehFile).toPath(), new File(targetTVehFilen).toPath(), StandardCopyOption.REPLACE_EXISTING);
 			IOUtils.deleteDirectory(new File(outputDir+"/ITERS/"), false);
