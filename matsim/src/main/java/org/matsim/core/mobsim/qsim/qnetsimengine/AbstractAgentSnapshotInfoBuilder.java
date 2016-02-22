@@ -173,43 +173,46 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 		//		Iterator<Entry<Double, Hole>> iterator = holePositions.descendingMap().entrySet().iterator() ;
 		Iterator<Entry<Double, Hole>> iterator = holePositions.entrySet().iterator() ;
 
-
+		double spaceFilledByVehicles = 0.;
+		
 		for ( MobsimVehicle mveh : vehs ) {
 			QVehicle veh = (QVehicle) mveh ;
 			double remainingTravelTime = veh.getEarliestLinkExitTime() - now ;
 
 			double distanceFromFromNode = this.calculateDistanceOnVectorFromFromNode2(curvedLength, spacing,
 					lastDistanceFromFromNode, now, freespeedTraveltime, remainingTravelTime);
-
+			//=========================================
+			double spaceLeftAfterFillingHolesAndVehicles = curvedLength; 
 			if ( QueueWithBuffer.HOLES ) {
 				while ( iterator.hasNext() ) {
 					Entry<Double, Hole> entry = iterator.next();
 					double holePositionFromFromNode = curvedLength - entry.getKey() ;
-					if (  holePositionFromFromNode > lastDistanceFromFromNode ) { // hole is on the right of the vehicle (fromNode---v---h------toNode)  
+					if (  holePositionFromFromNode > distanceFromFromNode ) { // hole is on the right of the vehicle (fromNode ----------vh toNode)  
 						// +7.5?  -7.5?  +7.5*size?  -7.5*size?
-						if (holePositionFromFromNode - lastDistanceFromFromNode < spacing ) { 
-							// hole and vehicle are adjacent, means, there was a vehicle ahead, update position. amit Feb'16
-							lastDistanceFromFromNode -=  spacing ;
-						} else { // enough space, dont update
-							break;
-						}
+//						spaceLeftAfterFillingHolesAndVehicles -= entry.getValue().getSizeInEquivalents() * spacing;
+						spaceLeftAfterFillingHolesAndVehicles -= entry.getKey();
 					} else {
 						break ;
 					}
 				}
 			}
+			spaceLeftAfterFillingHolesAndVehicles -= spaceFilledByVehicles;
+			System.out.println("distanceFromFromNode for agent "+veh.getDriver().getId()+ " is " + distanceFromFromNode + " whereas the spaceLeftAfterFillingHolesAndVehicles is " + spaceLeftAfterFillingHolesAndVehicles);
+			distanceFromFromNode = Math.min(distanceFromFromNode, spaceLeftAfterFillingHolesAndVehicles);
+			spaceFilledByVehicles += veh.getSizeInEquivalents() * spacing;
+			//=========================================
+			
 			Integer lane = AbstractAgentSnapshotInfoBuilder.guessLane(veh, numberOfLanesAsInt );
 			double speedValue = AbstractAgentSnapshotInfoBuilder.calcSpeedValueBetweenZeroAndOne(veh,
 					inverseFlowCapPerTS, now, freeSpeed);
 			this.positionAgentOnLink(positions, upstreamCoord, downstreamCoord,
 					curvedLength, euklideanDistance, veh,
 					distanceFromFromNode, lane, speedValue);
+			System.out.println("Agent "+veh.getDriver().getId() + " is at position "+ distanceFromFromNode);
 			lastDistanceFromFromNode = distanceFromFromNode;
 		}
 	}
-
-
-
+	
 	public final void positionQItem(final Collection<AgentSnapshotInfo> positions, Coord startCoord, Coord endCoord, 
 			double lengthOfCurve, double euclideanLength, QItem veh, 
 			double distanceFromFromNode,	Integer lane, double speedValueBetweenZeroAndOne){
