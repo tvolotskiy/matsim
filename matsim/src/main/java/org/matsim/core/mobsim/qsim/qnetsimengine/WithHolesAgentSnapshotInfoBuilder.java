@@ -81,6 +81,8 @@ class WithHolesAgentSnapshotInfoBuilder extends AbstractAgentSnapshotInfoBuilder
 			distanceFromFNode = lastDistanceFromFNode - spacing;
 		}
 		
+		distanceFromFNode = Math.max(0., distanceFromFNode);
+		
 		//else just do nothing anymore
 		return distanceFromFNode;
 	}
