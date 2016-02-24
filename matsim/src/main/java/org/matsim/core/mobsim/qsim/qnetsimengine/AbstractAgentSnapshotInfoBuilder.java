@@ -170,9 +170,6 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 
 		double lastDistanceFromFromNode = Double.NaN;
 
-		//		Iterator<Entry<Double, Hole>> iterator = holePositions.descendingMap().entrySet().iterator() ;
-		Iterator<Entry<Double, Hole>> iterator = holePositions.entrySet().iterator() ;
-
 		double spaceFilledByVehicles = 0.;
 		
 		for ( MobsimVehicle mveh : vehs ) {
@@ -182,6 +179,10 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 			double distanceFromFromNode = this.calculateDistanceOnVectorFromFromNode2(curvedLength, spacing,
 					lastDistanceFromFromNode, now, freespeedTraveltime, remainingTravelTime);
 			//=========================================
+
+//			Iterator<Entry<Double, Hole>> iterator = holePositions.descendingMap().entrySet().iterator() ;
+			Iterator<Entry<Double, Hole>> iterator = holePositions.entrySet().iterator() ;
+			
 			double spaceLeftAfterFillingHolesAndVehicles = curvedLength; 
 			if ( QueueWithBuffer.HOLES ) {
 				while ( iterator.hasNext() ) {
@@ -189,8 +190,8 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 					double holePositionFromFromNode = curvedLength - entry.getKey() ;
 					if (  holePositionFromFromNode > distanceFromFromNode ) { // hole is on the right of the vehicle (fromNode ----------vh toNode)  
 						// +7.5?  -7.5?  +7.5*size?  -7.5*size?
-//						spaceLeftAfterFillingHolesAndVehicles -= entry.getValue().getSizeInEquivalents() * spacing;
-						spaceLeftAfterFillingHolesAndVehicles -= entry.getKey();
+						spaceLeftAfterFillingHolesAndVehicles -= entry.getValue().getSizeInEquivalents() * spacing;
+//						spaceLeftAfterFillingHolesAndVehicles -= entry.getKey();
 					} else {
 						break ;
 					}
