@@ -68,26 +68,39 @@ class WithHolesAgentSnapshotInfoBuilder extends AbstractAgentSnapshotInfoBuilder
 			}
 		}
 		
-		if (Double.isNaN(lastDistanceFromFNode)) {
-			// (non-object-oriented way of "null" (?))
-			
-			lastDistanceFromFNode = length ;
-		}
-
-		if (distanceFromFNode >= lastDistanceFromFNode - spacing ) { 
-			/* vehicle is already in queue or has to stay behind another vehicle
-			 * -> position it directly after the last position
-			 */
-			distanceFromFNode = lastDistanceFromFNode - spacing;
-		}
+//		if (Double.isNaN(lastDistanceFromFNode)) {
+//			// (non-object-oriented way of "null" (?))
+//			
+//			lastDistanceFromFNode = length ;
+//		}
+//
+//		if (distanceFromFNode >= lastDistanceFromFNode - spacing ) { 
+//			/* vehicle is already in queue or has to stay behind another vehicle
+//			 * -> position it directly after the last position
+//			 */
+//			distanceFromFNode = lastDistanceFromFNode - spacing;
+//		}
 		
-		distanceFromFNode = Math.max(0., distanceFromFNode);
+		
+		if (Double.isNaN(lastDistanceFromFNode)) {
+		// (non-object-oriented way of "null" (?))
+		
+		lastDistanceFromFNode = length ;
+		// first vehicle on the link thus, can be exactly at the end of the link, amit Feb 2016
+		
+		} else if (distanceFromFNode >= lastDistanceFromFNode - spacing ) {
+			
+		/* vehicle is already in queue or has to stay behind another vehicle
+		 * -> position it directly after the last position
+		 */
+		distanceFromFNode = lastDistanceFromFNode - spacing;
+		
+	}
+		
+		distanceFromFNode = Math.max(0., distanceFromFNode); // position of the vehicle should not be negative, amit Feb 2016
 		
 		//else just do nothing anymore
 		return distanceFromFNode;
 	}
-
-	
-
 	
 }
