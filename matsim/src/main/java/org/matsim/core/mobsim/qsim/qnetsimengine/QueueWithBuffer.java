@@ -590,8 +590,8 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 	@Override
 	final Collection<MobsimVehicle> getAllVehicles() {
 		Collection<MobsimVehicle> vehicles = new ArrayList<>();
-		vehicles.addAll(vehQueue);
 		vehicles.addAll(buffer);
+		vehicles.addAll(vehQueue);
 		return vehicles ;
 	}
 
