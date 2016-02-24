@@ -1,9 +1,9 @@
 /* *********************************************************************** *
- * project: org.matsim.*												   *
+ * project: org.matsim.*
  *                                                                         *
  * *********************************************************************** *
  *                                                                         *
- * copyright       : (C) 2008 by the members listed in the COPYING,        *
+ * copyright       : (C) 2016 by the members listed in the COPYING,        *
  *                   LICENSE and WARRANTY file.                            *
  * email           : info at matsim dot org                                *
  *                                                                         *
@@ -16,41 +16,46 @@
  *   See also COPYING, LICENSE and WARRANTY file                           *
  *                                                                         *
  * *********************************************************************** */
-package org.matsim.roadpricing.run;
+
+package playground.jbischoff.examples;
 
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.Controler;
+import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.scenario.ScenarioUtils;
-import org.matsim.roadpricing.ControlerDefaultsWithRoadPricingModule;
-import org.matsim.roadpricing.RoadPricingConfigGroup;
 
 /**
- * Basic "script" to use roadpricing.
- * 
- * @author nagel
- *
+ * @author  jbischoff
+ *	Example code to run the MATSim Air traffic scenario. 
+ *	Note that there is no demand attached to this.
  */
-public final class RunRoadPricingExample {
-	// to not change class name: referenced from book.  kai, dec'14
+public class RunAirTrafficExample {
 
 	public static void main(String[] args) {
-		// load the config, telling it to "materialize" the road pricing section:
-		Config config = ConfigUtils.loadConfig( args[0], new RoadPricingConfigGroup() ) ;
+		String INPUTDIR = "../../../shared-svn/studies/countries/eu/flight/sf_oag_flight_model/public/";
+		Config config = ConfigUtils.createConfig();
 		
-		// load the scenario:
-		Scenario scenario = ScenarioUtils.loadScenario(config) ;
-
-		// instantiate the controler:
-		Controler controler = new Controler(scenario) ;
-
-		// use the road pricing module.
-        // (loads the road pricing scheme, uses custom travel disutility including tolls, etc.)
-        controler.setModules(new ControlerDefaultsWithRoadPricingModule());
-
-        // run the controler:
-		controler.run() ;
+		config.network().setInputFile(INPUTDIR+"air_network.xml");
+		config.transit().setUseTransit(true);
+		config.transit().setTransitScheduleFile(INPUTDIR+"flight_transit_schedule.xml");
+		config.transit().setVehiclesFile(INPUTDIR+"flight_transit_vehicles.xml");
+		
+		config.controler().setOutputDirectory(INPUTDIR+"output");
+		config.controler().setFirstIteration(0);
+		config.controler().setLastIteration(0);
+		config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
+		
+		config.vspExperimental().setWritingOutputEvents(true);
+		
+		config.qsim().setEndTime(40*3600);
+		
+		
+		Scenario scenario = ScenarioUtils.loadScenario(config);
+		Controler controler = new Controler(scenario); 
+		controler.run();
+		
 	}
 
 }
