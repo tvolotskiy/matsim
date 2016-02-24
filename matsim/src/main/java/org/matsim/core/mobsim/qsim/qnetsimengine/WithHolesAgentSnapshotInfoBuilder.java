@@ -61,6 +61,10 @@ class WithHolesAgentSnapshotInfoBuilder extends AbstractAgentSnapshotInfoBuilder
 			// (insure against division by zero on non-physical links)
 		}
 		else {
+			
+			// for agent on departure link, remaining travel time can be negative [= earliest link exit time(=0) - now].
+			remainingTravelTime = Math.max(0., remainingTravelTime); 
+			
 			// we calculate where the vehicle would be with free speed.
 			distanceFromFNode = (1. - (remainingTravelTime / freespeedTraveltime)) * length ;
 			if ( distanceFromFNode < 0. ) {
