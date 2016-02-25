@@ -63,8 +63,8 @@ import org.matsim.vis.otfvis.OnTheFlyServer;
  */
 public class HolesInOTFVisTest {
 
-	private static final boolean IS_USING_OTFVIS = false;
-	private static final boolean IS_WRITING_FILES = true;
+	private static final boolean IS_USING_OTFVIS = true;
+	private static final boolean IS_WRITING_FILES = false;
 
 	public static void main(String[] args) {
 
@@ -151,7 +151,7 @@ public class HolesInOTFVisTest {
 			scenario = ScenarioUtils.createScenario(ConfigUtils.createConfig());
 			config = scenario.getConfig();
 			config.qsim().setFlowCapFactor(1.0);
-			config.qsim().setStorageCapFactor(0.05);
+			config.qsim().setStorageCapFactor(1.0);
 			
 			config.qsim().setStuckTime(24*3600); // in order to let agents wait instead of forced entry.
 			config.qsim().setEndTime(01*3600);
@@ -171,7 +171,7 @@ public class HolesInOTFVisTest {
 
 			link1 = network.createAndAddLink(Id.createLinkId("1"), node1, node2, 10000, 25, 3600, 1, null, "22"); 
 			link2 = network.createAndAddLink(Id.createLinkId("2"), node2, node3, 1000, 25, 3600, 1, null, "22");	//flow capacity is 1 PCU per min.
-			link3 = network.createAndAddLink(Id.createLinkId("3"), node3, node4, 1000, 15, 360, 1, null, "22");
+			link3 = network.createAndAddLink(Id.createLinkId("3"), node3, node4, 100, 25, 360, 1, null, "22");
 			link4 = network.createAndAddLink(Id.createLinkId("4"), node4, node5, 10000, 25, 3600, 1, null, "22");
 
 			population = scenario.getPopulation();
