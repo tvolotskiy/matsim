@@ -25,9 +25,12 @@ import org.matsim.contrib.common.util.XORShiftRandom;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.facilities.ActivityFacilities;
-import playground.johannes.studies.matrix2014.analysis.LegStatsPerZone;
+import playground.johannes.studies.matrix2014.analysis.ValidateLAU2Attribute;
+import playground.johannes.studies.matrix2014.analysis.ValidatePopulationDensity;
+import playground.johannes.studies.matrix2014.analysis.ZoneMobilityRate;
+import playground.johannes.studies.matrix2014.gis.TransferZoneAttribute;
 import playground.johannes.studies.matrix2014.gis.ValidateFacilities;
+import playground.johannes.studies.matrix2014.gis.ZoneSetLAU2Class;
 import playground.johannes.studies.matrix2014.sim.ValidatePersonWeight;
 import playground.johannes.synpop.analysis.*;
 import playground.johannes.synpop.data.*;
@@ -35,6 +38,7 @@ import playground.johannes.synpop.data.io.PopulationIO;
 import playground.johannes.synpop.gis.*;
 import playground.johannes.synpop.processing.TaskRunner;
 import playground.johannes.synpop.processing.ValidateMissingAttribute;
+import playground.johannes.synpop.source.mid2008.MiDKeys;
 import playground.johannes.synpop.util.Executor;
 
 import java.util.Collection;
@@ -70,11 +74,19 @@ public class PopulationAnalyzer {
         dataPool.register(new ZoneDataLoader(configGroup), ZoneDataLoader.KEY);
 
         ValidateFacilities.validate(dataPool, "nuts3");
+
+        ZoneCollection lau2Zones = ((ZoneData) dataPool.get(ZoneDataLoader.KEY)).getLayer("lau2");
+        new ZoneSetLAU2Class().apply(lau2Zones);
         /*
         Load population...
          */
         logger.info("Loading persons...");
-        Set<Person> persons = PopulationIO.loadFromXML(config.findParam(MODULE_NAME, "popInputFile"), new PlainFactory());
+        Set<Person> persons = PopulationIO.loadFromXML(config.findParam(MODULE_NAME, "simPopulation"), new PlainFactory());
+        logger.info(String.format("Loaded %s persons.", persons.size()));
+
+        logger.info("Loading persons...");
+        Set<Person> refPersons = PopulationIO.loadFromXML(config.findParam(MODULE_NAME, "popInputFile"), new
+                PlainFactory());
         logger.info(String.format("Loaded %s persons.", persons.size()));
 
         logger.info("Validating persons...");
@@ -87,11 +99,31 @@ public class PopulationAnalyzer {
         AnalyzerTaskComposite<Collection<? extends Person>> tasks = new AnalyzerTaskComposite<>();
 
         ZoneData zoneData = (ZoneData) dataPool.get(ZoneDataLoader.KEY);
-        ActivityFacilities facilities = ((FacilityData)dataPool.get(FacilityDataLoader.KEY)).getAll();
-        LegStatsPerZone legStatsPerZone = new LegStatsPerZone(zoneData.getLayer("nuts3"), facilities, ioContext);
-        legStatsPerZone.setPredicate(carPredicate);
+        ZoneCollection modenaZones = zoneData.getLayer("modena");
 
-        tasks.addComponent(legStatsPerZone);
+//        ActivityFacilities facilities = ((FacilityData)dataPool.get(FacilityDataLoader.KEY)).getAll();
+//        LegStatsPerZone legStatsPerZone = new LegStatsPerZone(zoneData.getLayer("nuts3"), facilities, ioContext);
+//        legStatsPerZone.setPredicate(carPredicate);
+//        tasks.addComponent(legStatsPerZone);
+
+        ZoneMobilityRate zoneMobilityRate = new ZoneMobilityRate(
+                MiDKeys.PERSON_LAU2_CLASS,
+                lau2Zones,
+                carPredicate);
+        zoneMobilityRate.analyze(refPersons, null);
+
+        new TransferZoneAttribute().apply(lau2Zones, modenaZones, MiDKeys.PERSON_LAU2_CLASS);
+
+        ValidatePopulationDensity popDensity = new ValidatePopulationDensity(
+                dataPool,
+                zoneMobilityRate.getMobilityRatePerZone(modenaZones),
+                "modena");
+
+        popDensity.setIoContext(ioContext);
+        tasks.addComponent(popDensity);
+
+        ValidateLAU2Attribute lau2Attr = new ValidateLAU2Attribute(dataPool);
+        tasks.addComponent(lau2Attr);
 
         AnalyzerTaskRunner.run(persons, tasks, ioContext);
 

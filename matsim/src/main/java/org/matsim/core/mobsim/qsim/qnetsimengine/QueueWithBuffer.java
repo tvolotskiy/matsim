@@ -83,8 +83,11 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 	class FlowcapAccumulate {
 		private double timeStep = 0.;//Double.NEGATIVE_INFINITY ;
 		private double value = 0. ;
-		double getTimeStep() {
-			return timeStep;
+		double getTimeStep(){
+			return this.timeStep;
+		}
+		void setTimeStep(double now) {
+			this.timeStep = now;
 		}
 		double getValue() {
 			return value;
@@ -142,9 +145,8 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 	private static int spaceCapWarningCount = 0;
 	static boolean HOLES = false ; // can be set from elsewhere in package, but not from outside.  kai, nov'10
 	static boolean VIS_HOLES = false ;
-	static double hole_speed = 15.0;
-	// yyyy probably should neither be non-private nor static.  kai/amit, nov'15
-	
+	private final double HOLE_SPEED = 15.0;
+
 	
 	/**
 	 * LaneEvents should only be fired if there is more than one QueueLane on a QueueLink
@@ -282,10 +284,9 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 		
 		if(fastCapacityUpdate){
 			updateFlowAccumulation(now);
-			if (flowcap_accumulate.getValue() >= 0.0  ) {
+			if (flowcap_accumulate.getValue() > 0.0  ) {
 				flowcap_accumulate.addValue(-veh.getSizeInEquivalents(), now);
-			}
-			else {
+			} else {
 				throw new IllegalStateException("Buffer of link " + this.id + " has no space left!");
 			}
 		} else {
@@ -320,14 +321,14 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 	}
 
 	private boolean hasFlowCapacityLeftAndBufferSpace() {
-		final double now = network.simEngine.getMobsim().getSimTimer().getTimeOfDay() ;
-
+		double now = this.network.simEngine.getMobsim().getSimTimer().getTimeOfDay();
+		
 		if(fastCapacityUpdate){
-			updateFlowAccumulation(now);
+			updateFlowAccumulation(now); 
 			return (
 					usedBufferStorageCapacity < bufferStorageCapacity
 					&&
-					((flowcap_accumulate.getValue() >= 0.0) )
+					((flowcap_accumulate.getValue() > 0.0) )
 					);
 		} else {
 			return (
@@ -339,19 +340,17 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 	}
 
 	private void updateFlowAccumulation(final double now){
-
-		if( this.flowcap_accumulate.getTimeStep() < now && this.flowcap_accumulate.getValue() < 0 && isNotOfferingVehicle() ){
-
-			double flowCapSoFar = flowcap_accumulate.getValue();
-			double newStoredFlowCap = (now - flowcap_accumulate.getTimeStep()) * flowCapacityPerTimeStep;
-			double totalFlowCap = flowCapSoFar + newStoredFlowCap;
-
-			if(totalFlowCap > flowCapacityPerTimeStep) {
-				flowcap_accumulate.setValue(flowCapacityPerTimeStep);
-				flowcap_accumulate.timeStep = now;
-			}else {
-				flowcap_accumulate.addValue(newStoredFlowCap,now);
-			}
+		
+		if( this.flowcap_accumulate.getTimeStep() < now && this.flowcap_accumulate.getValue() <= 0. && isNotOfferingVehicle() ){
+			
+				double flowCapSoFar = flowcap_accumulate.getValue();
+				double accumulateFlowCap = (now - flowcap_accumulate.getTimeStep()) * flowCapacityPerTimeStep;
+				double newFlowCap = flowCapSoFar + accumulateFlowCap;
+				
+				newFlowCap = Math.min(newFlowCap, flowCapacityPerTimeStep);
+				
+				flowcap_accumulate.setValue(newFlowCap);
+				flowcap_accumulate.setTimeStep( now );
 		}
 	}
 
@@ -465,7 +464,7 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 				letVehicleArrive(now, veh);
 				continue;
 			}
-
+			
 			/* is there still room left in the buffer? */
 			if (!hasFlowCapacityLeftAndBufferSpace() ) {
 				return;
@@ -492,7 +491,7 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 
 		if ( QueueWithBuffer.HOLES ) {
 			QueueWithBuffer.Hole hole = new QueueWithBuffer.Hole() ;
-			double offset = length*3600./hole_speed/1000. ;
+			double offset = length*3600./HOLE_SPEED/1000. ;
 			hole.setEarliestLinkExitTime( now + 1.0*offset + 0.0*MatsimRandom.getRandom().nextDouble()*offset ) ;
 			hole.setSizeInEquivalents(veh2Remove.getSizeInEquivalents());
 			holes.add( hole ) ;
@@ -572,6 +571,10 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 		}
 		calculateFlowCapacity();
 		calculateStorageCapacity();
+		
+		if(fastCapacityUpdate){
+			flowcap_accumulate.setValue(flowCapacityPerTimeStep);
+		}
 	}
 
 	@Override
@@ -589,6 +592,9 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 
 	@Override
 	final Collection<MobsimVehicle> getAllVehicles() {
+		/* since it is an instance of arrayList, insertion order is maintained. Thus, correcting the order or insertion.
+		 * It will be more complicated for passingQueue. amit feb'16
+		 */
 		Collection<MobsimVehicle> vehicles = new ArrayList<>();
 		vehicles.addAll(buffer);
 		vehicles.addAll(vehQueue);
@@ -614,7 +620,7 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 		QVehicle veh = buffer.poll();
 		usedBufferStorageCapacity = usedBufferStorageCapacity - veh.getSizeInEquivalents();
 		bufferLastMovedTime = now; // just in case there is another vehicle in the buffer that is now the new front-most
-		flowcap_accumulate.timeStep = bufferLastMovedTime -1;
+		if(fastCapacityUpdate) flowcap_accumulate.setTimeStep(now - 1);
 		return veh;
 	}
 
@@ -807,7 +813,7 @@ final class QueueWithBuffer extends QLaneI implements SignalizeableItem {
 				// holes:
 				if ( !holes.isEmpty() ) {
 					double spacing = snapshotInfoBuilder.calculateVehicleSpacing(length, holes.size(), getStorageCapacity() );
-					double freespeedTraveltime = length / (hole_speed*1000./3600.);
+					double freespeedTraveltime = length / (HOLE_SPEED*1000./3600.);
 					double lastDistanceFromToNode = Double.NaN;
 					for (Hole hole : holes) {
 						lastDistanceFromToNode = createHolePositionAndReturnDistance(snapshotInfoBuilder, now, lastDistanceFromToNode,
