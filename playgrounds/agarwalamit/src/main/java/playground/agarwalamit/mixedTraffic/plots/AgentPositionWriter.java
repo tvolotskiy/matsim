@@ -18,6 +18,7 @@
  * *********************************************************************** */
 package playground.agarwalamit.mixedTraffic.plots;
 
+import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.util.ArrayList;
@@ -27,16 +28,19 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.events.PersonDepartureEvent;
 import org.matsim.api.core.v01.events.handler.PersonDepartureEventHandler;
+import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.QSimConfigGroup.SnapshotStyle;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.MatsimEventsReader;
 import org.matsim.core.network.NetworkImpl;
+import org.matsim.core.utils.collections.Tuple;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.core.utils.io.tabularFileParser.TabularFileHandler;
 import org.matsim.core.utils.io.tabularFileParser.TabularFileParser;
@@ -45,6 +49,7 @@ import org.matsim.run.Events2Snapshot;
 import org.matsim.vis.snapshotwriters.TransimsSnapshotWriter.Labels;
 
 import playground.agarwalamit.utils.LoadMyScenarios;
+import playground.benjamin.utils.BkNumberUtils;
 
 /**
  * 1) Create Transims snapshot file from events or just existing file. 
@@ -60,8 +65,10 @@ public class AgentPositionWriter {
 	private final static Logger LOGGER = Logger.getLogger(AgentPositionWriter.class);
 	private final static double SANPSOHOT_PERIOD = 1;
 	private final static boolean IS_WRITING_TRANSIM_FILE = false;
+	private final double linkLength = 1000;
 	private final double trackLength = 3000;
 	private final double maxSpeed = 60/3.6;
+	private final Scenario sc;
 
 	public static void main(String[] args) 
 	{
@@ -70,24 +77,24 @@ public class AgentPositionWriter {
 		final String configFile = dir+"/config.xml";
 		final String prefix = "2";
 		final String eventsFile = dir+"/events/events["+prefix+"].xml";
-		
+
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
 		final SnapshotStyle snapshotStyle = sc.getConfig().qsim().getSnapshotStyle();
-		
+
 		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc);
 		String transimFile;
-		
+
 		if( IS_WRITING_TRANSIM_FILE ){
 			// not sure, if following three lines are required.
 			sc.getConfig().qsim().setLinkWidthForVis((float)0);
 			((NetworkImpl)sc.getNetwork()).setEffectiveLaneWidth(0.);
-			
+
 			sc.getConfig().controler().setSnapshotFormat(Arrays.asList("transims"));
-			 transimFile = apw.createAndReturnTransimSnapshotFile(sc, eventsFile);
+			transimFile = apw.createAndReturnTransimSnapshotFile(sc, eventsFile);
 		} else {
 			transimFile = dir+"/TransVeh/T_["+prefix+"].veh.gz";
 		}
-		
+
 		apw.storePerson2Modes(eventsFile);
 		apw.readTransimFileAndWriteData(transimFile);
 	}
@@ -98,6 +105,7 @@ public class AgentPositionWriter {
 	 */
 	public AgentPositionWriter(String outFile, Scenario scenario)
 	{
+		this.sc = scenario;
 		writer = IOUtils.getBufferedWriter(outFile);
 		try {
 			writer.write("personId \t legMode \t positionOnLink \t time \t speed  \t cycleNumber \n");
@@ -133,13 +141,15 @@ public class AgentPositionWriter {
 	private BufferedWriter writer ;
 
 	private Map<Id<Person>,String> person2mode = new HashMap<>();
-	private Map<Id<Person>,Double> prevEasting = new HashMap<>();
-	private Map<Id<Person>,Double> prevNorthing = new HashMap<>();
-	private Map<Id<Person>,Double> prevPosition = new HashMap<>();
+	private Map<Id<Person>,Double> prevTime = new HashMap<>();
+	private Map<Id<Person>,Double> prevTrackPosition = new HashMap<>();
 	private Map<Id<Person>,Integer> prevCycle = new HashMap<>();
 
 	public void readTransimFileAndWriteData(String inputFile)
 	{
+
+		LOGGER.info("Reading transim file "+ inputFile);
+
 		TabularFileParserConfig config = new TabularFileParserConfig() ;
 		config.setFileName( inputFile );
 		config.setDelimiterTags( new String []{"\t"} );
@@ -151,6 +161,7 @@ public class AgentPositionWriter {
 				List<String> strs = Arrays.asList( row ) ;
 
 				if ( row[0].substring(0, 1).matches("[A-Za-z]") ) {
+					if ( row[0].startsWith("hole") ) return; 
 					for ( String str : strs ) {
 						labels.add( str ) ;
 					}
@@ -158,37 +169,48 @@ public class AgentPositionWriter {
 					double time = Double.parseDouble( strs.get( labels.indexOf( Labels.TIME.toString() ) ) ) ;
 					double easting = Double.parseDouble( strs.get( labels.indexOf( Labels.EASTING.toString() ) ) ) ;
 					double northing = Double.parseDouble( strs.get( labels.indexOf( Labels.NORTHING.toString() ) ) ) ;
-//					double velocity = Double.parseDouble( strs.get( labels.indexOf( Labels.VELOCITY.toString() ) ) ) ;
+					//					double velocity = Double.parseDouble( strs.get( labels.indexOf( Labels.VELOCITY.toString() ) ) ) ;
 					Id<Person> agentId = Id.createPersonId( strs.get( labels.indexOf( Labels.VEHICLE.toString() ) ) ) ;
-					try {
-						if( prevEasting.containsKey(agentId) ){
-							double currentDist = Math.sqrt( (easting - prevEasting.get(agentId))*(easting - prevEasting.get(agentId)) 
-									+ (northing- prevNorthing.get(agentId))*(northing- prevNorthing.get(agentId)) );
-							
-							double velocity = currentDist / (SANPSOHOT_PERIOD); // denominator should be equal to snapshot period.
-							if(Math.round(velocity) > Math.round(maxSpeed) && easting <= 1000.0 ) { // person arriving (vehicle leaving traffic) are falling in this category
-								LOGGER.error("Maximum speed is "+ maxSpeed+" but calculated speed is "+velocity);
-								return;
-							}else if (velocity < 0.0) throw new RuntimeException("Speed can not be negative. Aborting ...");
-						
-							double position = prevPosition.get(agentId) + currentDist ;
-							if(position > trackLength) {
-								position = position-trackLength;
-								prevCycle.put(agentId, prevCycle.get(agentId)+1);
+
+					Tuple<Double, Double> posAndLinkId = getDistanceFromFromNode (easting , northing); 
+					double currentPositionOnLink = posAndLinkId.getFirst();
+					double linkId = posAndLinkId.getSecond();
+
+					double velocity = Double.NaN ;
+					double trackPosition = 0. ;
+
+					if (prevTime.containsKey(agentId)) {
+						double timegap = time - prevTime.get(agentId);
+
+						trackPosition =  linkId  * linkLength  + currentPositionOnLink;
+
+						if( trackPosition < prevTrackPosition.get(agentId) ) {// next cycle
+							if(trackPosition > 0.) { // for such cases, speed may become negative
+								velocity = ( trackPosition + trackLength - prevTrackPosition.get(agentId) ) / timegap;
+							} else if ( trackPosition == 0.) {
+								// agent is EXACTLY at the end of the track, thus need to write it twice.
+								velocity =  ( trackLength - prevTrackPosition.get(agentId) ) / timegap;
+								writeString(agentId+"\t"+person2mode.get(agentId)+"\t"+ trackLength +"\t"+time+"\t"+velocity+"\t"+prevCycle.get(agentId)+"\n");
 							}
-							
-							writer.write(agentId+"\t"+person2mode.get(agentId)+"\t"+position+"\t"+time+"\t"+velocity+"\t"+prevCycle.get(agentId)+"\n");
-							prevPosition.put(agentId, position);
-						}  else {
-							writer.write(agentId+"\t"+person2mode.get(agentId)+"\t"+0.+"\t"+time+"\t"+maxSpeed+"\t"+"1"+"\n");
-							prevPosition.put(agentId, 0.);
-							prevCycle.put(agentId, 1);
+							prevCycle.put(agentId, prevCycle.get(agentId) + 1 ); 
+						} 
+						
+						if( Double.isNaN(velocity)) {
+							velocity = ( trackPosition - prevTrackPosition.get(agentId) ) / timegap;	
+						} else if(velocity < 0. ) {
+							System.out.println("In appropriate speed "+velocity);
 						}
-						prevEasting.put(agentId, easting);
-						prevNorthing.put(agentId, northing);
-					} catch (Exception e) {
-						throw new RuntimeException("Data is not written to the file. Reason :"+e);
+						prevTrackPosition.put(agentId, trackPosition);
+					} else {
+						velocity = maxSpeed;
+						prevCycle.put(agentId, 1);
+						prevTrackPosition.put(agentId, currentPositionOnLink);
 					}
+
+					prevTime.put(agentId, time);
+
+					writeString(agentId+"\t"+person2mode.get(agentId)+"\t"+prevTrackPosition.get(agentId) +"\t"+time+"\t"+velocity+"\t"+prevCycle.get(agentId)+"\n");
+
 				}
 			}
 		} ;
@@ -199,5 +221,39 @@ public class AgentPositionWriter {
 		} catch (Exception e) {
 			throw new RuntimeException("Data is not written to the file. Reason :"+e);
 		}
+	}
+
+
+	private void writeString(String buffer) {
+		try {
+			writer.write(buffer);
+		} catch (Exception e) {
+			throw new RuntimeException("Data is not written to the file. Reason :"+e);
+		}
+	}
+
+	/**
+	 * This should work for all types of network provided easting and northing are free from any corrections for positioning in the 2D space.
+	 */
+	private Tuple<Double, Double> getDistanceFromFromNode (final double easting, final double northing) {
+		double distFromFromNode = Double.NaN;
+		double linkId = Double.NaN;
+		for (Link l : sc.getNetwork().getLinks().values()) {
+			Coord fromNode = l.getFromNode().getCoord();
+			Coord toNode = l.getToNode().getCoord();
+
+			double distFromNodeAndPoint = Point2D.distance(fromNode.getX(), fromNode.getY(), easting, northing);
+			double distPointAndToNode = Point2D.distance(toNode.getX(), toNode.getY(), easting, northing);
+			double distFromNodeAndToNode = Point2D.distance(fromNode.getX(), fromNode.getY(), toNode.getX(), toNode.getY());
+
+			if ( Math.abs( distFromNodeAndPoint + distPointAndToNode - distFromNodeAndToNode ) < 0.01) { 
+				// 0.01 to ignore rounding errors, In general, if AC + CB = BC, c lies on AB
+				distFromFromNode = BkNumberUtils.roundDouble(distFromNodeAndPoint, 2);
+				linkId = Double.valueOf( l.getId().toString() );
+				break;
+			}
+		}
+		if( Double.isNaN(distFromFromNode) ) throw new RuntimeException("Easting, northing ("+ easting +","+northing +") is outside the network.");
+		return new Tuple<Double, Double>(distFromFromNode, linkId);
 	}
 }
