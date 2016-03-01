@@ -185,7 +185,9 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 			
 			double spaceLeftAfterFillingHolesAndVehicles = curvedLength; 
 			if ( QueueWithBuffer.HOLES ) {
-				while ( iterator.hasNext() ) {
+				while ( iterator.hasNext() ) { 
+					// TODO : there is still a problem -- vehicle is removed from vehQueue and added to buffer, 
+					// this means, following will subtract the space for vehicle (from buffer) and also from the newly created hole. This is not right. 
 					Entry<Double, Hole> entry = iterator.next();
 					double holePositionFromFromNode = curvedLength - entry.getKey() ;
 					if (  holePositionFromFromNode > distanceFromFromNode ) { // hole is on the right of the vehicle (fromNode ----------vh toNode)  
@@ -198,7 +200,7 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 				}
 			}
 			spaceLeftAfterFillingHolesAndVehicles -= spaceFilledByVehicles;
-			System.out.println("distanceFromFromNode for agent "+veh.getDriver().getId()+ " is " + distanceFromFromNode + " whereas the spaceLeftAfterFillingHolesAndVehicles is " + spaceLeftAfterFillingHolesAndVehicles);
+			System.out.println("distanceFromFromNode for agent "+veh.getDriver().getId()+ " at time "+now+" is " + distanceFromFromNode + " whereas the spaceLeftAfterFillingHolesAndVehicles is " + spaceLeftAfterFillingHolesAndVehicles);
 			distanceFromFromNode = Math.min(distanceFromFromNode, spaceLeftAfterFillingHolesAndVehicles);
 			spaceFilledByVehicles += veh.getSizeInEquivalents() * spacing;
 			//=========================================
