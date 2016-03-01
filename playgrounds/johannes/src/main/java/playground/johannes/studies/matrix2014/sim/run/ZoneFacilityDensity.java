@@ -3,7 +3,7 @@
  *                                                                         *
  * *********************************************************************** *
  *                                                                         *
- * copyright       : (C) 2014 by the members listed in the COPYING,        *
+ * copyright       : (C) 2016 by the members listed in the COPYING,        *
  *                   LICENSE and WARRANTY file.                            *
  * email           : info at matsim dot org                                *
  *                                                                         *
@@ -16,25 +16,27 @@
  *   See also COPYING, LICENSE and WARRANTY file                           *
  *                                                                         *
  * *********************************************************************** */
-package playground.agarwalamit.analysis.emission;
-/**
- * @author amit
- * These values are taken from Maibach et al. (2008)
- */
-public enum EmissionCostFactors {
-	
-	NOX (9600. / (1000. * 1000.)), //EURO_PER_GRAMM_NOX
-	NMHC (1700. / (1000. * 1000.)), //EURO_PER_GRAMM_NMVOC
-	SO2 (11000. / (1000. * 1000.)), //EURO_PER_GRAMM_SO2
-	PM (384500. / (1000. * 1000.)), //EURO_PER_GRAMM_PM2_5_EXHAUST
-	CO2_TOTAL (70. / (1000. * 1000.)); //EURO_PER_GRAMM_CO2 
 
-	private double costFactors;
-	
-	public double getCostFactor(){
-		return costFactors;
-	}
-	private EmissionCostFactors(final double costFactor){
-		this.costFactors = costFactor;
-	}
+package playground.johannes.studies.matrix2014.sim.run;
+
+import playground.johannes.synpop.gis.Zone;
+import playground.johannes.synpop.gis.ZoneCollection;
+
+/**
+ * @author johannes
+ */
+public class ZoneFacilityDensity {
+
+    public static final String FACILITY_DENSITY_KEY = "facility_density";
+
+    public void apply(ZoneCollection zones) {
+        for(Zone zone : zones.getZones()) {
+            String val = zone.getAttribute(ZoneFacilityCount.FACILITY_COUNT_KEY);
+            if(val != null) {
+                int count = Integer.parseInt(val);
+                double rho = count / zone.getGeometry().getArea();
+                zone.setAttribute(FACILITY_DENSITY_KEY, String.valueOf(rho));
+            }
+        }
+    }
 }

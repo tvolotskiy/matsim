@@ -1,10 +1,9 @@
 /* *********************************************************************** *
  * project: org.matsim.*
- * Sim2DQTransitionLink.java
  *                                                                         *
  * *********************************************************************** *
  *                                                                         *
- * copyright       : (C) 2013 by the members listed in the COPYING,        *
+ * copyright       : (C) 2014 by the members listed in the COPYING,        *
  *                   LICENSE and WARRANTY file.                            *
  * email           : info at matsim dot org                                *
  *                                                                         *
@@ -17,34 +16,34 @@
  *   See also COPYING, LICENSE and WARRANTY file                           *
  *                                                                         *
  * *********************************************************************** */
-
-package org.matsim.core.mobsim.qsim.qnetsimengine;
-
-import org.matsim.api.core.v01.network.Link;
-
-
-public class Sim2DQAdapterLink {
+package playground.benjamin.internalization;
+/**
+ * @author amit
+ * These values are taken from Maibach et al. (2008)
+ */
+public enum EmissionCostFactors {
 	
-	private final QLinkI ql;
+	NOX (9600. / (1000. * 1000.)), //EURO_PER_GRAMM_NOX
+	NMHC (1700. / (1000. * 1000.)), //EURO_PER_GRAMM_NMVOC
+	SO2 (11000. / (1000. * 1000.)), //EURO_PER_GRAMM_SO2
+	PM (384500. / (1000. * 1000.)), //EURO_PER_GRAMM_PM2_5_EXHAUST
+	CO2_TOTAL (70. / (1000. * 1000.)); //EURO_PER_GRAMM_CO2 
 
-	Sim2DQAdapterLink(QLinkI qLinkImpl) {
-		this.ql = qLinkImpl;
-	}
-
-
-	public boolean isAcceptingFromUpstream() {
-		return this.ql.isAcceptingFromUpstream();
-	}
-
-
-	public Link getLink() {
-		
-		return this.ql.getLink();
+	private double costFactors;
+	
+	public double getCostFactor(){
+		return costFactors;
 	}
 	
-
-	public void addFromUpstream(QVehicle veh) {
-		this.ql.addFromUpstream(veh);
-		
+	public static double getCostFactor ( String pollutant ) {
+		double cf = 0.;
+		for (EmissionCostFactors ecf : EmissionCostFactors.values() ){
+			if ( ecf.toString().equalsIgnoreCase(pollutant) ) return ecf.getCostFactor();
+		}
+		return cf;
+	}
+	
+	private EmissionCostFactors(double costFactor){
+		this.costFactors = costFactor;
 	}
 }
