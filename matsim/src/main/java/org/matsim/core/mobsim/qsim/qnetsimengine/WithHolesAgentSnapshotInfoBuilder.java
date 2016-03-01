@@ -59,10 +59,8 @@ class WithHolesAgentSnapshotInfoBuilder extends AbstractAgentSnapshotInfoBuilder
 		if (freespeedTraveltime == 0.0){
 			distanceFromFNode = 0. ;
 			// (insure against division by zero on non-physical links)
-		}
-		else {
-			
-			// for agent on departure link, remaining travel time can be negative [= earliest link exit time(=0) - now].
+		} else {
+			// for agents on the departure link, remaining travel time can be negative [= earliest link exit time(=0) - now].
 			remainingTravelTime = Math.max(0., remainingTravelTime); 
 			
 			// we calculate where the vehicle would be with free speed.
@@ -72,35 +70,17 @@ class WithHolesAgentSnapshotInfoBuilder extends AbstractAgentSnapshotInfoBuilder
 			}
 		}
 		
-//		if (Double.isNaN(lastDistanceFromFNode)) {
-//			// (non-object-oriented way of "null" (?))
-//			
-//			lastDistanceFromFNode = length ;
-//		}
-//
-//		if (distanceFromFNode >= lastDistanceFromFNode - spacing ) { 
-//			/* vehicle is already in queue or has to stay behind another vehicle
-//			 * -> position it directly after the last position
-//			 */
-//			distanceFromFNode = lastDistanceFromFNode - spacing;
-//		}
-		
-		
-		if (Double.isNaN(lastDistanceFromFNode)) {
-		// (non-object-oriented way of "null" (?))
-		
-		lastDistanceFromFNode = length ;
-		// first vehicle on the link thus, can be exactly at the end of the link, amit Feb 2016
+		if ( Double.isNaN(lastDistanceFromFNode)) {
+		// first vehicle (either departed or traveling) on the link thus, can be exactly at the end of the link, amit Feb 2016
 		
 		} else if (distanceFromFNode >= lastDistanceFromFNode - spacing ) {
 			
-		/* vehicle is already in queue or has to stay behind another vehicle
+		/* vehicle is already in the queue or has to stay behind another vehicle
 		 * -> position it directly after the last position
 		 */
 		distanceFromFNode = lastDistanceFromFNode - spacing;
 		
 	}
-		
 		distanceFromFNode = Math.max(0., distanceFromFNode); // position of the vehicle should not be negative, amit Feb 2016
 		
 		//else just do nothing anymore
