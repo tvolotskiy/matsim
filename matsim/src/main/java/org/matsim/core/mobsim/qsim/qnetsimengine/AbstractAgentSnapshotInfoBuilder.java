@@ -170,7 +170,7 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 
 		double lastDistanceFromFromNode = Double.NaN;
 
-		double spaceFilledByVehicles = 0.;
+		double spaceOccupiedByVehicles = 0.;
 		
 		for ( MobsimVehicle mveh : vehs ) {
 			QVehicle veh = (QVehicle) mveh ;
@@ -180,29 +180,28 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 					lastDistanceFromFromNode, now, freespeedTraveltime, remainingTravelTime);
 			//=========================================
 
-//			Iterator<Entry<Double, Hole>> iterator = holePositions.descendingMap().entrySet().iterator() ;
 			Iterator<Entry<Double, Hole>> iterator = holePositions.entrySet().iterator() ;
 			
-			double spaceLeftAfterFillingHolesAndVehicles = curvedLength; 
+			double remainingSpaceAfterFillingHolesAndVehicles = curvedLength; 
 			if ( QueueWithBuffer.HOLES ) {
 				while ( iterator.hasNext() ) { 
-					// TODO : there is still a problem -- vehicle is removed from vehQueue and added to buffer, 
-					// this means, following will subtract the space for vehicle (from buffer) and also from the newly created hole. This is not right. 
+					// 
+					// following will subtract the space for vehicle (from buffer) and also from the newly created hole. This is not right. 
 					Entry<Double, Hole> entry = iterator.next();
 					double holePositionFromFromNode = curvedLength - entry.getKey() ;
-					if (  holePositionFromFromNode > distanceFromFromNode ) { // hole is on the right of the vehicle (fromNode ----------vh toNode)  
-						// +7.5?  -7.5?  +7.5*size?  -7.5*size?
-						spaceLeftAfterFillingHolesAndVehicles -= entry.getValue().getSizeInEquivalents() * spacing;
-//						spaceLeftAfterFillingHolesAndVehicles -= entry.getKey();
+					if (  holePositionFromFromNode > distanceFromFromNode  // hole is on the right of the vehicle (fromNode ----------vh toNode) 
+							//vehicle is removed from vehQueue => added to buffer => hole is created;
+							&& entry.getKey() > 0. ){ // thus, this is required so that space is not subtracted two times  
+						remainingSpaceAfterFillingHolesAndVehicles -= entry.getValue().getSizeInEquivalents() * spacing;
 					} else {
 						break ;
 					}
 				}
 			}
-			spaceLeftAfterFillingHolesAndVehicles -= spaceFilledByVehicles;
-			System.out.println("distanceFromFromNode for agent "+veh.getDriver().getId()+ " at time "+now+" is " + distanceFromFromNode + " whereas the spaceLeftAfterFillingHolesAndVehicles is " + spaceLeftAfterFillingHolesAndVehicles);
-			distanceFromFromNode = Math.min(distanceFromFromNode, spaceLeftAfterFillingHolesAndVehicles);
-			spaceFilledByVehicles += veh.getSizeInEquivalents() * spacing;
+			remainingSpaceAfterFillingHolesAndVehicles -= spaceOccupiedByVehicles;
+			System.out.println("distanceFromFromNode for agent "+veh.getDriver().getId()+ " at time "+now+" is " + distanceFromFromNode + " whereas the spaceLeftAfterFillingHolesAndVehicles is " + remainingSpaceAfterFillingHolesAndVehicles);
+			distanceFromFromNode = Math.min(distanceFromFromNode, remainingSpaceAfterFillingHolesAndVehicles);
+			spaceOccupiedByVehicles += veh.getSizeInEquivalents() * spacing;
 			//=========================================
 			
 			Integer lane = AbstractAgentSnapshotInfoBuilder.guessLane(veh, numberOfLanesAsInt );
@@ -211,7 +210,6 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 			this.positionAgentOnLink(positions, upstreamCoord, downstreamCoord,
 					curvedLength, euklideanDistance, veh,
 					distanceFromFromNode, lane, speedValue);
-			System.out.println("Agent "+veh.getDriver().getId() + " is at position "+ distanceFromFromNode);
 			lastDistanceFromFromNode = distanceFromFromNode;
 		}
 	}
