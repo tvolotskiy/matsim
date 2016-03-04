@@ -259,7 +259,7 @@ public class AgentPositionWriter {
 			double distFromNodeAndToNode = Point2D.distance(fromNode.getX(), fromNode.getY(), toNode.getX(), toNode.getY());
 
 			if ( Math.abs( distFromNodeAndPoint + distPointAndToNode - distFromNodeAndToNode ) < 0.01) { 
-				// 0.01 to ignore rounding errors, In general, if AC + CB = BC, c lies on AB
+				// 0.01 to ignore rounding errors, In general, if AC + CB = AB, C lies on AB
 				distFromFromNode = BkNumberUtils.roundDouble(distFromNodeAndPoint, 2);
 				linkId = Double.valueOf( l.getId().toString() );
 				break;
