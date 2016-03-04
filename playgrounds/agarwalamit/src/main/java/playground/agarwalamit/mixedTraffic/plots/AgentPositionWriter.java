@@ -63,7 +63,6 @@ import playground.benjamin.utils.BkNumberUtils;
 public class AgentPositionWriter {
 
 	private final static Logger LOGGER = Logger.getLogger(AgentPositionWriter.class);
-	private final static double SANPSOHOT_PERIOD = 1;
 	private final static boolean IS_WRITING_TRANSIM_FILE = false;
 	private final double linkLength = 1000;
 	private final double trackLength = 3000;
@@ -75,7 +74,7 @@ public class AgentPositionWriter {
 		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "2";
+		final String prefix = "40";
 		final String eventsFile = dir+"/events/events["+prefix+"].xml";
 
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
@@ -142,7 +141,7 @@ public class AgentPositionWriter {
 
 	private Map<Id<Person>,String> person2mode = new HashMap<>();
 	private Map<Id<Person>,Double> prevTime = new HashMap<>();
-	private Map<Id<Person>,Double> prevTrackPosition = new HashMap<>();
+	private Map<Id<Person>,Double> prevTrackPositions = new HashMap<>();
 	private Map<Id<Person>,Integer> prevCycle = new HashMap<>();
 
 	public void readTransimFileAndWriteData(String inputFile)
@@ -169,7 +168,6 @@ public class AgentPositionWriter {
 					double time = Double.parseDouble( strs.get( labels.indexOf( Labels.TIME.toString() ) ) ) ;
 					double easting = Double.parseDouble( strs.get( labels.indexOf( Labels.EASTING.toString() ) ) ) ;
 					double northing = Double.parseDouble( strs.get( labels.indexOf( Labels.NORTHING.toString() ) ) ) ;
-					//					double velocity = Double.parseDouble( strs.get( labels.indexOf( Labels.VELOCITY.toString() ) ) ) ;
 					Id<Person> agentId = Id.createPersonId( strs.get( labels.indexOf( Labels.VEHICLE.toString() ) ) ) ;
 
 					Tuple<Double, Double> posAndLinkId = getDistanceFromFromNode (easting , northing); 
@@ -177,39 +175,53 @@ public class AgentPositionWriter {
 					double linkId = posAndLinkId.getSecond();
 
 					double velocity = Double.NaN ;
-					double trackPosition = 0. ;
+					Double trackPosition = 0. ;
 
+					Double prevPosition = prevTrackPositions.get(agentId);
+					
 					if (prevTime.containsKey(agentId)) {
 						double timegap = time - prevTime.get(agentId);
 
 						trackPosition =  linkId  * linkLength  + currentPositionOnLink;
 
-						if( trackPosition < prevTrackPosition.get(agentId) ) {// next cycle
-							if(trackPosition > 0.) { // for such cases, speed may become negative
-								velocity = ( trackPosition + trackLength - prevTrackPosition.get(agentId) ) / timegap;
+						if ( Math.round(trackPosition) == Math.round(prevPosition) ) {
+							// same cycle, but rounding errors, for e.g. first position 933.33 and next position 933.0
+							trackPosition = prevPosition;
+						
+						} else if( trackPosition >= 0.0 &&  prevPosition <= trackLength && trackPosition < prevPosition ) {// next cycle
+						
+							if(trackPosition > 0.) { // for such cases, get speed
+								velocity = ( trackPosition + trackLength - prevPosition ) / timegap;
 							} else if ( trackPosition == 0.) {
 								// agent is EXACTLY at the end of the track, thus need to write it twice.
-								velocity =  ( trackLength - prevTrackPosition.get(agentId) ) / timegap;
+								velocity =  Math.min( ( trackLength - prevPosition ) / timegap , maxSpeed) ;
 								writeString(agentId+"\t"+person2mode.get(agentId)+"\t"+ trackLength +"\t"+time+"\t"+velocity+"\t"+prevCycle.get(agentId)+"\n");
 							}
 							prevCycle.put(agentId, prevCycle.get(agentId) + 1 ); 
 						} 
-						
+
 						if( Double.isNaN(velocity)) {
-							velocity = ( trackPosition - prevTrackPosition.get(agentId) ) / timegap;	
+							velocity = ( trackPosition - prevPosition ) / timegap;	
 						} else if(velocity < 0. ) {
-							System.out.println("In appropriate speed "+velocity);
+							System.err.println("In appropriate speed "+velocity);
+						} 
+						
+						if(Math.round(velocity) > Math.round(maxSpeed) ){
+							System.out.println("Velocity "+velocity+" is found, which is higher than max speed. This could happen due to rounding errors."
+									+ "Setting it to max speed.");
+							velocity = Math.min(velocity, maxSpeed);
 						}
-						prevTrackPosition.put(agentId, trackPosition);
+
+						prevTrackPositions.put(agentId, trackPosition);
 					} else {
 						velocity = maxSpeed;
 						prevCycle.put(agentId, 1);
-						prevTrackPosition.put(agentId, currentPositionOnLink);
+						prevTrackPositions.put(agentId, currentPositionOnLink);
 					}
 
 					prevTime.put(agentId, time);
 
-					writeString(agentId+"\t"+person2mode.get(agentId)+"\t"+prevTrackPosition.get(agentId) +"\t"+time+"\t"+velocity+"\t"+prevCycle.get(agentId)+"\n");
+					writeString(agentId+"\t"+person2mode.get(agentId)+"\t"+prevTrackPositions.get(agentId) +"\t"+time+"\t"+velocity+"\t"+prevCycle.get(agentId)+"\n");
 
 				}
 			}
