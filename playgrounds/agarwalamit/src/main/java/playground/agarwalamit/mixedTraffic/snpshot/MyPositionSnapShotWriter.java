@@ -50,13 +50,16 @@ public class MyPositionSnapShotWriter implements SnapshotWriter {
 
 	private BufferedWriter out = null;
 	private double currentTime = -1;
+	private Scenario scenario; 
 	private Map<Id<Person>, Id<Link>> person2link = new HashMap<>();
 
 	public static enum Labels { TIME, VEHICLE, LINK_ID, DISTANCE_FROM_FROMNODE, SPEED } ;
 
-	@Inject Scenario scenario;
+	@Inject 
+	public MyPositionSnapShotWriter(Scenario scenario) {
+		this.scenario = scenario;
+		String filename = scenario.getConfig().controler().getOutputDirectory()+"/agentPositions.txt";
 	
-	public MyPositionSnapShotWriter(String filename) {
 		// first check if easting northing is free from any correction due to placement on 2d space
 		if (scenario.getConfig().qsim().getLinkWidthForVis() !=  0. || 
 				( (NetworkImpl) scenario.getNetwork() ).getEffectiveLaneWidth() != 0.) 
@@ -102,6 +105,7 @@ public class MyPositionSnapShotWriter implements SnapshotWriter {
 
 	@Override
 	public void beginSnapshot(double time) {
+		this.person2link.clear();
 		this.currentTime = time;
 	}
 

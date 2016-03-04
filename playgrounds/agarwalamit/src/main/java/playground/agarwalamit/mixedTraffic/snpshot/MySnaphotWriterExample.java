@@ -39,7 +39,7 @@ public class MySnaphotWriterExample {
 		controler.addOverridingModule(new AbstractModule() {
 			@Override
 			public void install() {
-				addSnapshotWriterBinding().toInstance(new MyPositionSnapShotWriter(" myfile.txt "));
+				addSnapshotWriterBinding().to(MyPositionSnapShotWriter.class);
 			}
 		});
 		controler.run();

@@ -18,18 +18,14 @@
  * *********************************************************************** */
 package playground.agarwalamit.mixedTraffic;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
-import org.matsim.api.core.v01.events.PersonStuckEvent;
-import org.matsim.api.core.v01.events.handler.PersonStuckEventHandler;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Activity;
@@ -44,10 +40,14 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.ConfigWriter;
 import org.matsim.core.config.groups.QSimConfigGroup.SnapshotStyle;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
+import org.matsim.core.controler.AbstractModule;
+import org.matsim.core.controler.Controler;
+import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.algorithms.EventWriterXML;
 import org.matsim.core.mobsim.qsim.QSim;
 import org.matsim.core.mobsim.qsim.QSimUtils;
+import org.matsim.core.mobsim.qsim.interfaces.Netsim;
 import org.matsim.core.network.NetworkImpl;
 import org.matsim.core.network.NetworkWriter;
 import org.matsim.core.population.routes.LinkNetworkRouteFactory;
@@ -58,20 +58,23 @@ import org.matsim.vis.otfvis.OTFVisConfigGroup;
 import org.matsim.vis.otfvis.OTFVisConfigGroup.ColoringScheme;
 import org.matsim.vis.otfvis.OnTheFlyServer;
 
+import playground.agarwalamit.mixedTraffic.snpshot.MyPositionSnapShotWriter;
+
 /**
  * @author amit
  */
 public class HolesInOTFVisTest {
 
-	private static final boolean IS_USING_OTFVIS = true;
+	private static final boolean IS_USING_OTFVIS = false;
 	private static final boolean IS_WRITING_FILES = false;
+	private final static String outputDir = "./output/";
 
 	public static void main(String[] args) {
 
 		SimpleNetwork net = new SimpleNetwork();
 
-		Scenario sc = net.scenario;
-
+		final Scenario sc = net.scenario;
+		
 		for (int i=0;i<20;i++){
 			Id<Person> id = Id.createPersonId(i);
 			Person p = net.population.getFactory().createPerson(id);
@@ -92,22 +95,9 @@ public class HolesInOTFVisTest {
 			Activity a2 = net.population.getFactory().createActivityFromLinkId("w", net.link4.getId());
 			plan.addActivity(a2);
 			net.population.addPerson(p);
-
 		}
 
-		final List<PersonStuckEvent> stuckEvents = new ArrayList<PersonStuckEvent>();
 		EventsManager manager = EventsUtils.createEventsManager();
-		manager.addHandler(new PersonStuckEventHandler() {
-			
-			@Override
-			public void reset(int iteration) {
-			}
-			
-			@Override
-			public void handleEvent(PersonStuckEvent event) {
-				stuckEvents.add(event);
-			}
-		});
 		EventWriterXML 	ew;
 		
 		if(IS_WRITING_FILES){
@@ -117,7 +107,7 @@ public class HolesInOTFVisTest {
 			manager.addHandler(ew);
 		}
 
-		QSim qSim = QSimUtils.createDefaultQSim(sc, manager);
+		final Netsim qSim = QSimUtils.createDefaultQSim(sc, manager);
 
 		if ( IS_USING_OTFVIS ) {
 			// otfvis configuration.  There is more you can do here than via file!
@@ -126,13 +116,33 @@ public class HolesInOTFVisTest {
 			otfVisConfig.setColoringScheme(ColoringScheme.byId);
 			//				otfVisConfig.setShowParking(true) ; // this does not really work
 
-			OnTheFlyServer server = OTFVis.startServerAndRegisterWithQSim(sc.getConfig(), sc, manager, qSim);
+			OnTheFlyServer server = OTFVis.startServerAndRegisterWithQSim(sc.getConfig(), sc, manager, (QSim) qSim);
 			OTFClientLive.run(sc.getConfig(), server);
+		} else {
+			sc.getConfig().qsim().setLinkWidthForVis((float)0);
+			((NetworkImpl) sc.getNetwork()).setEffectiveLaneWidth(0.);	
 		}
-		qSim.run();
-
+		
+		sc.getConfig().controler().setOutputDirectory(outputDir);
+		sc.getConfig().controler().setOverwriteFileSetting(OverwriteFileSetting.overwriteExistingFiles);
+		sc.getConfig().controler().setLastIteration(0);
+		sc.getConfig().controler().setDumpDataAtEnd(false);
+		sc.getConfig().controler().setCreateGraphs(false);
+		
+		Controler controler = new Controler (sc);
+		
+		controler.addOverridingModule(new AbstractModule() {
+			
+			@Override
+			public void install() {
+				this.bindMobsim().toInstance(qSim);
+				if(! IS_USING_OTFVIS) this.addSnapshotWriterBinding().to(MyPositionSnapShotWriter.class);
+			}
+		});
+		
+		controler.run();
+		
 		if(IS_WRITING_FILES) ew.closeFile();
-		//		Assert.assertEquals("There should not be any stuck events.", 0, stuckEvents.size(), MatsimTestUtils.EPSILON);
 	}
 
 	private static final class SimpleNetwork{
@@ -158,6 +168,7 @@ public class HolesInOTFVisTest {
 
 			config.qsim().setTrafficDynamics(TrafficDynamics.withHoles);
 			config.qsim().setSnapshotStyle(SnapshotStyle.withHoles);
+			config.qsim().setSnapshotPeriod(1);
 
 			network = (NetworkImpl) scenario.getNetwork();
 
