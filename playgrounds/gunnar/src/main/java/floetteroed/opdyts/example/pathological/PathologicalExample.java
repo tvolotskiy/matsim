@@ -19,7 +19,7 @@ import floetteroed.utilities.math.Vector;
  *
  */
 public class PathologicalExample {
-
+	
 	private final LinearSystemSimulator system;
 
 	private final String logFileName;
@@ -60,11 +60,10 @@ public class PathologicalExample {
 				200, 100);
 		final ObjectiveFunction objFct = new LinearSystemObjectiveFunction();
 
-		final int maxMemorizedTrajectoryLength = Integer.MAX_VALUE;
 		final boolean interpolate = true;
-		final int maxRandomSearchIterations = 5;
+		final int maxRandomSearchIterations = 10;
 		final int maxRandomSearchTransitions = Integer.MAX_VALUE;
-		final boolean includeCurrentBest = false;
+		final boolean includeCurrentBest = true;
 
 		final Vector min = new Vector(Double.NEGATIVE_INFINITY,
 				Double.NEGATIVE_INFINITY); // new Vector(-0.1, -0.1);
@@ -77,7 +76,7 @@ public class PathologicalExample {
 						new Vector(2), this.system), convergenceCriterion,
 				maxRandomSearchIterations, maxRandomSearchTransitions,
 				this.populationSize, rnd, interpolate, objFct,
-				maxMemorizedTrajectoryLength, includeCurrentBest);
+				includeCurrentBest);
 		randomSearch.setLogFileName(this.logFileName);
 		randomSearch.setConvergenceTrackingFileName(this.convFileName);
 		
@@ -87,7 +86,7 @@ public class PathologicalExample {
 
 	public static void main(String[] args) throws IOException {
 
-		final Random rnd = new Random(4711);
+		final Random rnd = new Random(10 * 1000);
 
 		for (int populationSize : new int[] { 16 }) {
 
