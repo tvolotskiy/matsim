@@ -400,7 +400,7 @@ public class GenerateFundamentalDiagramData {
 		controler.run();
 		
 		//remove and renaming of the files which are generated from controler and not required.
-		modifyFilesFromControler(pointToRun);
+		updateTransimFileNameAndDir(pointToRun);
 
 		boolean stableState = true;
 		for(int index=0;index<travelModes.length;index++){
@@ -530,7 +530,7 @@ public class GenerateFundamentalDiagramData {
 		return qSim;
 	}
 	
-	private void modifyFilesFromControler(List<Integer> runningPoint) {
+	private void updateTransimFileNameAndDir(List<Integer> runningPoint) {
 		String outputDir = scenario.getConfig().controler().getOutputDirectory();
 		//Check if Transim veh dir exists, if not create it
 		if(! new File(outputDir+"/TransVeh/").exists() ) new File(outputDir+"/TransVeh/").mkdir();
