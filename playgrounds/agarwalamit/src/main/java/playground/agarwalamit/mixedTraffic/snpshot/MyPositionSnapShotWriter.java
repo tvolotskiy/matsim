@@ -28,13 +28,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.inject.Inject;
+import javax.vecmath.Point2d;
 
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.network.NetworkImpl;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.utils.collections.Tuple;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.vis.snapshotwriters.AgentSnapshotInfo;
@@ -52,6 +55,7 @@ public class MyPositionSnapShotWriter implements SnapshotWriter {
 	private double currentTime = -1;
 	private Scenario scenario; 
 	private Map<Id<Person>, Id<Link>> person2link = new HashMap<>();
+	private final static Logger LOG = Logger.getLogger(MyPositionSnapShotWriter.class);
 
 	public static enum Labels { TIME, VEHICLE, LINK_ID, DISTANCE_FROM_FROMNODE, SPEED } ;
 
@@ -171,8 +175,13 @@ public class MyPositionSnapShotWriter implements SnapshotWriter {
 				{
 					return new Tuple<>(it.next().getKey(),it.next().getValue());
 				} 
-				else 
-					throw new RuntimeException("Easting-northing does not belong to the network.");
+				else
+				{
+					LOG.warn("Can not dertermine the link information. Thus getting the nearest link for given easting northing.");
+					Link l = NetworkUtils.getNearestLink(scenario.getNetwork(), new Coord(easting, northing));
+					double dist_f_fromNode = Point2D.distance(easting, northing, l.getFromNode().getCoord().getX(), l.getFromNode().getCoord().getY());
+					return new Tuple<>(l.getId(),dist_f_fromNode);
+				}
 			}
 		}
 		return null;
