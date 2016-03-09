@@ -156,8 +156,9 @@ public class MyPositionSnapShotWriter implements SnapshotWriter {
 		}
 		
 		//if an agent is on a node => fromNode for a link and to Node for another; store such info
-		if( link2positions.isEmpty() ) throw new RuntimeException("Easting, northing ("+ easting +","+northing +") is outside the network.");
-		else if(link2positions.size() == 1) 
+//		if( link2positions.isEmpty() ) throw new RuntimeException("Easting, northing ("+ easting +","+northing +") is outside the network.");
+//		else
+		if(link2positions.size() == 1) 
 		{
 			Iterator<Entry<Id<Link>, Double>> it = link2positions.entrySet().iterator();
 			return new Tuple<>(it.next().getKey(),it.next().getValue());
@@ -175,14 +176,15 @@ public class MyPositionSnapShotWriter implements SnapshotWriter {
 				{
 					return new Tuple<>(it.next().getKey(),it.next().getValue());
 				} 
-				else
-				{
-					LOG.warn("Can not dertermine the link information. Thus getting the nearest link for given easting northing.");
-					Link l = NetworkUtils.getNearestLink(scenario.getNetwork(), new Coord(easting, northing));
-					double dist_f_fromNode = Point2D.distance(easting, northing, l.getFromNode().getCoord().getX(), l.getFromNode().getCoord().getY());
-					return new Tuple<>(l.getId(),dist_f_fromNode);
-				}
 			}
+		}
+		if ( link2positions.isEmpty()) {
+			// this is possible if storage cap =1 or linkLength = euclidien dist between nodes.
+			LOG.warn("Can not dertermine the link information. Thus getting the nearest link for given easting northing.");
+			Link l = NetworkUtils.getNearestLink(scenario.getNetwork(), new Coord(easting, northing));
+			double dist_f_fromNode = Point2D.distance(easting, northing, l.getFromNode().getCoord().getX(), l.getFromNode().getCoord().getY());
+			return new Tuple<>(l.getId(),dist_f_fromNode);
+		
 		}
 		return null;
 	}
