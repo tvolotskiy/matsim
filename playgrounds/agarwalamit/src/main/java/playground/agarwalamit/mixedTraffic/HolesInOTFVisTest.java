@@ -40,14 +40,10 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.config.ConfigWriter;
 import org.matsim.core.config.groups.QSimConfigGroup.SnapshotStyle;
 import org.matsim.core.config.groups.QSimConfigGroup.TrafficDynamics;
-import org.matsim.core.controler.AbstractModule;
-import org.matsim.core.controler.Controler;
-import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.algorithms.EventWriterXML;
 import org.matsim.core.mobsim.qsim.QSim;
 import org.matsim.core.mobsim.qsim.QSimUtils;
-import org.matsim.core.mobsim.qsim.interfaces.Netsim;
 import org.matsim.core.network.NetworkImpl;
 import org.matsim.core.network.NetworkWriter;
 import org.matsim.core.population.routes.LinkNetworkRouteFactory;
@@ -58,14 +54,12 @@ import org.matsim.vis.otfvis.OTFVisConfigGroup;
 import org.matsim.vis.otfvis.OTFVisConfigGroup.ColoringScheme;
 import org.matsim.vis.otfvis.OnTheFlyServer;
 
-import playground.agarwalamit.mixedTraffic.snpshot.MyPositionSnapShotWriter;
-
 /**
  * @author amit
  */
 public class HolesInOTFVisTest {
 
-	private static final boolean IS_USING_OTFVIS = false;
+	private static final boolean IS_USING_OTFVIS = true;
 	private static final boolean IS_WRITING_FILES = false;
 	private final static String outputDir = "./output/";
 
@@ -101,13 +95,13 @@ public class HolesInOTFVisTest {
 		EventWriterXML 	ew;
 		
 		if(IS_WRITING_FILES){
-			ew = new EventWriterXML("./output/events.xml");	
-			new ConfigWriter(sc.getConfig()).write("./output/config.xml");
-			new NetworkWriter(sc.getNetwork()).write("./output/network.xml");
+			ew = new EventWriterXML(outputDir+"/events.xml");	
+			new ConfigWriter(sc.getConfig()).write(outputDir+"/config.xml");
+			new NetworkWriter(sc.getNetwork()).write(outputDir+"/network.xml");
 			manager.addHandler(ew);
 		}
 
-		final Netsim qSim = QSimUtils.createDefaultQSim(sc, manager);
+		QSim qSim = QSimUtils.createDefaultQSim(sc, manager);
 
 		if ( IS_USING_OTFVIS ) {
 			// otfvis configuration.  There is more you can do here than via file!
@@ -122,26 +116,8 @@ public class HolesInOTFVisTest {
 			sc.getConfig().qsim().setLinkWidthForVis((float)0);
 			((NetworkImpl) sc.getNetwork()).setEffectiveLaneWidth(0.);	
 		}
-		
-		sc.getConfig().controler().setOutputDirectory(outputDir);
-		sc.getConfig().controler().setOverwriteFileSetting(OverwriteFileSetting.overwriteExistingFiles);
-		sc.getConfig().controler().setLastIteration(0);
-		sc.getConfig().controler().setDumpDataAtEnd(false);
-		sc.getConfig().controler().setCreateGraphs(false);
-		
-		Controler controler = new Controler (sc);
-		
-		controler.addOverridingModule(new AbstractModule() {
-			
-			@Override
-			public void install() {
-				this.bindMobsim().toInstance(qSim);
-				if(! IS_USING_OTFVIS) this.addSnapshotWriterBinding().to(MyPositionSnapShotWriter.class);
-			}
-		});
-		
-		controler.run();
-		
+		qSim.run();
+
 		if(IS_WRITING_FILES) ew.closeFile();
 	}
 
