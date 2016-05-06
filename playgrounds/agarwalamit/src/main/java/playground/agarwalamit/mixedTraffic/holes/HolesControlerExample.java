@@ -56,9 +56,10 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.vis.otfvis.OTFClientLive;
 import org.matsim.vis.otfvis.OTFVisConfigGroup;
 import org.matsim.vis.otfvis.OTFVisConfigGroup.ColoringScheme;
-import org.matsim.vis.otfvis.OnTheFlyServer;
 
-import playground.agarwalamit.mixedTraffic.snpshot.MyPositionSnapShotWriter;
+import playground.agarwalamit.mixedTraffic.snapshot.MyPositionSnapShotWriter;
+
+import org.matsim.vis.otfvis.OnTheFlyServer;
 
 /**
  * @author amit

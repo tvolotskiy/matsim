@@ -17,7 +17,7 @@
  *                                                                         *
  * *********************************************************************** */
 
-package playground.agarwalamit.mixedTraffic.snpshot;
+package playground.agarwalamit.mixedTraffic.snapshot;
 
 import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.inject.Inject;
-import javax.vecmath.Point2d;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Coord;
