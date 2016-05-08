@@ -399,9 +399,12 @@ public class GenerateFundamentalDiagramData {
 		});
 		controler.run();
 		
-		//remove and renaming of the files which are generated from controler and not required.
-		updateTransimFileNameAndDir(pointToRun);
-
+		if(! inputs.getSnapshotFormats().isEmpty()) {
+			//remove and renaming of the files which are generated from controler and not required.
+			updateTransimFileNameAndDir(pointToRun);
+		}
+		cleanOutputDir();
+		
 		boolean stableState = true;
 		for(int index=0;index<travelModes.length;index++){
 			Id<VehicleType> veh = Id.create(travelModes[index], VehicleType.class);
@@ -502,8 +505,8 @@ public class GenerateFundamentalDiagramData {
 				for ( Id<Person> personId : person2Mode.keySet()) {
 					String travelMode = person2Mode.get(personId);
 					double randDouble = MatsimRandom.getRandom().nextDouble();
-					double actEndTime = randDouble*InputsForFDTestSetUp.MAX_ACT_END_TIME;
-//					double actEndTime = Integer.valueOf(personId.toString())*2;
+//					double actEndTime = randDouble*InputsForFDTestSetUp.MAX_ACT_END_TIME;
+					double actEndTime = Integer.valueOf(personId.toString())*2;
 					
 					MobsimAgent agent = new MySimplifiedRoundAndRoundAgent(personId, actEndTime, travelMode);
 					qSim.insertAgentIntoMobsim(agent);
@@ -539,16 +542,20 @@ public class GenerateFundamentalDiagramData {
 		String targetTVehFilen = outputDir+"/TransVeh/T_"+runningPoint.toString()+".veh.gz"; 
 		try {
 			Files.move(new File(sourceTVehFile).toPath(), new File(targetTVehFilen).toPath(), StandardCopyOption.REPLACE_EXISTING);
-			IOUtils.deleteDirectory(new File(outputDir+"/ITERS/"), false);
-			IOUtils.deleteDirectory(new File(outputDir+"/tmp/"), false);
-			new File(outputDir+"/logfile.log").delete();
-			new File(outputDir+"/logfileWarningsErrors.log").delete();
-			new File(outputDir+"/scorestat.txt").delete();
-			new File(outputDir+"/stopwatch.txt").delete();
-			new File(outputDir+"/traveldistancestats.txt").delete();
 		} catch (IOException e) {
 			throw new RuntimeException("File not found.");
 		}
+	}
+	
+	private void cleanOutputDir(){
+		String outputDir = scenario.getConfig().controler().getOutputDirectory();
+		IOUtils.deleteDirectory(new File(outputDir+"/ITERS/"), false);
+		IOUtils.deleteDirectory(new File(outputDir+"/tmp/"), false);
+		new File(outputDir+"/logfile.log").delete();
+		new File(outputDir+"/logfileWarningsErrors.log").delete();
+		new File(outputDir+"/scorestat.txt").delete();
+		new File(outputDir+"/stopwatch.txt").delete();
+		new File(outputDir+"/traveldistancestats.txt").delete();
 	}
 
 	private void openFileAndWriteHeader(String dir) {
@@ -795,6 +802,5 @@ public class GenerateFundamentalDiagramData {
 			// TODO Auto-generated method stub
 			throw new RuntimeException("not implemented") ;
 		}
-
 	}
 }

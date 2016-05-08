@@ -18,6 +18,8 @@
  * *********************************************************************** */
 package playground.agarwalamit.mixedTraffic.FDTestSetUp;
 
+import java.util.Arrays;
+
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
@@ -36,12 +38,12 @@ import org.matsim.core.scenario.ScenarioUtils;
  */
 
 public class ShockwaveExperiment {
-
-	private static final String RUN_DIR = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
+	
+	private static final String RUN_DIR = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW_kn/";
 
 	public static void main(String[] args) {
 
-		boolean isUsingOTFVis = true;
+		boolean isUsingOTFVis = false;
 
 		InputsForFDTestSetUp inputs = new InputsForFDTestSetUp();
 		inputs.setTravelModes(new String [] {"car"});
@@ -49,10 +51,11 @@ public class ShockwaveExperiment {
 		inputs.setTrafficDynamics(TrafficDynamics.withHoles);
 		inputs.setLinkDynamics(LinkDynamics.FIFO);
 		inputs.setTimeDependentNetwork(true);
+		inputs.setSnapshotFormats(Arrays.asList( "transims", "otfvis" ));
 
 		GenerateFundamentalDiagramData generateFDData = new GenerateFundamentalDiagramData(inputs);
 		generateFDData.setRunDirectory(RUN_DIR);
-		generateFDData.setReduceDataPointsByFactor(140);
+		generateFDData.setReduceDataPointsByFactor(40);
 		generateFDData.setIsPlottingDistribution(false);
 		generateFDData.setIsUsingLiveOTFVis(isUsingOTFVis);
 		generateFDData.setIsWritingEventsFileForEachIteration(true);
