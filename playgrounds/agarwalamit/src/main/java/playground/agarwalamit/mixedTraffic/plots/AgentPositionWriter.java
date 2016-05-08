@@ -49,7 +49,6 @@ import org.matsim.run.Events2Snapshot;
 import org.matsim.vis.snapshotwriters.TransimsSnapshotWriter.Labels;
 
 import playground.agarwalamit.utils.LoadMyScenarios;
-import playground.benjamin.utils.BkNumberUtils;
 
 /**
  * 1) Create Transims snapshot file from events or just existing file. 
@@ -71,16 +70,16 @@ public class AgentPositionWriter {
 
 	public static void main(String[] args) 
 	{
-		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
+		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW_aa/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "40";
+		final String prefix = "20";
 		final String eventsFile = dir+"/events/events["+prefix+"].xml";
 
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
 		final SnapshotStyle snapshotStyle = sc.getConfig().qsim().getSnapshotStyle();
 
-		AgentPositionWriter apw = new AgentPositionWriter(dir+"rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc);
+		AgentPositionWriter apw = new AgentPositionWriter(dir+"/snapshotFiles/rDataPersonPosition_"+prefix+"_"+snapshotStyle+".txt", sc);
 		String transimFile;
 
 		if( IS_WRITING_TRANSIM_FILE ){
@@ -171,6 +170,7 @@ public class AgentPositionWriter {
 					Id<Person> agentId = Id.createPersonId( strs.get( labels.indexOf( Labels.VEHICLE.toString() ) ) ) ;
 
 					Tuple<Double, Double> posAndLinkId = getDistanceFromFromNode (easting , northing); 
+					if (posAndLinkId == null) return;
 					double currentPositionOnLink = posAndLinkId.getFirst();
 					double linkId = posAndLinkId.getSecond();
 
@@ -260,7 +260,8 @@ public class AgentPositionWriter {
 
 			if ( Math.abs( distFromNodeAndPoint + distPointAndToNode - distFromNodeAndToNode ) < 0.01) { 
 				// 0.01 to ignore rounding errors, In general, if AC + CB = AB, C lies on AB
-				distFromFromNode = BkNumberUtils.roundDouble(distFromNodeAndPoint, 2);
+				distFromFromNode = Math.round(distFromNodeAndPoint*100)/100; 
+				if ( l.getId().toString().equals("work") || l.getId().toString().equals("home")) return null;
 				linkId = Double.valueOf( l.getId().toString() );
 				break;
 			}
