@@ -56,7 +56,7 @@ import playground.agarwalamit.utils.LoadMyScenarios;
  * @author amit 
  */
 
-public class AgentPositionWriter2 {
+public class AgentPositionWriter {
 
 	private final static Logger LOGGER = Logger.getLogger(AgentPositionWriter.class);
 	private final static boolean IS_WRITING_TRANSIM_FILE = false;
@@ -74,7 +74,7 @@ public class AgentPositionWriter2 {
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
 		final SnapshotStyle snapshotStyle = sc.getConfig().qsim().getSnapshotStyle();
 
-		AgentPositionWriter2 apw = new AgentPositionWriter2(dir+"/snapshotFiles/position_"+prefix+"_"+snapshotStyle+".txt");
+		AgentPositionWriter apw = new AgentPositionWriter(dir+"/snapshotFiles/position_"+prefix+"_"+snapshotStyle+".txt");
 		String transimFile;
 
 		if( IS_WRITING_TRANSIM_FILE ){
@@ -95,7 +95,7 @@ public class AgentPositionWriter2 {
 	/**
 	 * Constructor opens writer, creates transims file and stores person 2 mode from events file.
 	 */
-	public AgentPositionWriter2(String outFile)
+	public AgentPositionWriter(String outFile)
 	{
 		writer = IOUtils.getBufferedWriter(outFile);
 		try {
