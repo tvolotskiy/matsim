@@ -20,7 +20,6 @@
 package org.matsim.core.mobsim.qsim.qnetsimengine;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
@@ -174,24 +173,31 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 
 		double ttimeOfHoles = curvedLength / (QueueWithBuffer.HOLE_SPEED_KM_H*1000./3600.);
 		double distanceOfHoleFromFromNode = Double.NaN ;
-		double lastDistanceFromFromNode = Double.NaN;
 		
 		TreeMap<Double, Hole> holePositions = new TreeMap<>() ;
 		
 		// holes, if applicable:
 		if ( QSimConfigGroup.SnapshotStyle.withHoles==scenario.getConfig().qsim().getSnapshotStyle() ) {
 			if ( !holes.isEmpty() ) {
-			
+				
 				for(Hole hole : holes ) {
 					distanceOfHoleFromFromNode = computeHolePositionAndReturnDistance( ttimeOfHoles, hole, now, curvedLength);
 					addHolePosition( positions, distanceOfHoleFromFromNode, hole, curvedLength, upstreamCoord, downstreamCoord ) ;
-					holePositions.put(distanceOfHoleFromFromNode, hole);
+
+					if(Math.round(distanceOfHoleFromFromNode) != Math.round(curvedLength) ) {
+						holePositions.put(distanceOfHoleFromFromNode, hole);	
+					} else { 
+						//do nothing
+						// since hole is created even if vehicle is in buffer, thus excluding such holes in vehicle position updating
+						// probably, don't create hole in visualizer also. amit May 2016						
+					}
 				}
 			}
 		}
 
 		double freespeedTraveltime = curvedLength / freeSpeed ;
 		
+		double lastDistanceFromFromNode = Double.NaN;
 		double distanceFromFromNode = Double.NaN;
 		double spaceOccupiedByVehicles = 0.;
 		
@@ -202,29 +208,28 @@ abstract class AbstractAgentSnapshotInfoBuilder {
 			// (starts off relatively small (rightmost vehicle))
 			
 			final double vehicleSpacing = mveh.getSizeInEquivalents()*spacingOfOnePCE;
-			distanceFromFromNode = this.calculateOdometerDistanceFromFromNode(curvedLength, vehicleSpacing , distanceFromFromNode, 
+			distanceFromFromNode = this.calculateOdometerDistanceFromFromNode(curvedLength, vehicleSpacing , lastDistanceFromFromNode, 
 					now, freespeedTraveltime, remainingTravelTime);
 			// (starts off relatively large (rightmost vehicle))
 			
-			Iterator<Entry<Double, Hole>> iterator = holePositions.entrySet().iterator() ;
-
 			double remainingSpaceAfterFillingHolesAndVehicles = curvedLength; 
-			while ( iterator.hasNext() ) { 
-				// 
-				// following will subtract the space for vehicle (from buffer) and also from the newly created hole. This is not right. 
-				Entry<Double, Hole> entry = iterator.next();
-				double holePositionFromFromNode = curvedLength - entry.getKey() ;
-				if (  holePositionFromFromNode > distanceFromFromNode  // hole is on the right of the vehicle (fromNode ----------vh toNode) 
-						//vehicle is removed from vehQueue => added to buffer => hole is created;
-						&& entry.getKey() > 0. ){ // thus, this is required so that space is not subtracted two times  
-					remainingSpaceAfterFillingHolesAndVehicles -= entry.getValue().getSizeInEquivalents() * spacingOfOnePCE;
+			
+			while ( ! holePositions.isEmpty()) { 
+				double holePositionFromFromNode =  holePositions.lastKey() ;
+				if (  holePositionFromFromNode > distanceFromFromNode ){  // hole is on the right of the vehicle (fromNode ----------vh toNode) 
+					Entry<Double, Hole> entry = holePositions.pollLastEntry();
+					distanceFromFromNode -= entry.getValue().getSizeInEquivalents() * spacingOfOnePCE; 
+					//remainingSpaceAfterFillingHolesAndVehicles -= entry.getValue().getSizeInEquivalents() * spacingOfOnePCE;
 				} else {
 					break ;
 				}
 			}
 			
 			remainingSpaceAfterFillingHolesAndVehicles -= spaceOccupiedByVehicles;
-			System.out.println("distanceFromFromNode for agent "+veh.getDriver().getId()+ " at time "+now+" is " + distanceFromFromNode + " whereas the spaceLeftAfterFillingHolesAndVehicles is " + remainingSpaceAfterFillingHolesAndVehicles);
+			
+			if(distanceFromFromNode > remainingSpaceAfterFillingHolesAndVehicles) {
+				System.out.println("distanceFromFromNode for agent "+veh.getDriver().getId()+ " at time "+now+" is " + distanceFromFromNode + " whereas the spaceLeftAfterFillingHolesAndVehicles is " + remainingSpaceAfterFillingHolesAndVehicles);
+			}
 			distanceFromFromNode = Math.min(distanceFromFromNode, remainingSpaceAfterFillingHolesAndVehicles);
 			spaceOccupiedByVehicles += veh.getSizeInEquivalents() * spacingOfOnePCE;
 			
