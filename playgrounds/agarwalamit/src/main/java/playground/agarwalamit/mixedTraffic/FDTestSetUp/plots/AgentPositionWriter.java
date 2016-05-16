@@ -16,9 +16,8 @@
  *   See also COPYING, LICENSE and WARRANTY file                           *
  *                                                                         *
  * *********************************************************************** */
-package playground.agarwalamit.mixedTraffic.plots;
+package playground.agarwalamit.mixedTraffic.FDTestSetUp.plots;
 
-import java.awt.geom.Point2D;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.util.ArrayList;
@@ -39,7 +38,9 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.QSimConfigGroup.SnapshotStyle;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.MatsimEventsReader;
+import org.matsim.core.gbl.Gbl;
 import org.matsim.core.network.NetworkImpl;
+import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.utils.collections.Tuple;
 import org.matsim.core.utils.io.IOUtils;
 import org.matsim.core.utils.io.tabularFileParser.TabularFileHandler;
@@ -51,7 +52,7 @@ import org.matsim.vis.snapshotwriters.TransimsSnapshotWriter.Labels;
 import playground.agarwalamit.utils.LoadMyScenarios;
 
 /**
- * 1) Create Transims snapshot file from events or just existing file. 
+ * 1) Create Transims snapshot file from events or use existing file. 
  * 2) read events 
  * 3) Write data in simpler form for space time plotting.
  * <b> At the moment, this should be only used for race track experiment. The methodology can work for other scenarios.
@@ -67,13 +68,15 @@ public class AgentPositionWriter {
 	private final double trackLength = 3000;
 	private final double maxSpeed = 60/3.6;
 	private final Scenario sc;
+	private int warnCount_higherSpeed = 0;
+	private int warnCount_negativeVehPosition = 0;
 
 	public static void main(String[] args) 
 	{
-		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW_aa/";
+		final String dir = "../../../../repos/shared-svn/projects/mixedTraffic/triangularNetwork/run313/singleModes/holes/car_SW/";
 		final String networkFile = dir+"/network.xml";
 		final String configFile = dir+"/config.xml";
-		final String prefix = "20";
+		final String prefix = "10";
 		final String eventsFile = dir+"/events/events["+prefix+"].xml";
 
 		Scenario sc = LoadMyScenarios.loadScenarioFromNetworkAndConfig(networkFile, configFile);
@@ -96,7 +99,6 @@ public class AgentPositionWriter {
 		apw.storePerson2Modes(eventsFile);
 		apw.readTransimFileAndWriteData(transimFile);
 	}
-
 
 	/**
 	 * Constructor opens writer, creates transims file and stores person 2 mode from events file.
@@ -142,6 +144,7 @@ public class AgentPositionWriter {
 	private Map<Id<Person>,Double> prevTime = new HashMap<>();
 	private Map<Id<Person>,Double> prevTrackPositions = new HashMap<>();
 	private Map<Id<Person>,Integer> prevCycle = new HashMap<>();
+	private Map<Id<Person>,Double> prevLink = new HashMap<>();
 
 	public void readTransimFileAndWriteData(String inputFile)
 	{
@@ -169,8 +172,9 @@ public class AgentPositionWriter {
 					double northing = Double.parseDouble( strs.get( labels.indexOf( Labels.NORTHING.toString() ) ) ) ;
 					Id<Person> agentId = Id.createPersonId( strs.get( labels.indexOf( Labels.VEHICLE.toString() ) ) ) ;
 
-					Tuple<Double, Double> posAndLinkId = getDistanceFromFromNode (easting , northing); 
+					Tuple<Double, Double> posAndLinkId = getDistanceFromFromNode ( new Coord(easting , northing) ); 
 					if (posAndLinkId == null) return;
+
 					double currentPositionOnLink = posAndLinkId.getFirst();
 					double linkId = posAndLinkId.getSecond();
 
@@ -178,45 +182,75 @@ public class AgentPositionWriter {
 					Double trackPosition = 0. ;
 
 					Double prevPosition = prevTrackPositions.get(agentId);
-					
+
 					if (prevTime.containsKey(agentId)) {
 						double timegap = time - prevTime.get(agentId);
 
 						trackPosition =  linkId  * linkLength  + currentPositionOnLink;
 
-						if ( Math.round(trackPosition) == Math.round(prevPosition) ) {
+						if(trackPosition < 0. || trackPosition > trackLength) {
+
+							throw new RuntimeException("Position can not be negative or higher than track length ("+trackLength+"m).");
+
+						} else if(trackPosition < prevPosition  && linkId == prevLink.get(agentId) ){ 
+
+							// prev = 1986 and now = 1980 should not happen however, prev = 2993, now = 6 is possible.
+							//							throw new RuntimeException("Should not happen.");
+							if(warnCount_negativeVehPosition < 1){
+								warnCount_negativeVehPosition++;
+								LOGGER.warn("Prev position is "+prevPosition+" and current position is "+ trackPosition+". "
+										+ "\n This happens due to filling the holes. I am not sure if this is absolutely right.");
+								LOGGER.warn(Gbl.ONLYONCE);
+							}
+//							trackPosition = prevPosition;
+						} else if ( Math.round(trackPosition) == Math.round(prevPosition) ) {
+
 							// same cycle, but rounding errors, for e.g. first position 933.33 and next position 933.0
 							trackPosition = prevPosition;
-						
-						} else if( trackPosition >= 0.0 &&  prevPosition <= trackLength && trackPosition < prevPosition ) {// next cycle
-						
-							if(trackPosition > 0.) { // for such cases, get speed
-								velocity = ( trackPosition + trackLength - prevPosition ) / timegap;
-							} else if ( trackPosition == 0.) {
+
+						} else if ( trackPosition < prevPosition ) {// next cycle
+
+							if ( trackPosition == 0.) {
 								// agent is EXACTLY at the end of the track, thus need to write it twice.
 								velocity =  Math.min( ( trackLength - prevPosition ) / timegap , maxSpeed) ;
 								writeString(agentId+"\t"+person2mode.get(agentId)+"\t"+ trackLength +"\t"+time+"\t"+velocity+"\t"+prevCycle.get(agentId)+"\n");
+							} else {
+								velocity = ( trackPosition + trackLength - prevPosition ) / timegap;
 							}
 							prevCycle.put(agentId, prevCycle.get(agentId) + 1 ); 
 						} 
 
 						if( Double.isNaN(velocity)) {
-							velocity = ( trackPosition - prevPosition ) / timegap;	
+							velocity = Math.abs( ( trackPosition - prevPosition ) / timegap );	
 						} else if(velocity < 0. ) {
 							System.err.println("In appropriate speed "+velocity);
 						} 
-						
+
 						if(Math.round(velocity) > Math.round(maxSpeed) ){
-							System.out.println("Velocity "+velocity+" is found, which is higher than max speed. This could happen due to rounding errors."
-									+ "Setting it to max speed.");
+							// sometimes its positioning errors from simulation snapshots
+							if (velocity <= 50.0 ) {
+								if(warnCount_higherSpeed<1){
+									warnCount_higherSpeed++;
+									LOGGER.warn("Velocity is "+velocity+".This comes from the error in positioning "
+											+ "during snapshot generation in the simulation. Setting it to max speed.");
+									LOGGER.warn("Prev and current track positions are " + prevPosition +", " + trackPosition +" and time gap between two snapshots is "+ timegap );
+									LOGGER.warn(Gbl.ONLYONCE);
+								}
+							} else {
+								LOGGER.info("Prev and current track positions are " + prevPosition +", " + trackPosition +" and time gap between two snapshots is "+ timegap );
+								LOGGER.error("Velocity is "+velocity+". This is way too high.");
+//								throw new RuntimeException("Velocity is "+velocity+". This is way too high.");
+							}
 							velocity = Math.min(velocity, maxSpeed);
 						}
 
 						prevTrackPositions.put(agentId, trackPosition);
+						prevLink.put(agentId, linkId);
 					} else {
 						velocity = maxSpeed;
 						prevCycle.put(agentId, 1);
 						prevTrackPositions.put(agentId, currentPositionOnLink);
+						prevLink.put(agentId, linkId);
 					}
 
 					prevTime.put(agentId, time);
@@ -247,26 +281,40 @@ public class AgentPositionWriter {
 	/**
 	 * This should work for all types of network provided easting and northing are free from any corrections for positioning in the 2D space.
 	 */
-	private Tuple<Double, Double> getDistanceFromFromNode (final double easting, final double northing) {
+	private Tuple<Double, Double> getDistanceFromFromNode (final Coord eastinNorthing) {
+		// check if easting is on "Home" or "Work" links
+		if (eastinNorthing.getX() < 0 || eastinNorthing.getX() > 1000) return null;
+
 		double distFromFromNode = Double.NaN;
 		double linkId = Double.NaN;
 		for (Link l : sc.getNetwork().getLinks().values()) {
 			Coord fromNode = l.getFromNode().getCoord();
 			Coord toNode = l.getToNode().getCoord();
 
-			double distFromNodeAndPoint = Point2D.distance(fromNode.getX(), fromNode.getY(), easting, northing);
-			double distPointAndToNode = Point2D.distance(toNode.getX(), toNode.getY(), easting, northing);
-			double distFromNodeAndToNode = Point2D.distance(fromNode.getX(), fromNode.getY(), toNode.getX(), toNode.getY());
+			double distFromNodeAndPoint = NetworkUtils.getEuclideanDistance(eastinNorthing, fromNode); // alternatively use Point2D.distance(...)
+			double distPointAndToNode = NetworkUtils.getEuclideanDistance(eastinNorthing, toNode);
+			double distFromNodeAndToNode = NetworkUtils.getEuclideanDistance(fromNode, toNode);
 
 			if ( Math.abs( distFromNodeAndPoint + distPointAndToNode - distFromNodeAndToNode ) < 0.01) { 
 				// 0.01 to ignore rounding errors, In general, if AC + CB = AB, C lies on AB
 				distFromFromNode = Math.round(distFromNodeAndPoint*100)/100; 
-				if ( l.getId().toString().equals("work") || l.getId().toString().equals("home")) return null;
 				linkId = Double.valueOf( l.getId().toString() );
 				break;
 			}
 		}
-		if( Double.isNaN(distFromFromNode) ) throw new RuntimeException("Easting, northing ("+ easting +","+northing +") is outside the network.");
+		if( Double.isNaN(distFromFromNode) ) { // this is possible, because of minor errors --
+
+			Link nearestLink = NetworkUtils.getNearestLink(sc.getNetwork(), eastinNorthing);
+			linkId = Double.valueOf(nearestLink.getId().toString());
+			distFromFromNode = NetworkUtils.getEuclideanDistance(eastinNorthing, nearestLink.getFromNode().getCoord());
+
+			// since easting northing is slightly out, dist should not higher than link length
+			distFromFromNode = Math.min(nearestLink.getLength(), distFromFromNode); 
+			LOGGER.warn("Easting northing "+eastinNorthing.toString() + " is not found to be on the link. \n"
+					+ "Thus, using, nearest link to get the distance.");
+			LOGGER.info("Thus, identified link is "+nearestLink.getId()+" and the distance of the point from from node is "+distFromFromNode);
+			//throw new RuntimeException("Easting, northing ("+ eastinNorthing.getX() +","+eastinNorthing.getY() +") is outside the network.");
+		}
 		return new Tuple<Double, Double>(distFromFromNode, linkId);
 	}
 }
