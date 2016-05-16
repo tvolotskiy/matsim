@@ -553,31 +553,6 @@ public class GenerateFundamentalDiagramData {
 		IOUtils.deleteDirectory(new File(outputDir+"/tmp/"), false);
 		new File(outputDir+"/logfile.log").delete();
 		new File(outputDir+"/logfileWarningsErrors.log").delete();
-		new File(outputDir+"/scorestat.txt").delete();
-		new File(outputDir+"/stopwatch.txt").delete();
-		new File(outputDir+"/traveldistancestats.txt").delete();
-	}
-	
-	private void updateTransimFileNameAndDir(List<Integer> runningPoint) {
-		String outputDir = scenario.getConfig().controler().getOutputDirectory();
-		//Check if Transim veh dir exists, if not create it
-		if(! new File(outputDir+"/TransVeh/").exists() ) new File(outputDir+"/TransVeh/").mkdir();
-		//first, move T.veh.gz file
-		String sourceTVehFile = outputDir+"/ITERS/it.0/0.T.veh.gz"; 
-		String targetTVehFilen = outputDir+"/TransVeh/T_"+runningPoint.toString()+".veh.gz"; 
-		try {
-			Files.move(new File(sourceTVehFile).toPath(), new File(targetTVehFilen).toPath(), StandardCopyOption.REPLACE_EXISTING);
-		} catch (IOException e) {
-			throw new RuntimeException("File not found.");
-		}
-	}
-	
-	private void cleanOutputDir(){
-		String outputDir = scenario.getConfig().controler().getOutputDirectory();
-		IOUtils.deleteDirectory(new File(outputDir+"/ITERS/"), false);
-		IOUtils.deleteDirectory(new File(outputDir+"/tmp/"), false);
-		new File(outputDir+"/logfile.log").delete();
-		new File(outputDir+"/logfileWarningsErrors.log").delete();
 		new File(outputDir+"/scorestats.txt").delete();
 		new File(outputDir+"/stopwatch.txt").delete();
 		new File(outputDir+"/traveldistancestats.txt").delete();
