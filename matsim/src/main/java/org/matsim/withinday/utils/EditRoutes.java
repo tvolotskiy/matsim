@@ -38,7 +38,7 @@ import org.matsim.core.mobsim.framework.HasPerson;
 import org.matsim.core.mobsim.framework.MobsimAgent;
 import org.matsim.core.mobsim.qsim.agents.WithinDayAgentUtils;
 import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.population.routes.ModeRouteFactory;
+import org.matsim.core.population.routes.RouteFactoryImpl;
 import org.matsim.core.population.routes.NetworkRoute;
 import org.matsim.core.population.routes.RouteUtils;
 import org.matsim.core.router.LinkWrapperFacility;
@@ -71,11 +71,11 @@ public class EditRoutes {
 
 	private  Network network ;
 	private  LeastCostPathCalculator pathCalculator ;
-	private  ModeRouteFactory routeFactories ;
+	private  RouteFactoryImpl routeFactories ;
 
 	public EditRoutes(){} // for backwards compatibility
 
-	public EditRoutes( Network network, LeastCostPathCalculator pathCalculator, ModeRouteFactory routeFactory ) {
+	public EditRoutes( Network network, LeastCostPathCalculator pathCalculator, RouteFactoryImpl routeFactory ) {
 		this.network = network ;
 		this.pathCalculator = pathCalculator ;
 		this.routeFactories = routeFactory ;
@@ -149,6 +149,7 @@ public class EditRoutes {
 	 * 
 	 * @return true when replacing the route worked, false when something went wrong
 	 */
+	@Deprecated // switch this to relocateFutureTrip, since with egress legs relocating the destination of a single leg leads to disconnected trips. kai, dec'15
 	public static boolean replanFutureLegRoute(Leg leg, Person person, Network network, TripRouter tripRouter) {
 		return relocateFutureLegRoute( leg, leg.getRoute().getStartLinkId(), leg.getRoute().getEndLinkId(), person, network, tripRouter ) ;
 	}
@@ -191,25 +192,26 @@ public class EditRoutes {
 		return true;
 	}
 
-	/**
-	 * @deprecated switch this to (a new) relocateCurrentTrip, since with egress legs relocating the destination of a single leg leads to disconnected trips. kai, dec'15
-	 */
-	@Deprecated // switch this to (a new) relocateCurrentTrip, since with egress legs relocating the destination of a single leg leads to disconnected trips. kai, dec'15
-	public static boolean relocateCurrentRoute( MobsimAgent agent, Id<Link> toLinkId, double now, Network network, TripRouter tripRouter ) {
+//	/**
+//	 * @deprecated switch this to (a new) relocateCurrentTrip, since with egress legs relocating the destination of a single leg leads to disconnected trips. kai, dec'15
+//	 */
+//	@Deprecated // switch this to (a new) relocateCurrentTrip, since with egress legs relocating the destination of a single leg leads to disconnected trips. kai, dec'15
+//	public static boolean relocateCurrentRoute( MobsimAgent agent, Id<Link> toLinkId, double now, Network network, TripRouter tripRouter ) {
+////		Leg leg = WithinDayAgentUtils.getModifiableCurrentLeg(agent) ;
+////		Person person = ((HasPerson) agent).getPerson() ;
+////		int currentLinkIndex = WithinDayAgentUtils.getCurrentRouteLinkIdIndex(agent) ;
+////		return relocateCurrentLegRoute( leg, person, currentLinkIndex, toLinkId, now, network, tripRouter ) ;
+//		throw new RuntimeException("currently not implemented: existing version was not consistent with access/egress legs") ;
+//	}
+//
+//	@Deprecated // use the non-static variant
+//	public static boolean replanCurrentRoute( MobsimAgent agent, double now, Network network, TripRouter tripRouter ) {
 //		Leg leg = WithinDayAgentUtils.getModifiableCurrentLeg(agent) ;
 //		Person person = ((HasPerson) agent).getPerson() ;
 //		int currentLinkIndex = WithinDayAgentUtils.getCurrentRouteLinkIdIndex(agent) ;
-//		return relocateCurrentLegRoute( leg, person, currentLinkIndex, toLinkId, now, network, tripRouter ) ;
-		throw new RuntimeException("currently not implemented: existing version was not consistent with access/egress legs") ;
-	}
-
-	public static boolean replanCurrentRoute( MobsimAgent agent, double now, Network network, TripRouter tripRouter ) {
-		Leg leg = WithinDayAgentUtils.getModifiableCurrentLeg(agent) ;
-		Person person = ((HasPerson) agent).getPerson() ;
-		int currentLinkIndex = WithinDayAgentUtils.getCurrentRouteLinkIdIndex(agent) ;
-//		return replanCurrentLegRoute( leg, person, currentLinkIndex, now, network, tripRouter ) ;
-		throw new RuntimeException("currently not implemented") ;
-	}
+////		return replanCurrentLegRoute( leg, person, currentLinkIndex, now, network, tripRouter ) ;
+//		throw new RuntimeException("currently not implemented") ;
+//	}
 
 	/**
 	 * Re-locates a current route. The route is given by its leg.  Does not look after plans consistency!

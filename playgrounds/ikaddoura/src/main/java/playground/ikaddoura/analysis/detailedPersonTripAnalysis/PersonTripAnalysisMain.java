@@ -46,7 +46,7 @@ import playground.ikaddoura.analysis.detailedPersonTripAnalysis.handler.NoiseAna
 import playground.ikaddoura.analysis.vtts.VTTSHandler;
 import playground.vsp.congestion.events.CongestionEventsReader;
 
-/*
+/**
  * 
  * Provides the following analysis: 
  * 
@@ -69,6 +69,8 @@ public class PersonTripAnalysisMain {
 	private static final Logger log = Logger.getLogger(PersonTripAnalysisMain.class);
 
 	private String runDirectory;
+	private boolean analyzeCongestionEvents;
+	private boolean analyzeNoiseEvents;
 			
 	public static void main(String[] args) {
 			
@@ -81,8 +83,8 @@ public class PersonTripAnalysisMain {
 			
 		} else {
 			
-			String id = "cn4";
-			String baiscDirectoryPath = "../../../runs-svn/cn2/500iterations/output/";
+			String id = "nce_0";
+			String baiscDirectoryPath = "/Users/ihab/Desktop/ils4/kaddoura/incidents/output/2b_reroute1.0/";
 						
 			runDirectory = baiscDirectoryPath + id + "/";
 			log.info("Could not find run-directory in args. Using the directory " + runDirectory);
@@ -108,10 +110,14 @@ public class PersonTripAnalysisMain {
 		Config config = ConfigUtils.loadConfig(configFile);	
 		config.plans().setInputFile(populationFile);
 		config.network().setInputFile(networkFile);
+		config.network().setChangeEventsInputFile(null);
 		
 		int finalIteration = config.controler().getLastIteration();
 		String eventsFile = runDirectory + "ITERS/it." + finalIteration + "/" + finalIteration + ".events.xml.gz";
-		String outputPath = runDirectory + "ITERS/it." + finalIteration + "/detailedAnalysis/";
+		String outputPath = runDirectory + "ITERS/it." + finalIteration + "/analysis/";
+		
+		analyzeCongestionEvents = false;
+		analyzeNoiseEvents = false;
 		
 		String noiseEventsFile = runDirectory + "ITERS/it." + finalIteration + "/" + finalIteration + ".events.xml.gz";
 //		String noiseEventsFile = runDirectory + "noiseAnalysis/analysis_it.100/100.events_NoiseImmission_Offline.xml.gz";
@@ -167,13 +173,16 @@ public class PersonTripAnalysisMain {
 			log.info("Congestion events have already been analyzed based on the standard events file.");
 			
 		} else {
-			EventsManager eventsCongestion = EventsUtils.createEventsManager();
-			eventsCongestion.addHandler(congestionHandler);
-	
-			log.info("Reading the congestion events file...");
-			CongestionEventsReader congestionEventsReader = new CongestionEventsReader(eventsCongestion);		
-			congestionEventsReader.parse(congestionEventsFile);
-			log.info("Reading the congestion events file... Done.");		
+			
+			if (analyzeCongestionEvents) {
+				EventsManager eventsCongestion = EventsUtils.createEventsManager();
+				eventsCongestion.addHandler(congestionHandler);
+		
+				log.info("Reading the congestion events file...");
+				CongestionEventsReader congestionEventsReader = new CongestionEventsReader(eventsCongestion);		
+				congestionEventsReader.parse(congestionEventsFile);
+				log.info("Reading the congestion events file... Done.");	
+			}	
 		}	
 		
 		// noise events analysis
@@ -181,13 +190,16 @@ public class PersonTripAnalysisMain {
 		if (noiseHandler.isCaughtNoiseEvent()) {
 			log.info("Noise events have already been analyzed based on the standard events file.");
 		} else {
-			EventsManager eventsNoise = EventsUtils.createEventsManager();
-			eventsNoise.addHandler(noiseHandler);
-					
-			log.info("Reading noise events file...");
-			NoiseEventsReader noiseEventReader = new NoiseEventsReader(eventsNoise);		
-			noiseEventReader.parse(noiseEventsFile);
-			log.info("Reading noise events file... Done.");	
+			
+			if (analyzeNoiseEvents) {
+				EventsManager eventsNoise = EventsUtils.createEventsManager();
+				eventsNoise.addHandler(noiseHandler);
+						
+				log.info("Reading noise events file...");
+				NoiseEventsReader noiseEventReader = new NoiseEventsReader(eventsNoise);		
+				noiseEventReader.parse(noiseEventsFile);
+				log.info("Reading noise events file... Done.");	
+			}
 		}	
 		
 		// print the results

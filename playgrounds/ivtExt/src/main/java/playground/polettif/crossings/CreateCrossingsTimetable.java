@@ -55,17 +55,17 @@ public class CreateCrossingsTimetable {
 		final Scenario scenario = ScenarioUtils.loadScenario(config);
 
 		//create an event object
-		EventsManager events = EventsUtils.createEventsManager();
+		EventsManager eventsManager = EventsUtils.createEventsManager();
         			
 		//create the handler and add it
 		CrossingsHandler handler = new CrossingsHandler();
 		handler.setNetwork(scenario.getNetwork());
 		handler.setBuffer(preBuffer, postBuffer);
 		handler.loadCrossings(inputCrossingsFile);
-		events.addHandler(handler);
+		eventsManager.addHandler(handler);
 
 		//create the reader and read the file
-		MatsimEventsReader reader = new MatsimEventsReader(events);
+		MatsimEventsReader reader = new MatsimEventsReader(eventsManager);
 		reader.readFile(inputEventsFile);
 		
 		List<LinkChangeEvent> linkChangeEvents = handler.getLinkChangeEvents();
@@ -89,9 +89,9 @@ public class CreateCrossingsTimetable {
 				for(LinkChangeEvent event : linkChangeEvents) {
 					out.write("\t<networkChangeEvent startTime=\"" + event.getStarttime() + "\">");
 					out.newLine();
-					out.write("\t\t<link refId=\"" + event.getLinkId1() + "\"/>");
+					out.write("\t\t<link refId=\"" + event.getLinkId() + "\"/>");
 					out.newLine();
-					out.write("\t\t<link refId=\"" + event.getLinkId2() + "\"/>");
+					out.write("\t\t<link refId=\"" + event.getLinkId() + "\"/>");
 					out.newLine();
 					out.write("\t\t<flowCapacity type=\"absolute\" value=\"0\"/>");
 					out.newLine();
@@ -99,9 +99,9 @@ public class CreateCrossingsTimetable {
 					out.newLine();
 					out.write("\t<networkChangeEvent startTime=\"" + event.getStoptime() + "\">");
 					out.newLine();
-					out.write("\t\t<link refId=\"" + event.getLinkId1() + "\"/>");
+					out.write("\t\t<link refId=\"" + event.getLinkId() + "\"/>");
 					out.newLine();
-					out.write("\t\t<link refId=\"" + event.getLinkId2() + "\"/>");
+					out.write("\t\t<link refId=\"" + event.getLinkId() + "\"/>");
 					out.newLine();
 					out.write("\t\t<flowCapacity type=\"absolute\" value=\"" + event.getCapacity() + "\"/>");
 					out.newLine();
