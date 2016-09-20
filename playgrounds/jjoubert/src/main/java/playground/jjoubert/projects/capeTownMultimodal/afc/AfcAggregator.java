@@ -108,7 +108,7 @@ public class AfcAggregator {
 		int staffTransactions = 0;
 		
 		try{
-			String line = br.readLine(); /*Header. */
+			String line = br.readLine(); /* Header. */
 			while((line = br.readLine()) != null){
 				String[] sa = line.split(",");
 				

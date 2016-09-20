@@ -94,8 +94,8 @@ public class RunCoord3D {
 		
 		/* Fix the seed and threads. */
 		config.global().setRandomSeed(SEED * run);
-		config.global().setNumberOfThreads(1);
-		config.qsim().setNumberOfThreads(1);
+		config.global().setNumberOfThreads(4);
+		config.qsim().setNumberOfThreads(4);
 		
 		/* Set the number of iterations and intervals. */
 		config.controler().setLastIteration(ITERS);

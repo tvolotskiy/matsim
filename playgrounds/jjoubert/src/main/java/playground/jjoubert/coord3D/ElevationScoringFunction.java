@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.network.Link;
@@ -42,6 +43,7 @@ import org.matsim.core.scoring.ScoringFunction;
  * @author jwjoubert
  */
 public class ElevationScoringFunction implements ScoringFunction {
+	final private static Logger LOG = Logger.getLogger(ElevationScoringFunction.class);
 	private double score;
 	private Network network;
 	private String vehicleType;
@@ -98,7 +100,10 @@ public class ElevationScoringFunction implements ScoringFunction {
 	 * @return
 	 */
 	private double getExperiencedDistance(Link link){
+		double grade = Utils3D.calculateGrade(link)*100.0;
 		double angle = Utils3D.calculateAngle(link);
+		angle = Math.max(angle, -2.2);
+		angle = Math.min(angle, 2.5);
 		
 		double factor = 1.0;
 		if(this.vehicleType.equalsIgnoreCase("A")){

@@ -97,7 +97,7 @@ public class AfcUtils {
 	
 	
 	/**
-	 * The stop IDs form the AFC and GTFS data do not coincide. Some stops can
+	 * The stop IDs from the AFC and GTFS data do not coincide. Some stops can
 	 * be resolved by the stop's name alone. If that can not be done, this 
 	 * class provides a manual mapping.
 	 * 
