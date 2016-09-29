@@ -16,6 +16,8 @@ import org.matsim.core.mobsim.qsim.qnetsimengine.DefaultQNetworkFactory;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QLanesNetworkFactory;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QNetsimEnginePlugin;
 import org.matsim.core.mobsim.qsim.qnetsimengine.QNetworkFactory;
+import org.matsim.core.mobsim.qsim.qnetsimengine.assignment.QNetsimNodeAssignmentFactory;
+import org.matsim.core.mobsim.qsim.qnetsimengine.assignment.RoundRobinNodeAssignmentFactory;
 import org.matsim.pt.config.TransitConfigGroup;
 
 import com.google.inject.AbstractModule;
@@ -42,6 +44,8 @@ public class QSimModule extends AbstractModule {
 				throw new RuntimeException("not implemented") ;
 			}
 		}
+		
+		//bind(QNetsimNodeAssignmentFactory.class).to(RoundRobinNodeAssignmentFactory.class);
 	}
 
 	@SuppressWarnings("static-method")

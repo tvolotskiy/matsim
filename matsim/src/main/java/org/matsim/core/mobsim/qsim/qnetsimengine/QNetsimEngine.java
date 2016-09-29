@@ -60,6 +60,9 @@ import org.matsim.core.mobsim.qsim.interfaces.AgentCounter;
 import org.matsim.core.mobsim.qsim.interfaces.MobsimEngine;
 import org.matsim.core.mobsim.qsim.interfaces.MobsimVehicle;
 import org.matsim.core.mobsim.qsim.interfaces.NetsimNetwork;
+import org.matsim.core.mobsim.qsim.qnetsimengine.assignment.QNetsimNodeAssignment;
+import org.matsim.core.mobsim.qsim.qnetsimengine.assignment.QNetsimNodeAssignmentFactory;
+import org.matsim.core.mobsim.qsim.qnetsimengine.assignment.RoundRobinNodeAssignmentFactory;
 import org.matsim.core.utils.misc.Time;
 import org.matsim.vehicles.Vehicle;
 import org.matsim.vis.snapshotwriters.SnapshotLinkWidthCalculator;
@@ -142,6 +145,9 @@ public class QNetsimEngine implements MobsimEngine {
 	public QNetsimEngine(final QSim sim) {
 		this(sim, null);
 	}
+	
+	@Inject
+	QNetsimNodeAssignmentFactory nodeAssignmentFactory;
 
 	@Inject
 	public QNetsimEngine(final QSim sim, QNetworkFactory netsimNetworkFactory) {
@@ -474,10 +480,11 @@ public class QNetsimEngine implements MobsimEngine {
 		// only for statistics
 		int nodes[] = new int[numOfRunners];
 		int links[] = new int[numOfRunners];
+		
+		QNetsimNodeAssignment assignment = nodeAssignmentFactory.createNodeAssignment(numOfRunners);
 
-		int roundRobin = 0;
 		for (QNode node : network.getNetsimNodes().values()) {
-			int i = roundRobin % this.numOfRunners;
+			int i = assignment.findEngine(node.getNode().getId());
 			node.setNetElementActivationRegistry(this.engines.get(i));
 			nodes[i]++;
 
@@ -501,8 +508,6 @@ public class QNetsimEngine implements MobsimEngine {
 				links[i]++;
 
 			}
-
-			roundRobin++;
 		}
 
 		// print some statistics

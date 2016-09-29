@@ -6,6 +6,8 @@ import org.matsim.core.config.Config;
 import org.matsim.core.mobsim.qsim.AbstractQSimPlugin;
 import org.matsim.core.mobsim.qsim.interfaces.DepartureHandler;
 import org.matsim.core.mobsim.qsim.interfaces.MobsimEngine;
+import org.matsim.core.mobsim.qsim.qnetsimengine.assignment.QNetsimNodeAssignmentFactory;
+import org.matsim.core.mobsim.qsim.qnetsimengine.assignment.RoundRobinNodeAssignmentFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
