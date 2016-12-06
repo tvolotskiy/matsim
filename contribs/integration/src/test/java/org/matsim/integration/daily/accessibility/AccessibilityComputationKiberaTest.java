@@ -25,14 +25,16 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.junit.Rule;
 import org.junit.Test;
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.contrib.accessibility.AccessibilityConfigGroup;
+import org.matsim.contrib.accessibility.AccessibilityConfigGroup.AreaOfAccesssibilityComputation;
 import org.matsim.contrib.accessibility.AccessibilityContributionCalculator;
-import org.matsim.contrib.accessibility.AccessibilityStartupListener;
 import org.matsim.contrib.accessibility.ConstantSpeedModeProvider;
 import org.matsim.contrib.accessibility.FacilityTypes;
 import org.matsim.contrib.accessibility.FreeSpeedNetworkModeProvider;
+import org.matsim.contrib.accessibility.GridBasedAccessibilityModule;
 import org.matsim.contrib.accessibility.NetworkModeProvider;
 import org.matsim.contrib.accessibility.utils.AccessibilityUtils;
 import org.matsim.contrib.accessibility.utils.VisualizationUtils;
@@ -45,6 +47,7 @@ import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.facilities.ActivityFacilities;
+import org.matsim.facilities.ActivityFacility;
 import org.matsim.testcases.MatsimTestUtils;
 
 import com.google.inject.Key;
@@ -56,7 +59,7 @@ import com.vividsolutions.jts.geom.Envelope;
  * @author dziemke
  */
 public class AccessibilityComputationKiberaTest {
-	public static final Logger log = Logger.getLogger(AccessibilityComputationKiberaTest.class);
+	public static final Logger LOG = Logger.getLogger(AccessibilityComputationKiberaTest.class);
 
 	private static final Double cellSize = 1000.;
 
@@ -79,7 +82,7 @@ public class AccessibilityComputationKiberaTest {
 		final String crs = "EPSG:21037"; // = Arc 1960 / UTM zone 37S, for Nairobi, Kenya
 		final Envelope envelope = new Envelope(252000, 256000, 9854000, 9856000);
 		final String runId = "ke_kibera_" + AccessibilityUtils.getDate() + "_" + cellSize.toString().split("\\.")[0];
-		final boolean push2Geoserver = true;
+		final boolean push2Geoserver = false;
 
 		// QGis parameters
 		boolean createQGisOutput = false;
@@ -95,7 +98,17 @@ public class AccessibilityComputationKiberaTest {
 		final List<String> modes = new ArrayList<>();
 
 		// Config and scenario
-		final Config config = ConfigUtils.createConfig(new AccessibilityConfigGroup());
+//		final Config config = ConfigUtils.createConfig(new AccessibilityConfigGroup());
+		final Config config = ConfigUtils.createConfig();
+		// new
+		AccessibilityConfigGroup acg = ConfigUtils.addOrGetModule(config, AccessibilityConfigGroup.class);
+		acg.setCellSizeCellBasedAccessibility(1000);
+		acg.setAreaOfAccessibilityComputation(AreaOfAccesssibilityComputation.fromBoundingBox.toString());
+		acg.setBoundingBoxBottom(envelope.getMinY());
+		acg.setBoundingBoxTop(envelope.getMaxY());
+		acg.setBoundingBoxLeft(envelope.getMinX());
+		acg.setBoundingBoxRight(envelope.getMaxX());
+		// end new
 		config.network().setInputFile(networkFile);
 		config.facilities().setInputFile(facilitiesFile);
 		config.controler().setOverwriteFileSetting(OverwriteFileSetting.deleteDirectoryIfExists);
@@ -108,6 +121,26 @@ public class AccessibilityComputationKiberaTest {
 //		log.info("Found activity types: " + activityTypes);
 		final List<String> activityTypes = new ArrayList<>();
 		activityTypes.add(FacilityTypes.DRINKING_WATER);
+		
+		// new
+		ActivityFacilities activityFacilities = scenario.getActivityFacilities();
+		List<Id<ActivityFacility>> facilitiesList = new ArrayList<>();
+
+		LOG.error("activityFacilities = " + activityFacilities.getFacilities().size());
+		int count = 1;
+		for (Id<ActivityFacility> activityFacilityId : activityFacilities.getFacilities().keySet()) {
+			ActivityFacility activityFacility = activityFacilities.getFacilities().get(activityFacilityId);
+			if (!activityFacility.getActivityOptions().containsKey(FacilityTypes.DRINKING_WATER)) {
+				facilitiesList.add(activityFacilityId);
+				System.out.println(count);
+				count++;
+			}
+		}
+		for (Id<ActivityFacility> activityFacilityId : facilitiesList) {
+			activityFacilities.getFacilities().remove(activityFacilityId);
+		}
+		LOG.error("activityFacilities = " + activityFacilities.getFacilities().size());
+		// end new
 		
 		// Settings for VSP check
 		config.timeAllocationMutator().setMutationRange(7200.);
@@ -123,7 +156,10 @@ public class AccessibilityComputationKiberaTest {
 
 		// Controller
 		final Controler controler = new Controler(scenario);
-		controler.addControlerListener(new AccessibilityStartupListener(activityTypes, densityFacilities, crs, runId, envelope, cellSize, push2Geoserver));
+//		controler.addControlerListener(new AccessibilityStartupListener(activityTypes, densityFacilities, crs, runId, envelope, cellSize, push2Geoserver));
+		
+		controler.addOverridingModule(new GridBasedAccessibilityModule());
+//		controler.addControlerListener(new AccessibilityStartupListener(activityTypes, densityFacilities, crs, runId, envelope, cellSize, push2Geoserver));
 		
 		// Add calculators
 		controler.addOverridingModule(new AbstractModule() {
