@@ -1,6 +1,8 @@
 package playground.sebhoerl.renault;
 
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.contrib.dvrp.trafficmonitoring.VrpTravelTimeModules;
+import org.matsim.contrib.dynagent.run.DynQSimModule;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.AbstractModule;
@@ -9,6 +11,7 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.pt.router.TransitRouter;
 import playground.sebhoerl.avtaxi.framework.AVConfigGroup;
 import playground.sebhoerl.avtaxi.framework.AVModule;
+import playground.sebhoerl.avtaxi.framework.AVQSimProvider;
 import playground.sebhoerl.avtaxi.framework.AVUtils;
 
 public class RunLaDefenseScenario {
@@ -20,6 +23,8 @@ public class RunLaDefenseScenario {
 
         Controler controler = new Controler(scenario);
 
+        controler.addOverridingModule(VrpTravelTimeModules.createTravelTimeEstimatorModule(0.05));
+        controler.addOverridingModule(new DynQSimModule<>(AVQSimProvider.class));
         controler.addOverridingModule(new AVModule());
         controler.addOverridingModule(new LaDefenseModule());
         controler.addOverridingModule(new AbstractModule() {
