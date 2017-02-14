@@ -34,13 +34,8 @@ public class LaDefenseModule extends AbstractModule {
             File sourcePath = new File(basePath, ldPath);
 
             try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(sourcePath)));
-
-                String line = null;
-                while ((line = reader.readLine()) != null) {
-                    filter.add(Id.createNodeId(line.trim()));
-                }
-
+                LDFilterReader reader = new LDFilterReader(filter);
+                reader.read(sourcePath);
             } catch (IOException e) {
                 throw new RuntimeException("Could not open La defense filter file");
             }
