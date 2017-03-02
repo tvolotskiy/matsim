@@ -3,6 +3,7 @@ package playground.manserpa.minibus;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
+import org.matsim.contrib.minibus.PConfigGroup;
 import org.matsim.contrib.minibus.hook.PModule;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -15,9 +16,9 @@ import org.matsim.core.scenario.ScenarioUtils;
  * 
  * @author aneumann
  */
-public final class RunMinibus {
+public final class runMinibus {
 
-	private final static Logger log = Logger.getLogger(RunMinibus.class);
+	private final static Logger log = Logger.getLogger(runMinibus.class);
 
 	public static void main(final String[] args) {
 
