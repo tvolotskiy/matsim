@@ -16,9 +16,9 @@ import org.matsim.core.scenario.ScenarioUtils;
  * 
  * @author aneumann
  */
-public final class runMinibus {
+public final class RunMinibusTest {
 
-	private final static Logger log = Logger.getLogger(runMinibus.class);
+	private final static Logger log = Logger.getLogger(RunMinibusTest.class);
 
 	public static void main(final String[] args) {
 
