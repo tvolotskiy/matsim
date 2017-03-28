@@ -240,9 +240,9 @@ public class GridExample extends AbstractAnalysis{
 				cell.add(new org.jzy3d.plot3d.primitives.Point(new Coord3d(ca[i].x, ca[i].y, 0.0)));
 			}
 			double thisWeight = this.kde.getWeight(p);
-			if(thisWeight > 0){
-				LOG.debug("Some weight");
-			}
+//			if(thisWeight > 0){
+//				LOG.debug("Some weight");
+//			}
 			int alpha = (int) Math.round((thisWeight / max)*255.0);
 			Color thisColor = new Color(0, 0, 0, alpha);
 			

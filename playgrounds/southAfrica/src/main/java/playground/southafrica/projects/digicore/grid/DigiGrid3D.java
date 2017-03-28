@@ -292,7 +292,7 @@ public abstract class DigiGrid3D extends AbstractAnalysis{
 		light.setEnabled(true);
 		light.setEnabled(false);
 
-		chart.addKeyController();
+		chart.addKeyboardScreenshotController();
 		Coord3d oldViewPoint = chart.getCanvas().getView().getViewPoint();
 		Coord3d newViewPoint = new Coord3d(oldViewPoint.x, oldViewPoint.y/3, 500);
 
@@ -414,7 +414,7 @@ public abstract class DigiGrid3D extends AbstractAnalysis{
 			light.setRepresentationRadius(100);
 			light.setEnabled(false);
 			
-			chart.addKeyController();
+			chart.addKeyboardScreenshotController();
 			Coord3d viewPoint = new Coord3d(2*Math.PI/2, Math.PI/2, 1000);
 			
 			chart.getView().setSquared(false);
