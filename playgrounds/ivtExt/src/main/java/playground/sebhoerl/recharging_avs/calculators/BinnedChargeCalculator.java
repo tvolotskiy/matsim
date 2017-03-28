@@ -78,7 +78,7 @@ public class BinnedChargeCalculator implements ChargeCalculator {
             time += duration;
 
             currentBin += 1;
-        } while (charge < data.getMaximumCharge(currentBin - 1));
+        } while (charge < data.getMaximumCharge(currentBin - 1) && currentBin < data.getNumberOfBins());
 
         return time - S_PER_H * (charge - data.getMaximumCharge(currentBin - 1)) / data.getRechgargeRate(currentBin - 1);
     }

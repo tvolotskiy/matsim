@@ -27,7 +27,10 @@ public class RunSimulation {
         DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
         dvrpConfigGroup.setTravelTimeEstimationAlpha(0.05);
 
-        Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new StaticChargeCalculatorConfig(), new BinnedChargeCalculatorConfig());
+        Config config = ConfigUtils.loadConfig(
+                configFile,
+                new AVConfigGroup(), dvrpConfigGroup, new RechargingConfig(),
+                new StaticChargeCalculatorConfig(), new BinnedChargeCalculatorConfig());
 
         Scenario scenario = ScenarioUtils.createScenario(config);
         scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(AVRoute.class, new AVRouteFactory());

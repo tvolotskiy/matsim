@@ -11,6 +11,7 @@ import playground.sebhoerl.avtaxi.dispatcher.AVDispatcher;
 import playground.sebhoerl.avtaxi.passenger.AVRequest;
 import playground.sebhoerl.avtaxi.schedule.AVDriveTask;
 import playground.sebhoerl.avtaxi.schedule.AVStayTask;
+import playground.sebhoerl.recharging_avs.tracker.ConsumptionTracker;
 import playground.sebhoerl.recharging_avs.calculators.ChargeCalculator;
 
 import java.util.HashMap;
@@ -21,12 +22,14 @@ public class RechargingDispatcher implements AVDispatcher {
 
     final private AVDispatcher delegate;
     final private ChargeCalculator chargeCalculator;
+    final private ConsumptionTracker consumptionTracker;
 
     private double now = Double.NEGATIVE_INFINITY;
 
-    public RechargingDispatcher(ChargeCalculator chargeCalculator, AVDispatcher dispatcher) {
+    public RechargingDispatcher(ChargeCalculator chargeCalculator, AVDispatcher dispatcher, ConsumptionTracker consumptionTracker) {
         this.delegate = dispatcher;
         this.chargeCalculator = chargeCalculator;
+        this.consumptionTracker = consumptionTracker;
     }
 
     @Override
@@ -42,14 +45,19 @@ public class RechargingDispatcher implements AVDispatcher {
         Task previous = schedule.getTasks().get(current.getTaskIdx() - 1);
 
         Double currentChargeState = chargeState.get(vehicle);
+        double delta;
 
         if (currentChargeState != null) {
             if (previous instanceof AVDriveTask) {
-                currentChargeState -= chargeCalculator.calculateConsumption((VrpPathWithTravelData) ((AVDriveTask) previous).getPath());
+                delta = chargeCalculator.calculateConsumption((VrpPathWithTravelData) ((AVDriveTask) previous).getPath());
+                currentChargeState -= delta;
+                consumptionTracker.addDistanceBasedConsumption(now, delta);
             }
 
             if (!(previous instanceof AVStayTask)) {
-                currentChargeState -= chargeCalculator.calculateConsumption(previous.getBeginTime(), previous.getEndTime());
+                delta = chargeCalculator.calculateConsumption(previous.getBeginTime(), previous.getEndTime());
+                currentChargeState -= delta;
+                consumptionTracker.addTimeBasedConsumption(now, delta);
             }
 
             chargeState.put(vehicle, currentChargeState);
@@ -94,6 +102,9 @@ public class RechargingDispatcher implements AVDispatcher {
         @Inject
         Map<String, ChargeCalculator> chargeCalculators;
 
+        @Inject
+        ConsumptionTracker tracker;
+
         @Override
         public AVDispatcher createDispatcher(AVDispatcherConfig config) {
             if (!config.getParams().containsKey("delegate")) {
@@ -121,7 +132,7 @@ public class RechargingDispatcher implements AVDispatcher {
                 throw new IllegalArgumentException("Charge calculator '" + chargeCalculatorName + "' does not exist!");
             }
 
-            return new RechargingDispatcher(chargeCalculators.get(chargeCalculatorName), factories.get(delegateDisaptcherName).createDispatcher(delegateConfig));
+            return new RechargingDispatcher(chargeCalculators.get(chargeCalculatorName), factories.get(delegateDisaptcherName).createDispatcher(delegateConfig), tracker);
         }
     }
 }

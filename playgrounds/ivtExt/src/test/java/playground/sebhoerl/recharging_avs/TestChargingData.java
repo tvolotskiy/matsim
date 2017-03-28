@@ -14,6 +14,18 @@ import java.net.URL;
 
 public class TestChargingData {
     @Test
+    public void testSingleBin() {
+        VariableBinSizeData variableData = new VariableBinSizeData();
+        variableData.addBin(50, 0.1, 0.2, 0.3, 0.4, 0.5);
+
+        Assert.assertEquals((int) variableData.getBinStartTime(0), 50);
+        Assert.assertEquals((int) variableData.getBinEndTime(0), 50);
+        Assert.assertEquals(variableData.getDischargeRateByDistance(0), 0.1, 1e-6);
+
+        Assert.assertFalse(variableData.hasFixedIntervals());
+    }
+
+    @Test
     public void testFixedData() {
         VariableBinSizeData variableData = new VariableBinSizeData();
 

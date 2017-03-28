@@ -86,7 +86,7 @@ public class VariableBinSizeData implements BinnedChargeCalculatorData {
 
     @Override
     public double getBinEndTime(int bin) {
-        if (bin == startTimes.size() - 1) {
+        if (bin >= startTimes.size() - 1) {
             return startTimes.get(startTimes.size() - 1);
         }
 
