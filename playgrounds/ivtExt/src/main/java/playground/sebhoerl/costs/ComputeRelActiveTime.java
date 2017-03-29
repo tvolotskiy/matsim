@@ -50,7 +50,7 @@ public class ComputeRelActiveTime {
             LinkedList<String> elements = new LinkedList<>();
             elements.add(String.valueOf(fleetSize));
 
-            for (double value : runUtilizationAnalysis("/home/sebastian/ant/analysis/data/single/events_" + fleetSize + "_nosub.xml.gz", fleetSize)) {
+            for (double value : runUtilizationAnalysis("/home/sebastian/single/" + fleetSize + ".xml.gz", fleetSize)) {
                 elements.add(String.valueOf(value));
             }
 
