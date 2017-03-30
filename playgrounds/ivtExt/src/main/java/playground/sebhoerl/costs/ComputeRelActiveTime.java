@@ -4,10 +4,7 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.matsim.api.core.v01.Id;
-import org.matsim.api.core.v01.events.ActivityEndEvent;
-import org.matsim.api.core.v01.events.ActivityStartEvent;
-import org.matsim.api.core.v01.events.PersonDepartureEvent;
-import org.matsim.api.core.v01.events.PersonEntersVehicleEvent;
+import org.matsim.api.core.v01.events.*;
 import org.matsim.api.core.v01.events.handler.ActivityEndEventHandler;
 import org.matsim.api.core.v01.events.handler.ActivityStartEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonDepartureEventHandler;
@@ -16,15 +13,20 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.MatsimEventsReader;
+import org.matsim.core.events.handler.BasicEventHandler;
+import org.matsim.core.events.handler.EventHandler;
+import org.matsim.core.mobsim.qsim.interfaces.DepartureHandler;
+import org.matsim.core.scoring.SumScoringFunction;
+import org.matsim.core.utils.collections.Tuple;
 
 import java.io.*;
 import java.util.*;
 
 public class ComputeRelActiveTime {
     public static void main(String[] args) throws IOException {
-        int fleetSizes[] = { 100, 250, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 8000 };
+        int fleetSizes[] = { 100, 150, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 8000 };
 
-        FileOutputStream stream = new FileOutputStream("/home/sebastian/utilization.csv");
+        FileOutputStream stream = new FileOutputStream("/home/sebastian/single/utilization.csv");
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream));
 
         String headers[] = {
@@ -40,7 +42,13 @@ public class ComputeRelActiveTime {
                 "WAITING_90P_OFFPEAK",
                 "WAITING_MEAN_MORNING",
                 "WAITING_MEAN_AFTERNOON",
-                "WAITING_MEAN_OFFPEAK"
+                "WAITING_MEAN_OFFPEAK",
+                "MODE_SHARE_MORNING",
+                "MODE_SHARE_AFTERNOON",
+                "MODE_SHARE_OFFPEAK",
+                "UNDERSUPPLY_MORNING",
+                "UNDERSUPPLY_AFTERNOON",
+                "UNDERSUPPLY_OFFPEAK"
         };
 
         writer.write(String.join(";", headers) + "\n");
@@ -79,6 +87,14 @@ public class ComputeRelActiveTime {
         WaitingTimeHandler afternoonPeakWaitingTimeHandler = new WaitingTimeHandler(AFTERNOON_PEAK_START, AFTERNOON_PEAK_END);
         WaitingTimeHandler offpeakWaitingTimeHandler = new WaitingTimeHandler(OFFPEAK_START, OFFPEAK_END);
 
+        ModeShareHandler morningPeakModeShareHandler = new ModeShareHandler(MORNING_PEAK_START, MORNING_PEAK_END);
+        ModeShareHandler afternoonPeakModeShareHandler = new ModeShareHandler(AFTERNOON_PEAK_START, AFTERNOON_PEAK_END);
+        ModeShareHandler offpeakModeShareHandler = new ModeShareHandler(OFFPEAK_START, OFFPEAK_END);
+
+        DispatchModeHandler morningPeakDispatchModeHandler = new DispatchModeHandler(MORNING_PEAK_START, MORNING_PEAK_END);
+        DispatchModeHandler afternoonPeakDispatchModeHandler = new DispatchModeHandler(AFTERNOON_PEAK_START, AFTERNOON_PEAK_END);
+        DispatchModeHandler offpeakDispatchModeHandler = new DispatchModeHandler(OFFPEAK_START, OFFPEAK_END);
+
         EventsManager eventsManager = EventsUtils.createEventsManager();
         eventsManager.addHandler(morningPeakUtilizationHandler);
         eventsManager.addHandler(afternoonPeakUtilizationHandler);
@@ -86,6 +102,12 @@ public class ComputeRelActiveTime {
         eventsManager.addHandler(morningPeakWaitingTimeHandler);
         eventsManager.addHandler(afternoonPeakWaitingTimeHandler);
         eventsManager.addHandler(offpeakWaitingTimeHandler);
+        eventsManager.addHandler(morningPeakModeShareHandler);
+        eventsManager.addHandler(afternoonPeakModeShareHandler);
+        eventsManager.addHandler(offpeakModeShareHandler);
+        eventsManager.addHandler(morningPeakDispatchModeHandler);
+        eventsManager.addHandler(afternoonPeakDispatchModeHandler);
+        eventsManager.addHandler(offpeakDispatchModeHandler);
 
         new MatsimEventsReader(eventsManager).readFile(eventsSource);
 
@@ -105,7 +127,13 @@ public class ComputeRelActiveTime {
                 offpeakWaitingTimeHandler.getStatistics().getPercentile(90),
                 morningPeakWaitingTimeHandler.getStatistics().getMean(),
                 afternoonPeakWaitingTimeHandler.getStatistics().getMean(),
-                offpeakWaitingTimeHandler.getStatistics().getMean()
+                offpeakWaitingTimeHandler.getStatistics().getMean(),
+                morningPeakModeShareHandler.getModeShare(),
+                afternoonPeakModeShareHandler.getModeShare(),
+                offpeakModeShareHandler.getModeShare(),
+                morningPeakDispatchModeHandler.getUndersupplyShare(),
+                afternoonPeakDispatchModeHandler.getUndersupplyShare(),
+                offpeakDispatchModeHandler.getUndersupplyShare()
         };
     }
 
@@ -207,6 +235,104 @@ public class ComputeRelActiveTime {
                 Double waitingTime = endTime - startTime;
                 measuredWaitingTimes.addValue(waitingTime);
             }
+        }
+
+        @Override
+        public void reset(int iteration) {}
+    }
+
+    static class ModeShareHandler implements ActivityStartEventHandler, ActivityEndEventHandler, PersonDepartureEventHandler {
+        final private Map<Id<Person>, Tuple<Double,String>> ongoing = new HashMap<>();
+
+        final private double measurementStartTime;
+        final private double measurementEndTime;
+
+        private long totalNumberOfTrips = 0;
+        private long avNumberOfTrips = 0;
+
+        public double getModeShare() {
+            return (double)avNumberOfTrips / (double)totalNumberOfTrips;
+        }
+
+        public ModeShareHandler(double measurementStartTime, double measurementEndTime) {
+            this.measurementStartTime = measurementStartTime;
+            this.measurementEndTime = measurementEndTime;
+        }
+
+        @Override
+        public void handleEvent(ActivityEndEvent event) {
+            if (event.getPersonId().toString().startsWith("av") || event.getPersonId().toString().startsWith("pt")) {
+                return;
+            }
+
+            ongoing.put(event.getPersonId(), new Tuple<>(event.getTime(), null));
+        }
+
+        @Override
+        public void handleEvent(ActivityStartEvent event) {
+            Tuple<Double, String> trip = ongoing.remove(event.getPersonId());
+
+            if (trip != null && trip.getSecond() != null) {
+                if (measurementStartTime <= trip.getFirst() && trip.getFirst() <= measurementEndTime) {
+                    if (trip.getSecond().equals("av")) {
+                        avNumberOfTrips++;
+                    }
+
+                    totalNumberOfTrips++;
+                }
+            }
+        }
+
+        @Override
+        public void handleEvent(PersonDepartureEvent event) {
+            if (event.getLegMode().equals("transit_walk")) {
+                return;
+            }
+
+            Tuple<Double, String> trip = ongoing.get(event.getPersonId());
+
+            if (trip != null) {
+                ongoing.put(event.getPersonId(), new Tuple<>(trip.getFirst(), event.getLegMode()));
+            }
+        }
+
+        @Override
+        public void reset(int iteration) {}
+    }
+
+    static class DispatchModeHandler implements BasicEventHandler {
+        final private double measurementStartTime;
+        final private double measurementEndTime;
+
+        private double undersupplyDuration = 0.0;
+        private Double undersupplyStart = null;
+
+        public DispatchModeHandler(double measurementStartTime, double measurementEndTime) {
+            this.measurementStartTime = measurementStartTime;
+            this.measurementEndTime = measurementEndTime;
+        }
+
+        public double getUndersupplyShare() {
+            return undersupplyDuration / (measurementEndTime - measurementStartTime);
+        }
+
+        @Override
+        public void handleEvent(Event event) {
+            if (event.getEventType().equals("AVHeuristicModeChange")) {
+                if (event.getAttributes().get("mode").equals("UNDERSUPPLY")) {
+                    undersupplyStart = event.getTime();
+                } else if (event.getAttributes().get("mode").equals("OVERSUPPLY")) {
+                    double undersupplyEnd = event.getTime();
+
+                    if (measurementStartTime <= undersupplyStart && undersupplyEnd <= measurementEndTime) {
+                        undersupplyDuration += undersupplyEnd - undersupplyStart;
+                    } else if (measurementStartTime <= undersupplyStart && undersupplyStart <= measurementEndTime && undersupplyEnd > measurementEndTime) {
+                        undersupplyDuration += measurementEndTime - undersupplyStart;
+                    } else if (measurementStartTime > undersupplyStart && undersupplyEnd <= measurementEndTime && measurementStartTime <= undersupplyEnd) {
+                        undersupplyDuration += undersupplyEnd - measurementStartTime;
+                    }
+                }
+            }git
         }
 
         @Override
