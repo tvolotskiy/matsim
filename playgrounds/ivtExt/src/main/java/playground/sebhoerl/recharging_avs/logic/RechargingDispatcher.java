@@ -49,15 +49,20 @@ public class RechargingDispatcher implements AVDispatcher {
 
         if (currentChargeState != null) {
             if (previous instanceof AVDriveTask) {
-                delta = chargeCalculator.calculateConsumption((VrpPathWithTravelData) ((AVDriveTask) previous).getPath());
+                double distance = 0.0;
+                for (int i = 0; i < ((AVDriveTask) previous).getPath().getLinkCount(); i++) {
+                    distance += ((AVDriveTask) previous).getPath().getLink(i).getLength();
+                }
+
+                delta = chargeCalculator.calculateConsumption(previous.getBeginTime(), previous.getEndTime(), distance);
                 currentChargeState -= delta;
-                consumptionTracker.addDistanceBasedConsumption(now, delta);
+                consumptionTracker.addDistanceBasedConsumption(previous.getBeginTime(), previous.getEndTime(), delta);
             }
 
             if (!(previous instanceof AVStayTask)) {
                 delta = chargeCalculator.calculateConsumption(previous.getBeginTime(), previous.getEndTime());
                 currentChargeState -= delta;
-                consumptionTracker.addTimeBasedConsumption(now, delta);
+                consumptionTracker.addTimeBasedConsumption(previous.getBeginTime(), previous.getEndTime(), delta);
             }
 
             chargeState.put(vehicle, currentChargeState);

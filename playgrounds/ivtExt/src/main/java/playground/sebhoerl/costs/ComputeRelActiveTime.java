@@ -332,7 +332,7 @@ public class ComputeRelActiveTime {
                         undersupplyDuration += undersupplyEnd - measurementStartTime;
                     }
                 }
-            }git
+            }
         }
 
         @Override

@@ -16,13 +16,7 @@ public class StaticChargeCalculator implements ChargeCalculator {
     }
 
     @Override
-    public double calculateConsumption(VrpPathWithTravelData path) {
-        double distance = 0.0;
-
-        for (int i = 0; i < path.getLinkCount(); i++) {
-            distance += path.getLink(i).getLength();
-        }
-
+    public double calculateConsumption(double from, double until, double distance) {
         return distance / 1e-3 * config.getDischargeRateByDistance();
     }
 

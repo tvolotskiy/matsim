@@ -1,52 +1,69 @@
 package playground.sebhoerl.recharging_avs.tracker;
 
+import com.google.inject.Singleton;
 import org.matsim.core.controler.events.IterationEndsEvent;
 import org.matsim.core.controler.events.IterationStartsEvent;
 import org.matsim.core.controler.listener.IterationEndsListener;
 import org.matsim.core.controler.listener.IterationStartsListener;
+import org.matsim.core.mobsim.framework.events.MobsimAfterSimStepEvent;
+import org.matsim.core.mobsim.framework.events.MobsimBeforeSimStepEvent;
+import org.matsim.core.mobsim.framework.listeners.MobsimAfterSimStepListener;
+import org.matsim.core.mobsim.framework.listeners.MobsimBeforeSimStepListener;
 import org.matsim.core.utils.io.IOUtils;
+import playground.sebhoerl.av_paper.BinCalculator;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 public class CSVConsumptionTracker implements ConsumptionTracker, IterationStartsListener, IterationEndsListener {
-    private double currentTime = 0.0;
+    final private BinCalculator binCalculator;
 
-    private double currentTimeBasedConsumption;
-    private double currentDistanceBasedConsumption;
+    final private List<Double> timeBasedConsumption;
+    final private List<Double> distanceBasedConsumption;
 
-    private List<Double> timeBasedConsumption = new LinkedList<>();
-    private List<Double> distanceBasedConsumption = new LinkedList<>();
+    public CSVConsumptionTracker(BinCalculator binCalculator) {
+        this.binCalculator = binCalculator;
 
-    @Override
-    public void addDistanceBasedConsumption(double time, double consumption) {
-        ensureTime(time);
-        currentTimeBasedConsumption += consumption;
+        timeBasedConsumption = new ArrayList<>(binCalculator.getBins());
+        distanceBasedConsumption = new ArrayList<>(binCalculator.getBins());
+
+        for (int i = 0; i < binCalculator.getBins(); i++) {
+            timeBasedConsumption.add(0.0);
+            distanceBasedConsumption.add(0.0);
+        }
+    }
+
+    private void addConsumption(List<Double> consumptionData, double start, double end, double consumption) {
+        double consumptionPerSecond = consumption / (end - start);
+
+        for (BinCalculator.BinEntry entry : binCalculator.getBinEntriesNormalized(start, end)) {
+            consumptionData.set(entry.getIndex(), consumptionData.get(entry.getIndex()) + entry.getWeight() * binCalculator.getInterval() * consumptionPerSecond);
+        }
     }
 
     @Override
-    public void addTimeBasedConsumption(double time, double consumption) {
-        ensureTime(time);
-        currentDistanceBasedConsumption += consumption;
+    public void addDistanceBasedConsumption(double start, double end, double consumption) {
+        addConsumption(distanceBasedConsumption, start, end, consumption);
     }
 
-    private void ensureTime(double time) {
-        if (time > currentTime) {
-            currentTime = time;
-            timeBasedConsumption.add(currentTimeBasedConsumption);
-            distanceBasedConsumption.add(currentDistanceBasedConsumption);
+    @Override
+    public void addTimeBasedConsumption(double start, double end, double consumption) {
+        addConsumption(timeBasedConsumption, start, end, consumption);
+    }
+
+    private void clearConsumption(List<Double> consumption) {
+        for (int i = 0; i < binCalculator.getBins(); i++) {
+            consumption.set(i, 0.0);
         }
     }
 
     @Override
     public void notifyIterationStarts(IterationStartsEvent event) {
-        currentTime = 0.0;
-        currentDistanceBasedConsumption = 0.0;
-        currentTimeBasedConsumption = 0.0;
-        timeBasedConsumption.clear();
-        distanceBasedConsumption.clear();
+        clearConsumption(distanceBasedConsumption);
+        clearConsumption(timeBasedConsumption);
     }
 
     @Override
@@ -55,18 +72,14 @@ public class CSVConsumptionTracker implements ConsumptionTracker, IterationStart
             OutputStream stream = IOUtils.getOutputStream(event.getServices().getControlerIO().getIterationFilename(event.getIteration(), "consumption.csv"));
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new BufferedOutputStream(stream)));
 
-            writer.write("DISTANCE;TIME\n" + String.valueOf(distanceBasedConsumption.size()) + " " + String.valueOf(timeBasedConsumption.size()));
+            writer.write("TIME;DISTANCE_BASED;TIME_BASED\n");
 
-            Iterator<Double> distanceIterator = distanceBasedConsumption.iterator();
-            Iterator<Double> timeIterator = timeBasedConsumption.iterator();
-
-            while (distanceIterator.hasNext() && timeIterator.hasNext()) {
-                writer.write(String.format("%f;%f\n", distanceIterator.next(), timeIterator.next()));
+            for (int i = 0; i < binCalculator.getBins(); i++) {
+                writer.write(String.format("%d;%f;%f\n", (int) binCalculator.getStart(i), distanceBasedConsumption.get(i), timeBasedConsumption.get(i)));
             }
 
             writer.flush();
-            stream.flush();
-            stream.close();
+            writer.close();
         } catch (IOException e) {
             throw new RuntimeException();
         }
