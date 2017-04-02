@@ -25,14 +25,15 @@ import java.util.Queue;
 @Singleton
 public class AVScoringFunctionFactory implements ScoringFunctionFactory {
 	final private AVConfig config;
+
 	final private ScoringFunctionFactory standardFactory;
 	final private ScoringParametersForPerson params;
 
-	@Inject
-    public AVScoringFunctionFactory(Scenario scenario, AVConfig config) {
+    public AVScoringFunctionFactory(ScoringFunctionFactory standardFactory, Scenario scenario, AVConfig config) {
 		this.config = config;
+		this.standardFactory = standardFactory;
+
         params = new SubpopulationScoringParameters(scenario);
-        standardFactory = new CharyparNagelScoringFunctionFactory(scenario);
     }
     
 	@Override
