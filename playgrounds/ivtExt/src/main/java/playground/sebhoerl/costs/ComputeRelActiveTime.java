@@ -24,12 +24,18 @@ import java.util.*;
 
 public class ComputeRelActiveTime {
     public static void main(String[] args) throws IOException {
-        int fleetSizes[] = { 100, 150, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 8000 };
+        int fleetSizes[] = {
+                2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900,
+                3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900,
+                4000
+        };
 
-        FileOutputStream stream = new FileOutputStream("/home/sebastian/single/utilization.csv");
+        FileOutputStream stream = new FileOutputStream("/home/sebastian/belser/analysis/total_results.csv");
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream));
 
         String headers[] = {
+                "VERSION",
+                "QUANTILE",
                 "FLEET_SIZE",
                 "UTILZATION_MORNING",
                 "UTILZATION_AFTERNOON",
@@ -54,16 +60,30 @@ public class ComputeRelActiveTime {
         writer.write(String.join(";", headers) + "\n");
         writer.flush();
 
-        for (int fleetSize : fleetSizes) {
-            LinkedList<String> elements = new LinkedList<>();
-            elements.add(String.valueOf(fleetSize));
+        LinkedList<String> elements = new LinkedList<>(Arrays.asList("baseline", "baseline", "2000"));
+        for (double value : runUtilizationAnalysis("/home/sebastian/belser/analysis/baseline.xml.gz", 2000)) {
+            elements.add(String.valueOf(value));
+        }
+        writer.write(String.join(";", elements) + "\n");
 
-            for (double value : runUtilizationAnalysis("/home/sebastian/single/" + fleetSize + ".xml.gz", fleetSize)) {
-                elements.add(String.valueOf(value));
+        for (int version : new int[] { 1, 2}) {
+            for (int quantile : new int[] { 1, 5 }) {
+                for (int fleetSize : fleetSizes) {
+                    String path = String.format("/home/sebastian/Downloads/euler/q%d_v%d_%d_output/output_events.xml.gz", quantile, version, fleetSize);
+
+                    elements.clear();
+                    elements.add(String.valueOf(version));
+                    elements.add(String.valueOf(quantile));
+                    elements.add(String.valueOf(fleetSize));
+
+                    for (double value : runUtilizationAnalysis(path, fleetSize)) {
+                        elements.add(String.valueOf(value));
+                    }
+
+                    writer.write(String.join(";", elements) + "\n");
+                    writer.flush();
+                }
             }
-
-            writer.write(String.join(";", elements) + "\n");
-            writer.flush();
         }
 
         stream.close();
@@ -186,7 +206,7 @@ public class ComputeRelActiveTime {
         }
 
         public void finish() {
-            for (Id<Person> personId : customerStartTimes.keySet()) {
+            for (Id<Person> personId : new HashSet<>(customerStartTimes.keySet())) {
                 handleEvent(new ActivityStartEvent(measurementEndTime, personId, null, null, "AVDropoff"));
             }
         }
