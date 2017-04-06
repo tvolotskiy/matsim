@@ -20,6 +20,7 @@ import org.matsim.contrib.dvrp.trafficmonitoring.VrpTravelTimeModules;
 import org.matsim.contrib.dynagent.run.DynQSimModule;
 import org.matsim.contrib.zone.io.ZoneShpReader;
 import org.matsim.core.config.Config;
+import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
@@ -91,7 +92,7 @@ public class RunZurichWithAV {
 
         final Network network = scenario.getNetwork();
 
-        FileInputStream stream = new FileInputStream("nodes.list");
+        FileInputStream stream = new FileInputStream(ConfigGroup.getInputFileURL(config.getContext(), "nodes.list").getPath());
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
         final Set<Node> permissibleNodes = new HashSet<>();

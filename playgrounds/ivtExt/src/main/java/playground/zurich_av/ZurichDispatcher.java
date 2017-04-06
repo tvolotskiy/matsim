@@ -42,7 +42,7 @@ public class ZurichDispatcher implements AVDispatcher {
         delegate.addVehicle(vehicle);
     }
 
-    class ZurichDispatcherFactory implements AVDispatcherFactory {
+    static public class ZurichDispatcherFactory implements AVDispatcherFactory {
         @Inject
         private Map<String, AVDispatcherFactory> dispatcherFactories;
 

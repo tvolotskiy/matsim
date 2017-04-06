@@ -49,12 +49,12 @@ public class ZurichGenerator implements AVGenerator {
                 linkCache.get(MatsimRandom.getRandom().nextInt(linkCache.size())),
                 4.0,
                 0.0,
-                84000.0,
+                108000.0,
                 operator
                 );
     }
 
-    class ZurichGeneratorFactory implements AVGeneratorFactory {
+    static public class ZurichGeneratorFactory implements AVGeneratorFactory {
         @Inject @Named("zurich")
         private Collection<Link> permissibleLinks;
 
