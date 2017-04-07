@@ -9,6 +9,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Point;
 import contrib.baseline.IVTBaselineScoringFunctionFactory;
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
@@ -40,6 +41,7 @@ import playground.sebhoerl.avtaxi.framework.AVModule;
 import playground.sebhoerl.avtaxi.framework.AVQSimProvider;
 import playground.sebhoerl.avtaxi.framework.AVUtils;
 import playground.sebhoerl.avtaxi.scoring.AVScoringFunctionFactory;
+import playground.zurich_av.replanning.ZurichPlanStrategyProvider;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -101,6 +103,7 @@ public class RunZurichWithAV {
         reader.lines().forEach((String nodeId) -> permissibleNodes.add(network.getNodes().get(Id.createNodeId(nodeId))) );
         permissibleNodes.forEach((Node node) -> permissibleLinks.addAll(node.getOutLinks().values()));
         permissibleNodes.forEach((Node node) -> permissibleLinks.addAll(node.getInLinks().values()));
+        Logger.getLogger(RunZurichWithAV.class).info("Loaded " + permissibleLinks.size() + " permissible links.");
 
         controler.addOverridingModule(new AbstractModule() {
             @Override
@@ -108,6 +111,8 @@ public class RunZurichWithAV {
                 bind(new TypeLiteral<Collection<Link>>() {}).annotatedWith(Names.named("zurich")).toInstance(permissibleLinks);
                 AVUtils.registerDispatcherFactory(binder(), "ZurichDispatcher", ZurichDispatcher.ZurichDispatcherFactory.class);
                 AVUtils.registerGeneratorFactory(binder(), "ZurichGenerator", ZurichGenerator.ZurichGeneratorFactory.class);
+
+                addPlanStrategyBinding("zurichModeChoice").toProvider(ZurichPlanStrategyProvider.class);
             }
         });
 
