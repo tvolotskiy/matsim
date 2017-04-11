@@ -51,20 +51,28 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
     public PlanAlgorithm getPlanAlgoInstance() {
         TripRouter tripRouter = tripRouterProvider.get();
 
+        String[] modes = new String[this.modes.size()];
+        String[] modesWithoutAV = new String[this.modesWithoutAV.size()];
+        String[] chainBasedModes = new String[this.chainBasedModes.size()];
+
+        modes = this.modes.toArray(modes);
+        modesWithoutAV = this.modesWithoutAV.toArray(modesWithoutAV);
+        chainBasedModes = this.chainBasedModes.toArray(chainBasedModes);
+
         PlanAlgorithm withAVsAlgorithm = new ChooseRandomLegModeForSubtour(
                 tripRouter.getStageActivityTypes(),
                 tripRouter.getMainModeIdentifier(),
                 permissibleModesCalculator,
-                (String[]) modes.toArray(),
-                (String[]) chainBasedModes.toArray(),
+                modes,
+                chainBasedModes,
                 MatsimRandom.getLocalInstance());
 
         PlanAlgorithm withoutAVsAlgorithm = new ChooseRandomLegModeForSubtour(
                 tripRouter.getStageActivityTypes(),
                 tripRouter.getMainModeIdentifier(),
                 permissibleModesCalculator,
-                (String[]) modesWithoutAV.toArray(),
-                (String[]) chainBasedModes.toArray(),
+                modesWithoutAV,
+                chainBasedModes,
                 MatsimRandom.getLocalInstance());
 
         return new ZurichSubtourModeChoiceAlgorithm(network, tripRouter.getStageActivityTypes(), withAVsAlgorithm, withoutAVsAlgorithm, permissibleLinks);

@@ -8,6 +8,7 @@ import org.matsim.contrib.locationchoice.utils.PlanUtils;
 import org.matsim.core.population.algorithms.PlanAlgorithm;
 import org.matsim.core.router.StageActivityTypes;
 import org.matsim.core.router.TripStructureUtils;
+import org.matsim.core.utils.misc.Counter;
 import playground.sebhoerl.avtaxi.framework.AVModule;
 
 import java.util.Collection;
@@ -19,6 +20,8 @@ public class ZurichSubtourModeChoiceAlgorithm implements PlanAlgorithm {
 
     final private PlanAlgorithm choiceAlgorithmWithoutAV;
     final private PlanAlgorithm choiceAlgorithmWithAV;
+
+    private Counter rejectionCounter = new Counter("Rejected AV Plans ");
 
     public ZurichSubtourModeChoiceAlgorithm(Network network, StageActivityTypes stageActivityTypes, PlanAlgorithm choiceAlgorithmWithAV, PlanAlgorithm choiceAlgorithmWithoutAV, Collection<Link> permissibleLinks) {
         this.network = network;
@@ -33,10 +36,11 @@ public class ZurichSubtourModeChoiceAlgorithm implements PlanAlgorithm {
         Plan copy = PlanUtils.createCopy(plan);
         choiceAlgorithmWithAV.run(copy);
 
-        if (isPlanPermissible(plan)) {
+        if (isPlanPermissible(copy)) {
             PlanUtils.copyFrom(copy, plan);
         } else {
-            choiceAlgorithmWithoutAV.run(copy);
+            rejectionCounter.incCounter();
+            choiceAlgorithmWithoutAV.run(plan);
         }
     }
 
