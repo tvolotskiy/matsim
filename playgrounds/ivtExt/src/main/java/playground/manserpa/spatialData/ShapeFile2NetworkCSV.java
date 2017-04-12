@@ -15,19 +15,19 @@ import java.util.*;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-public final class ShapeFile2CSV {
+public final class ShapeFile2NetworkCSV {
 	private Geometry include;
 	private Geometry exclude;
 	private final GeometryFactory factory;
 	
 	public static void main(String[] args) throws IOException	{
-		ShapeFile2CSV cs = new ShapeFile2CSV(args[0]);
+		ShapeFile2NetworkCSV cs = new ShapeFile2NetworkCSV(args[0]);
 		
 		cs.run(args[1]);
 		
 	}
 	
-	private ShapeFile2CSV(String shpFile)	{
+	private ShapeFile2NetworkCSV(String shpFile)	{
 		this.factory = new GeometryFactory();
 		
 		readShapeFile(shpFile);
