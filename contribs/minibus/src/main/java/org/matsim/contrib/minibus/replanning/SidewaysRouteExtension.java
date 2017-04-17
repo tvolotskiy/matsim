@@ -52,25 +52,32 @@ public final class SidewaysRouteExtension extends AbstractPStrategyModule {
 	private final static Logger log = Logger.getLogger(SidewaysRouteExtension.class);
 	public static final String STRATEGY_NAME = "SidewaysRouteExtension";
 	private final double bufferSize;
+	private final double bufferSizeMin;
 	private final double ratio;
 	private final boolean excludeTermini;
 	
 	public SidewaysRouteExtension(ArrayList<String> parameter) {
 		super();
-		if(parameter.size() != 3){
+		if(parameter.size() != 4){
 			log.error("Parameter 1: Buffer size in meter");
-			log.error("Parameter 2: Ratio bufferSize to route's beeline length. If set to something very small, e.g. 0.01, the calculated buffer size may be smaller than the one specified in parameter 1. Parameter 1 will then be taken as minimal buffer size.");
-			log.error("Parameter 3: Remove buffer from termini - true/false");
+			log.error("Parameter 2: Minimal buffer size in meter");
+			log.error("Parameter 3: Ratio bufferSize to route's beeline length. If set to something very small, e.g. 0.01, the calculated buffer size may be smaller than the one specified in parameter 1. Parameter 1 will then be taken as minimal buffer size.");
+			log.error("Parameter 4: Remove buffer from termini - true/false");
 		}
 		this.bufferSize = Double.parseDouble(parameter.get(0));
-		this.ratio = Double.parseDouble(parameter.get(1));
-		this.excludeTermini = Boolean.parseBoolean(parameter.get(2));
+		this.bufferSizeMin = Double.parseDouble(parameter.get(1));
+		this.ratio = Double.parseDouble(parameter.get(2));
+		this.excludeTermini = Boolean.parseBoolean(parameter.get(3));
+		if(bufferSize <= bufferSizeMin)	{
+			log.error("Minimal buffer size has to be smaller than the buffer size");
+		}
 	}
 
 	@Override
 	public PPlan run(Operator operator) {
 
 		PPlan oldPlan = operator.getBestPlan();
+		//log.info("Sideways" + operator.getBestPlan().getId().toString());
 		ArrayList<TransitStopFacility> currentStopsToBeServed = oldPlan.getStopsToBeServed();
 		
 		TransitStopFacility baseStop = currentStopsToBeServed.get(0);
@@ -78,7 +85,9 @@ public final class SidewaysRouteExtension extends AbstractPStrategyModule {
 		double bufferSizeBasedOnRatio = CoordUtils.calcEuclideanDistance(baseStop.getCoord(), remoteStop.getCoord()) * this.ratio;
 		
 		List<Geometry> lineStrings = this.createGeometryFromStops(currentStopsToBeServed, remoteStop);
-		Geometry buffer = this.createBuffer(lineStrings, Math.max(this.bufferSize, bufferSizeBasedOnRatio), this.excludeTermini);
+		List<Geometry> stopPoints = this.createPointGeometryFromStops(currentStopsToBeServed, remoteStop);
+		
+		Geometry buffer = this.createBuffer(lineStrings, stopPoints, Math.max(this.bufferSize, bufferSizeBasedOnRatio), this.bufferSizeMin, this.excludeTermini);
 		
 		Set<Id<TransitStopFacility>> stopsUsed = this.getStopsUsed(oldPlan.getLine().getRoutes().values());
 		TransitStopFacility newStop = this.drawRandomStop(buffer, operator.getRouteProvider(), stopsUsed);
@@ -94,6 +103,7 @@ public final class SidewaysRouteExtension extends AbstractPStrategyModule {
 		newPlan.setNVehicles(1);
 		newPlan.setStartTime(oldPlan.getStartTime());
 		newPlan.setEndTime(oldPlan.getEndTime());
+		newPlan.setPVehicleType(oldPlan.getPVehicleType());
 		newPlan.setStopsToBeServed(newStopsToBeServed);
 		
 		newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
@@ -210,24 +220,50 @@ public final class SidewaysRouteExtension extends AbstractPStrategyModule {
 	}
 
 
-	private Geometry createBuffer(List<Geometry> lineStrings, double bufferSize, boolean excludeTermini) {
+	private Geometry createBuffer(List<Geometry> lineStrings, List<Geometry> stopPoints, double bufferSize, double bufferSizeMin, boolean excludeTermini) {
 		BufferParameters bufferParameters = new BufferParameters();
-		
+
 		if (excludeTermini) {
 			bufferParameters.setEndCapStyle(BufferParameters.CAP_FLAT);
 		} else {
 			bufferParameters.setEndCapStyle(BufferParameters.CAP_ROUND);
 		}
-		
-		Geometry union = null;
+
+
+		Geometry unionmax = null;
 		
 		for (Geometry lineString : lineStrings) {
 			Geometry buffer = BufferOp.bufferOp(lineString, bufferSize, bufferParameters);
-			if (union == null) {
-				union = buffer;
+			if (unionmax == null) {
+				unionmax = buffer;
 			} else {
-				union = union.union(buffer);
+				unionmax = unionmax.union(buffer);
 			}
+		}
+		
+		
+		Geometry unionmin = null;
+		
+		// exclude first and last stop from buffer
+		for(int i = 1; i < stopPoints.size(); i++)	{
+			
+			Geometry buff = stopPoints.get(i).buffer(bufferSizeMin);
+			
+			if (unionmin == null)	{
+				unionmin = buff;
+			}
+			else {
+				unionmin = unionmin.union(buff);
+			}
+		}
+		
+		Geometry union = null;
+		
+		if(unionmin == null)	{
+			union = unionmax;
+		}
+		else	{		
+			union = unionmax.difference(unionmin);
 		}
 		
 		return union;
@@ -258,6 +294,23 @@ public final class SidewaysRouteExtension extends AbstractPStrategyModule {
 		Coordinate[] coordinates = coords.toArray(new Coordinate[coords.size()]);
 		Geometry lineString = new GeometryFactory().createLineString(coordinates);
 		geometries.add(lineString);
+		return geometries;
+	}
+	
+	// manserpa: return stop points as geometry list
+	private List<Geometry> createPointGeometryFromStops(ArrayList<TransitStopFacility> stops, TransitStopFacility remoteStop) {
+		List<Geometry> geometries = new LinkedList<>();
+		
+		Coordinate coord = new Coordinate();
+		for (TransitStopFacility stop : stops) {
+			if (!stop.equals(remoteStop)) {
+				coord = new Coordinate(stop.getCoord().getX(), stop.getCoord().getY(), 0.0);
+				Geometry lineString = new GeometryFactory().createPoint(coord);
+				geometries.add(lineString);
+			}
+		}
+		
+
 		return geometries;
 	}
 

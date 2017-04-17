@@ -53,15 +53,18 @@ public final class EndRouteExtension extends AbstractPStrategyModule {
 	public static final String STRATEGY_NAME = "EndRouteExtension";
 	private final double bufferSize;
 	private final double ratio;
+	private final double bufferSizeMin;
 	
 	public EndRouteExtension(ArrayList<String> parameter) {
 		super();
-		if(parameter.size() != 2){
+		if(parameter.size() != 3){
 			log.error("Parameter 1: Buffer size in meter");
-			log.error("Parameter 2: Ratio bufferSize to route's beeline length. If set to something very small, e.g. 0.01, the calculated buffer size may be smaller than the one specified in parameter 1. Parameter 1 will then be taken as minimal buffer size.");
+			log.error("Parameter 2: Minimal buffer size in meter");
+			log.error("Parameter 3: Ratio bufferSize to route's beeline length. If set to something very small, e.g. 0.01, the calculated buffer size may be smaller than the one specified in parameter 1. Parameter 1 will then be taken as minimal buffer size.");
 		}
 		this.bufferSize = Double.parseDouble(parameter.get(0));
-		this.ratio = Double.parseDouble(parameter.get(1));
+		this.bufferSizeMin = Double.parseDouble(parameter.get(1));
+		this.ratio = Double.parseDouble(parameter.get(2));
 	}
 
 	@Override
@@ -77,7 +80,13 @@ public final class EndRouteExtension extends AbstractPStrategyModule {
 		List<Geometry> lineStrings = this.createGeometryFromStops(currentStopsToBeServed, remoteStop);
 		Geometry bufferWithoutEndCaps = this.createBuffer(lineStrings, Math.max(this.bufferSize, bufferSizeBasedOnRatio), true);
 		Geometry bufferWithEndCaps = this.createBuffer(lineStrings, Math.max(this.bufferSize, bufferSizeBasedOnRatio), false);
-		Geometry buffer = bufferWithEndCaps.difference(bufferWithoutEndCaps);
+		Geometry buffer1 = bufferWithEndCaps.difference(bufferWithoutEndCaps);
+		
+		Geometry bufferWithoutEndCapsMin = this.createBuffer(lineStrings, this.bufferSizeMin, true);
+		Geometry bufferWithEndCapsMin = this.createBuffer(lineStrings, this.bufferSizeMin, false);
+		Geometry bufferMin = bufferWithEndCapsMin.difference(bufferWithoutEndCapsMin);
+		
+		Geometry buffer = buffer1.difference(bufferMin);
 		
 		Set<Id<TransitStopFacility>> stopsUsed = this.getStopsUsed(oldPlan.getLine().getRoutes().values());
 		TransitStopFacility newStop = this.drawRandomStop(buffer, operator.getRouteProvider(), stopsUsed);
@@ -93,6 +102,7 @@ public final class EndRouteExtension extends AbstractPStrategyModule {
 		newPlan.setNVehicles(1);
 		newPlan.setStartTime(oldPlan.getStartTime());
 		newPlan.setEndTime(oldPlan.getEndTime());
+		newPlan.setPVehicleType(oldPlan.getPVehicleType());
 		newPlan.setStopsToBeServed(newStopsToBeServed);
 		
 		newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
