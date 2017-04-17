@@ -15,19 +15,19 @@ import java.util.*;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-public final class ShapeFile2CSV {
+public final class ShapeFile2TransitStopsCSV {
 	private Geometry include;
 	private Geometry exclude;
 	private final GeometryFactory factory;
 	
 	public static void main(String[] args) throws IOException	{
-		ShapeFile2CSV cs = new ShapeFile2CSV(args[0]);
+		ShapeFile2TransitStopsCSV cs = new ShapeFile2TransitStopsCSV(args[0]);
 		
 		cs.run(args[1]);
 		
 	}
 	
-	private ShapeFile2CSV(String shpFile)	{
+	private ShapeFile2TransitStopsCSV(String shpFile)	{
 		this.factory = new GeometryFactory();
 		
 		readShapeFile(shpFile);
@@ -65,67 +65,80 @@ public final class ShapeFile2CSV {
 		this.exclude = this.factory.createGeometryCollection(exclude.toArray(new Geometry[exclude.size()])).buffer(0);
 	}
 	
-	private void run(String networkFile) throws IOException	{
+	private void run(String transitSchedule) throws IOException	{
 	
-		String csvFileNodes = "NodesZH.csv";
-	    FileWriter writerNodes = new FileWriter(csvFileNodes);
+		String csvFile = "TransitStopsZH.csv";
+	    FileWriter writer = new FileWriter(csvFile);
 	    
-	    CSVUtils.writeLine(writerNodes, Arrays.asList("id", "x", "y"), ';');
-	    
-	    String csvFileLinks = "LinksZH.csv";
-	    FileWriter writerLinks = new FileWriter(csvFileLinks );
-	    
-	    CSVUtils.writeLine(writerLinks , Arrays.asList("id", "from","to","length","modes","freespeed"), ';');
+	    CSVUtils.writeLine(writer, Arrays.asList("OID", "id", "x", "y","name","linkRefId"), ';');
 	    
 		try {
-			List<String> nodeList = new ArrayList<>(); 
+			List<String> StopList = new ArrayList<>(); 
 			
 			SAXParserFactory factory = SAXParserFactory.newInstance();
 			SAXParser saxParser = factory.newSAXParser();
-			 
+			
 			DefaultHandler handler = new DefaultHandler()	{
+	
+				int counter = 1;
+				boolean hasStopinZurich;
+				String transitLineId;
 				
 			public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException	{
 				
-				if(qName.equalsIgnoreCase("node"))	{
+				if(qName.equalsIgnoreCase("stopFacility"))	{
 					
 					if(nodeInServiceArea(Double.parseDouble(attributes.getValue("x")),Double.parseDouble(attributes.getValue("y"))))	{
 						
+						
 						try {
-							CSVUtils.writeLine(writerNodes, Arrays.asList(attributes.getValue("id"), attributes.getValue("x"), attributes.getValue("y")), ';');
+							CSVUtils.writeLine(writer, Arrays.asList(Integer.toString(counter), attributes.getValue("id"), attributes.getValue("x"), 
+									attributes.getValue("y"), attributes.getValue("name"), attributes.getValue("linkRefId")), ';');
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
 						
-						nodeList.add(attributes.getValue("id"));
+						counter ++;
+						StopList.add(attributes.getValue("id"));
 						
 					}
 				}
 				
-				if(qName.equalsIgnoreCase("link"))	{
+				
+				if(qName.equalsIgnoreCase("transitLine"))	{
 					
-					if(nodeList.contains(attributes.getValue("from")) && nodeList.contains(attributes.getValue("to")))	{
-						
-						try {
-							CSVUtils.writeLine(writerLinks, Arrays.asList(attributes.getValue("id"), attributes.getValue("from"), attributes.getValue("to"),
-									attributes.getValue("length"), attributes.getValue("modes"), attributes.getValue("freespeed")), ';');
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+					transitLineId = attributes.getValue("id");
+					hasStopinZurich = false;
 					
-					}
+				}
+				
+				if(qName.equalsIgnoreCase("stop"))	{
+					
+					if(StopList.contains(attributes.getValue("refId")))
+						hasStopinZurich = true;
+					
 				}
 				
 			}
+			
+			public void endElement(String uri, String localName, String qName)
+		            throws SAXException {
+				
+		        if(qName.equals("transitLine") && hasStopinZurich) {
+		        	
+		        	System.out.println(transitLineId);
+		        	
+		        }
+		        
+		    }
+			
 			};
 			
-			saxParser.parse(networkFile, handler);
+			saxParser.parse(transitSchedule, handler);
 			
-			writerNodes.flush();
-	        writerNodes.close();
+			writer.flush();
+	        writer.close();
 	        
-	        writerLinks.flush();
-	        writerLinks.close();
 			
 		} catch (Exception e)	{
 			e.printStackTrace();

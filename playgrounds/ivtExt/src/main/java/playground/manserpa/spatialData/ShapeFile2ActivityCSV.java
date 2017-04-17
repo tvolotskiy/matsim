@@ -136,7 +136,7 @@ public class ShapeFile2ActivityCSV {
 				        	
 				       	for(ActivityList s: activityList)	{
 					       	try {	
-								CSVUtils.writeLine(writer, Arrays.asList(s.type, Double.toString(s.x), Double.toString(s.y), person), ';');
+								CSVUtils.writeLine(writer, Arrays.asList(s.type, Double.toString(s.x), Double.toString(s.y)), ';');
 							} catch (IOException e) {
 								e.printStackTrace();
 							}
