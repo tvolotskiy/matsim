@@ -74,6 +74,14 @@ final class OperatorCostContainer {
 		return this.costPerVehicleAndDay;
 	}
 	
+	public double getTotalMeterDriven()	{
+		return this.meterTravelled;
+	}
+	
+	public double getTotalTimeDriven()	{
+		return this.transitDriverAlightsE.getTime() - this.transitDriverStartsE.getTime();
+	}
+	
 	public double getRunningCostDistance(){
 		return this.expensesPerMeter * this.meterTravelled;
 	}
