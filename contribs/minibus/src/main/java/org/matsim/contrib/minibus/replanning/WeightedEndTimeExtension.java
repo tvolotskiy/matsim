@@ -59,6 +59,7 @@ public final class WeightedEndTimeExtension extends AbstractPStrategyModule {
 		newPlan.setNVehicles(1);
 		newPlan.setStopsToBeServed(operator.getBestPlan().getStopsToBeServed());
 		newPlan.setStartTime(operator.getBestPlan().getStartTime());
+		newPlan.setPVehicleType(operator.getBestPlan().getPVehicleType());
 		
 		// get a valid new end time
 		double newEndTime = this.timeProvider.getRandomTimeInInterval(operator.getBestPlan().getEndTime(), 24 * 3600.0);
