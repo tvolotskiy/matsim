@@ -55,16 +55,18 @@ final class SimpleCircleScheduleProvider implements PRouteProvider {
 	private final Network net;
 	private final TransitSchedule scheduleWithStopsOnly;
 	private final RandomStopProvider randomStopProvider;
+	private final RandomPVehicleProvider randomPVehicleProvider;
 	private final String transportMode;
 	private final LeastCostPathCalculator routingAlgo;
 	private final double vehicleMaximumVelocity;
 	private final double driverRestTime;
 	
-	public SimpleCircleScheduleProvider(String pIdentifier, TransitSchedule scheduleWithStopsOnly, Network network, RandomStopProvider randomStopProvider, double vehicleMaximumVelocity, double driverRestTime, final String transportMode) {
+	public SimpleCircleScheduleProvider(String pIdentifier, TransitSchedule scheduleWithStopsOnly, Network network, RandomStopProvider randomStopProvider, RandomPVehicleProvider randomPVehicleProvider, double vehicleMaximumVelocity, double driverRestTime, final String transportMode) {
 		this.pIdentifier = pIdentifier;
 		this.net = network;
 		this.scheduleWithStopsOnly = scheduleWithStopsOnly;
 		this.randomStopProvider = randomStopProvider;
+		this.randomPVehicleProvider = randomPVehicleProvider;
 		this.transportMode = transportMode;
 		FreespeedTravelTimeAndDisutility tC = new FreespeedTravelTimeAndDisutility(-6.0, 0.0, 0.0);
 		this.routingAlgo = new Dijkstra(this.net, tC, tC);
@@ -185,6 +187,16 @@ final class SimpleCircleScheduleProvider implements PRouteProvider {
 	@Override
 	public Collection<TransitStopFacility> getAllPStops() {
 		return this.scheduleWithStopsOnly.getFacilities().values();
+	}
+
+	@Override
+	public String getRandomPVehicle() {
+		return this.randomPVehicleProvider.getRandomPVehicle();
+	}
+
+	@Override
+	public String getSmallestPVehicle() {
+		return this.randomPVehicleProvider.getSmallestPVehicle();
 	}
 
 }

@@ -56,14 +56,16 @@ final class SimpleBackAndForthScheduleProvider implements PRouteProvider{
 	private final Network net;
 	private final TransitSchedule scheduleWithStopsOnly;
 	private final RandomStopProvider randomStopProvider;
+	private final RandomPVehicleProvider randomPVehicleProvider;
 	private final String transportMode;
 	private final double vehicleMaximumVelocity;
 	private final double driverRestTime;
 	
-	public SimpleBackAndForthScheduleProvider(String pIdentifier, TransitSchedule scheduleWithStopsOnly, Network network, RandomStopProvider randomStopProvider, double vehicleMaximumVelocity, double driverRestTime, String transportMode) {
+	public SimpleBackAndForthScheduleProvider(String pIdentifier, TransitSchedule scheduleWithStopsOnly, Network network, RandomStopProvider randomStopProvider, RandomPVehicleProvider randomPVehicleProvider, double vehicleMaximumVelocity, double driverRestTime, String transportMode) {
 		this.pIdentifier = pIdentifier;
 		this.net = network;
 		this.scheduleWithStopsOnly = scheduleWithStopsOnly;
+		this.randomPVehicleProvider = randomPVehicleProvider;
 		this.randomStopProvider = randomStopProvider;
 		this.transportMode = transportMode;
 		this.vehicleMaximumVelocity = vehicleMaximumVelocity;
@@ -185,6 +187,16 @@ final class SimpleBackAndForthScheduleProvider implements PRouteProvider{
 	@Override
 	public Collection<TransitStopFacility> getAllPStops() {
 		return this.scheduleWithStopsOnly.getFacilities().values();
+	}
+
+	@Override
+	public String getRandomPVehicle() {
+		return this.randomPVehicleProvider.getRandomPVehicle();
+	}
+
+	@Override
+	public String getSmallestPVehicle() {
+		return this.randomPVehicleProvider.getSmallestPVehicle();
 	}
 
 }
