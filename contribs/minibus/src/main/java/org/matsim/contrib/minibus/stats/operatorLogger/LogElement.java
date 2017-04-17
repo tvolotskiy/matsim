@@ -50,6 +50,10 @@ public final class LogElement {
 	private OperatorState status;
 	private Id<PPlan> planId;
 	private String creatorId;
+	private String vehicleType;
+	private double distanceDriven;
+	private double timeDriven;
+	private double passengerKilometer;
 	private Id<PPlan> parentId;
 	private int nVeh;
 	private int nPax;
@@ -94,6 +98,30 @@ public final class LogElement {
 	}
 	public void setCreatorId(String creatorId) {
 		this.creatorId = creatorId;
+	}
+	public String getVehicleType() {
+		return vehicleType;
+	}
+	public void setVehicleType(String vehicleType) {
+		this.vehicleType = vehicleType;
+	}
+	public double getDistanceDriven() {
+		return this.distanceDriven;
+	}
+	public void setDistanceDriven(double distanceDriven) {
+		this.distanceDriven = distanceDriven;
+	}
+	public double getTimeDriven() {
+		return this.timeDriven;
+	}
+	public void setTimeDriven(double timeDriven) {
+		this.timeDriven = timeDriven;
+	}
+	public double getPassengerKilometer() {
+		return this.passengerKilometer;
+	}
+	public void setPassengerKilometer(double passengerKilometer) {
+		this.passengerKilometer = passengerKilometer;
 	}
 	public Id<PPlan> getParentId() {
 		return parentId;
@@ -159,7 +187,11 @@ public final class LogElement {
 		strB.append(DELIMITER).append("plan id");
 		strB.append(DELIMITER).append("creator");
 		strB.append(DELIMITER).append("parent");
+		strB.append(DELIMITER).append("vehicletype");
 		strB.append(DELIMITER).append("vehicle");
+		strB.append(DELIMITER).append("distance driven");
+		strB.append(DELIMITER).append("time driven");
+		strB.append(DELIMITER).append("passenger kilometer");
 		strB.append(DELIMITER).append("pax");
 		strB.append(DELIMITER).append("score");
 		strB.append(DELIMITER).append("budget");
@@ -178,7 +210,11 @@ public final class LogElement {
 		strB.append(DELIMITER).append(this.planId);
 		strB.append(DELIMITER).append(this.creatorId);
 		strB.append(DELIMITER).append(this.parentId);
+		strB.append(DELIMITER).append(this.vehicleType);
 		strB.append(DELIMITER).append(this.nVeh);
+		strB.append(DELIMITER).append(this.distanceDriven);
+		strB.append(DELIMITER).append(this.timeDriven);
+		strB.append(DELIMITER).append(this.passengerKilometer);
 		strB.append(DELIMITER).append(this.nPax);
 		strB.append(DELIMITER).append(this.score);
 		strB.append(DELIMITER).append(this.budget);
@@ -197,7 +233,11 @@ public final class LogElement {
 		strB.append(DELIMITER).append(NOVALUE);
 		strB.append(DELIMITER).append(NOVALUE);
 		strB.append(DELIMITER).append(NOVALUE);
+		strB.append(DELIMITER).append(NOVALUE);
 		strB.append(DELIMITER).append(nVeh);
+		strB.append(DELIMITER).append(NOVALUE);
+		strB.append(DELIMITER).append(NOVALUE);
+		strB.append(DELIMITER).append(NOVALUE);
 		strB.append(DELIMITER).append(nPax);
 		strB.append(DELIMITER).append(score);
 		strB.append(DELIMITER).append(budget);
