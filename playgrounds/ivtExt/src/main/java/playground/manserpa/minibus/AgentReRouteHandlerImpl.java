@@ -1,0 +1,68 @@
+/* *********************************************************************** *
+ * project: org.matsim.*
+ *                                                                         *
+ * *********************************************************************** *
+ *                                                                         *
+ * copyright       : (C) 2011 by the members listed in the COPYING,        *
+ *                   LICENSE and WARRANTY file.                            *
+ * email           : info at matsim dot org                                *
+ *                                                                         *
+ * *********************************************************************** *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *   See also COPYING, LICENSE and WARRANTY file                           *
+ *                                                                         *
+ * *********************************************************************** */
+
+package playground.manserpa.minibus;
+
+import org.apache.log4j.Logger;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.events.PersonStuckEvent;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.gbl.MatsimRandom;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+/**
+ * Collects all {@link PersonStuckEvent} and returns a set of the ids of the agents
+ *
+ * @author aneumann
+ */
+class AgentReRouteHandlerImpl	{
+
+	private static final Logger log = Logger.getLogger(AgentReRouteHandlerImpl.class);
+
+	private Set<Id<Person>> agentsToReRoute;
+
+	private Map<Id<Person>, ? extends Person> agents;
+
+	public AgentReRouteHandlerImpl(Map<Id<Person>, ? extends Person> agents) {
+		this.agents = agents;
+		
+		this.agentsToReRoute = new TreeSet<>();
+		
+		for( Id<Person> e : this.agents.keySet())	{
+			double rand = MatsimRandom.getRandom().nextDouble();
+			if ( rand > 0.4 )
+				this.agentsToReRoute.add(e);
+		}
+		
+		log.info("initialized");
+	}
+	
+	public Set<Id<Person>> resetAgentsToReRoute() {
+		this.agentsToReRoute = new TreeSet<>();
+		return this.agentsToReRoute;
+	}
+
+	public Set<Id<Person>> getAgentsToReRoute() {
+		log.info("Returning " + this.agentsToReRoute.size() + " agent ids");
+		return this.agentsToReRoute;
+	}
+}
