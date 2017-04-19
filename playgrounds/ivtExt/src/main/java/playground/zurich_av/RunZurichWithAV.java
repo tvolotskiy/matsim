@@ -101,21 +101,21 @@ public class RunZurichWithAV {
         final Set<Node> permissibleNodes = new HashSet<>();
         final Set<Link> permissibleLinks = new HashSet<>();
 
-
         reader.lines().forEach((String nodeId) -> permissibleNodes.add(network.getNodes().get(Id.createNodeId(nodeId))) );
         permissibleNodes.forEach((Node node) -> permissibleLinks.addAll(node.getOutLinks().values()));
         permissibleNodes.forEach((Node node) -> permissibleLinks.addAll(node.getInLinks().values()));
         final Set<Link> filteredPermissibleLinks = permissibleLinks.stream().filter((l) -> l.getAllowedModes().contains("car")).collect(Collectors.toSet());
-        Logger.getLogger(RunZurichWithAV.class).info("Loaded " + permissibleLinks.size() + " permissible links.");
+
+        Logger.getLogger(RunZurichWithAV.class).info("Loaded " + filteredPermissibleLinks.size() + " permissible links (from " + permissibleLinks.size() + " in the area).");
 
         controler.addOverridingModule(new AbstractModule() {
             @Override
             public void install() {
                 bind(new TypeLiteral<Collection<Link>>() {}).annotatedWith(Names.named("zurich")).toInstance(filteredPermissibleLinks);
-                AVUtils.registerDispatcherFactory(binder(), "ZurichDispatcher", ZurichDispatcher.ZurichDispatcherFactory.class);
+                //AVUtils.registerDispatcherFactory(binder(), "ZurichDispatcher", ZurichDispatcher.ZurichDispatcherFactory.class);
                 AVUtils.registerGeneratorFactory(binder(), "ZurichGenerator", ZurichGenerator.ZurichGeneratorFactory.class);
 
-                addPlanStrategyBinding("zurichModeChoice").toProvider(ZurichPlanStrategyProvider.class);
+                addPlanStrategyBinding("ZurichModeChoice").toProvider(ZurichPlanStrategyProvider.class);
             }
         });
 
