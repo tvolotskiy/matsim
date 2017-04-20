@@ -9,6 +9,8 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.controler.AbstractModule;
@@ -26,6 +28,7 @@ import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MASModule extends AbstractModule {
@@ -39,8 +42,8 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    private CordonCharger provideCordonCharger(@Named(CORDON_LINKS) Collection<Link> cordonLinks, MASConfigGroup config) {
-        return new CordonCharger(cordonLinks, config.getCordonPrice(), config.getChargedOperators());
+    private CordonCharger provideCordonCharger(@Named(CORDON_LINKS) Collection<Link> cordonLinks, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
+        return new CordonCharger(cordonLinks, config.getCordonPrice(), config.getChargedOperators(), evUserIds);
     }
 
     @Provides @Singleton @Named(CORDON_LINKS)
@@ -70,5 +73,16 @@ public class MASModule extends AbstractModule {
     @Provides @Singleton
     public MASScoringFunctionFactory provideScoringFunctionFactory(AVScoringFunctionFactory delegate, Scenario scenario, AVConfig config, CordonCharger charger) {
         return new MASScoringFunctionFactory(delegate, scenario, charger);
+    }
+
+    @Provides @Singleton @Named("ev_user_ids")
+    public Collection<Id<Person>> provideEVUserIds(Population population) {
+        return population.getPersons().keySet().stream().filter(new Predicate<Id<Person>>() {
+            @Override
+            public boolean test(Id<Person> personId) {
+                Boolean flag = (Boolean) population.getPersonAttributes().getAttribute(personId.toString(), "ev");
+                return flag != null && flag;
+            }
+        }).collect(Collectors.toSet());
     }
 }

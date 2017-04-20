@@ -14,6 +14,7 @@ import org.matsim.api.core.v01.events.handler.PersonLeavesVehicleEventHandler;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Population;
+import org.matsim.utils.objectattributes.attributable.Attributes;
 import org.matsim.vehicles.Vehicle;
 import playground.sebhoerl.avtaxi.data.AVOperator;
 import playground.sebhoerl.avtaxi.framework.AVModule;
@@ -27,15 +28,17 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
     final private Set<Id<Person>> departures = new HashSet<>();
     final private Map<Id<Vehicle>, Id<Person>> passengers = new HashMap<>();
 
+    final private Collection<Id<Person>> evUserIds;
     final private Collection<Id<Link>> cordonLinkIds;
     final private Collection<String> chargedOperators;
 
     final private double cordonPrice;
 
-    public CordonCharger(Collection<Link> cordonLinks, double cordonPrice, Collection<Id<AVOperator>> chargedOperators) {
+    public CordonCharger(Collection<Link> cordonLinks, double cordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
         this.cordonLinkIds = cordonLinks.stream().map(l -> l.getId()).collect(Collectors.toSet());
         this.cordonPrice = cordonPrice;
         this.chargedOperators = chargedOperators.stream().map(i -> i.toString()).collect(Collectors.toSet());
+        this.evUserIds = evUserIds;
     }
 
     @Override
@@ -45,8 +48,7 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
     }
 
     private boolean isChargeableDeparture(Id<Person> personId, String mode) {
-        // TODO add electric person attribute here
-        return mode.equals(AVModule.AV_MODE) || mode.equals(TransportMode.car);
+        return mode.equals(AVModule.AV_MODE) || (mode.equals(TransportMode.car) && !evUserIds.contains(personId));
     }
 
     @Override
