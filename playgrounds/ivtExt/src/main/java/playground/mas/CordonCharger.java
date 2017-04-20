@@ -30,14 +30,14 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
 
     final private Collection<Id<Person>> evUserIds;
     final private Collection<Id<Link>> cordonLinkIds;
-    final private Collection<String> chargedOperators;
+    final private Collection<Id<AVOperator>> chargedOperators;
 
     final private double cordonPrice;
 
     public CordonCharger(Collection<Link> cordonLinks, double cordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
         this.cordonLinkIds = cordonLinks.stream().map(l -> l.getId()).collect(Collectors.toSet());
         this.cordonPrice = cordonPrice;
-        this.chargedOperators = chargedOperators.stream().map(i -> i.toString()).collect(Collectors.toSet());
+        this.chargedOperators = chargedOperators;
         this.evUserIds = evUserIds;
     }
 
@@ -58,20 +58,6 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
         }
     }
 
-    private boolean isChargeableOperatorVehicle(Id<Vehicle> vehicleId) {
-        String stringId = vehicleId.toString();
-
-        if (stringId.startsWith("av_")) {
-            for (String operatorId : chargedOperators) {
-                if (stringId.startsWith("av_" + operatorId)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     private boolean isPrivateVehicle(Id<Vehicle> vehicleId) {
         return !vehicleId.toString().startsWith("av_");
     }
@@ -79,7 +65,7 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
     @Override
     public void handleEvent(PersonEntersVehicleEvent event) {
         if (departures.remove(event.getPersonId())) {
-            if (isPrivateVehicle(event.getVehicleId()) || isChargeableOperatorVehicle(event.getVehicleId())) {
+            if (isPrivateVehicle(event.getVehicleId()) || MASCordonUtils.isChargeableOperator(event.getVehicleId(), chargedOperators)) {
                 passengers.put(event.getVehicleId(), event.getPersonId());
             }
         }

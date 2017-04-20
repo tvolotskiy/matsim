@@ -13,7 +13,10 @@ import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.population.routes.RouteFactories;
 import org.matsim.core.router.Dijkstra;
 import org.matsim.core.router.costcalculators.OnlyTimeDependentTravelDisutility;
+import org.matsim.core.router.costcalculators.OnlyTimeDependentTravelDisutilityFactory;
+import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.router.util.LeastCostPathCalculator;
+import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.core.scoring.ScoringFunctionFactory;
 
@@ -75,6 +78,11 @@ public class AVModule extends AbstractModule {
         addControlerListenerBinding().to(Key.get(ParallelLeastCostPathCalculator.class, Names.named(AVModule.AV_MODE)));
         addMobsimListenerBinding().to(Key.get(ParallelLeastCostPathCalculator.class, Names.named(AVModule.AV_MODE)));
 	}
+
+	@Provides @Singleton @Named(AVModule.AV_MODE)
+    private TravelDisutilityFactory provideTravelDisutilityFactory() {
+        return new OnlyTimeDependentTravelDisutilityFactory();
+    }
 
 	@Provides @Singleton @Named(AVModule.AV_MODE)
 	private ParallelLeastCostPathCalculator provideParallelLeastCostPathCalculator(AVConfigGroup config, AVParallelRouterFactory factory) {
