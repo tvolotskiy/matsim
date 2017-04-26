@@ -71,34 +71,18 @@ public class MASModule extends AbstractModule {
 
     @Provides @Singleton
     private MASCordonTravelDisutility provideMASCordonTravelDisutility(@Named(CORDON_LINKS) Collection<Link> cordonLinks, PlanCalcScoreConfigGroup scoreConfig, MASConfigGroup masConfig) {
-        double cordonDisutility = scoreConfig.getMarginalUtilityOfMoney() * masConfig.getCordonPrice();
+        double cordonDisutility = scoreConfig.getMarginalUtilityOfMoney() * masConfig.getCordonFee();
         return new MASCordonTravelDisutility(cordonLinks, cordonDisutility);
     }
 
     @Provides @Singleton
     private CordonCharger provideCordonCharger(@Named(CORDON_LINKS) Collection<Link> cordonLinks, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
-        return new CordonCharger(cordonLinks, config.getCordonPrice(), config.getChargedOperators(), evUserIds);
+        return new CordonCharger(cordonLinks, config.getCordonFee(), config.getChargedOperatorIds(), evUserIds);
     }
 
     @Provides @Singleton @Named(CORDON_LINKS)
     public Collection<Link> provideCordonLinks(Config config, MASConfigGroup masConfig, Network network) {
-        try {
-            FileInputStream stream = new FileInputStream(ConfigGroup.getInputFileURL(config.getContext(), masConfig.getCordonPath()).getPath());
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-
-            final Set<Link> cordonLinks = new HashSet<>();
-
-            reader.lines().forEach((String linkId) -> cordonLinks.add(network.getLinks().get(Id.createLinkId(linkId))) );
-
-            final Set<Link> filteredCordonLinks = cordonLinks.stream().filter((l) ->
-                    l.getAllowedModes().contains("car")
-            ).collect(Collectors.toSet());
-
-            log.info("Loaded " + filteredCordonLinks.size() + " cordon links from " + masConfig.getCordonPath());
-            return filteredCordonLinks;
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("Cordon input file not found.");
-        }
+        return MASCordonUtils.findChargeableCordonLinks(masConfig.getCordonCenterNodeId(), masConfig.getCordonRadius(), network);
     }
 
     @Provides @Singleton

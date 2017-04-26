@@ -1,6 +1,7 @@
 package playground.mas;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.config.ReflectiveConfigGroup;
 import playground.sebhoerl.avtaxi.data.AVOperator;
 
@@ -13,35 +14,35 @@ import java.util.stream.Collectors;
 public class MASConfigGroup extends ReflectiveConfigGroup {
     final static public String MAS = "mas";
 
-    final static public String CORDON_PRICE = "cordonPrice";
-    final static public String CHARGED_OPERATORS = "chargedOperators";
-    final static public String INPUT_CORDON = "inputCordonFile";
+    final static public String CORDON_CENTER_NODE_ID = "cordonCenterNodeId";
+    final static public String CORDON_RADIUS = "cordonRadius";
 
-    private double cordonPrice = 0.0;
+    final static public String CORDON_FEE = "cordonFee";
+    final static public String CHARGED_OPERATORS = "chargedOperators";
+
+    private double cordonFee = 0.0;
     private Set<Id<AVOperator>> chargedOperators = new HashSet<>();
-    private String cordonPath;
+
+    private Id<Node> cordonCenterNodeId = null;
+    private double cordonRadius = 0.0;
 
     public MASConfigGroup() {
         super(MAS);
     }
 
-    @StringGetter(CORDON_PRICE)
-    public double getCordonPrice() {
-        return cordonPrice;
+    @StringGetter(CORDON_FEE)
+    public double getCordonFee() {
+        return cordonFee;
     }
 
-    @StringSetter(CORDON_PRICE)
-    public void setCordonPrice(double cordonPrice) {
-        this.cordonPrice = cordonPrice;
+    @StringSetter(CORDON_FEE)
+    public void setCordonFee(double cordonFee) {
+        this.cordonFee = cordonFee;
     }
 
     @StringGetter(CHARGED_OPERATORS)
-    public String _getChargedOperators() {
+    public String getChargedOperators() {
         return String.join(",", chargedOperators.stream().map(i -> i.toString()).collect(Collectors.toList()));
-    }
-
-    public Collection<Id<AVOperator>> getChargedOperators() {
-        return chargedOperators;
     }
 
     @StringSetter(CHARGED_OPERATORS)
@@ -49,13 +50,31 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
         this.chargedOperators = Arrays.asList(chargedOperators.split(",")).stream().map(i -> Id.create(i, AVOperator.class)).collect(Collectors.toSet());
     }
 
-    @StringGetter(INPUT_CORDON)
-    public String getCordonPath() {
-        return cordonPath;
+    public Collection<Id<AVOperator>> getChargedOperatorIds() {
+        return chargedOperators;
     }
 
-    @StringSetter(INPUT_CORDON)
-    public void setCordonPath(String cordonPath) {
-        this.cordonPath = cordonPath;
+    @StringGetter(CORDON_CENTER_NODE_ID)
+    public Id<Node> getCordonCenterNodeId() {
+        return cordonCenterNodeId;
+    }
+
+    public void setCordonCenterNodeId(Id<Node> cordonCenterNodeId) {
+        this.cordonCenterNodeId = cordonCenterNodeId;
+    }
+
+    @StringSetter(CORDON_CENTER_NODE_ID)
+    public void setCordonCenterNodeId(String cordonCenterNodeId) {
+        this.cordonCenterNodeId = Id.createNodeId(cordonCenterNodeId);
+    }
+
+    @StringGetter(CORDON_RADIUS)
+    public double getCordonRadius() {
+        return cordonRadius;
+    }
+
+    @StringSetter(CORDON_RADIUS)
+    public void setCordonRadius(double radius) {
+        this.cordonRadius = radius;
     }
 }

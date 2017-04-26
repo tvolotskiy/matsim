@@ -9,6 +9,7 @@ import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.router.Dijkstra;
 import org.matsim.core.router.costcalculators.OnlyTimeDependentTravelDisutility;
 import org.matsim.core.router.util.LeastCostPathCalculator;
+import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import playground.mas.MASConfigGroup;
 import playground.mas.routing.MASAVTravelDisutility;
@@ -40,7 +41,10 @@ public class MASSoloDispatcherFactory implements AVDispatcher.AVDispatcherFactor
 
     @Override
     public AVDispatcher createDispatcher(AVDispatcherConfig config) {
-        ParallelLeastCostPathCalculator router = new ParallelLeastCostPathCalculator((int) avConfig.getParallelRouters(), new RouterFactory());
+        ParallelLeastCostPathCalculator router = new ParallelLeastCostPathCalculator(
+                (int) avConfig.getParallelRouters(),
+                new MASRouterFactory(network, travelTime, cordonDisutility, masConfig.getChargedOperatorIds().contains(config.getParent().getId()))
+        );
 
         return new SingleHeuristicDispatcher(
                 config.getParent().getId(),
@@ -48,12 +52,5 @@ public class MASSoloDispatcherFactory implements AVDispatcher.AVDispatcherFactor
                 network,
                 new SingleRideAppender(config, router, travelTime)
         );
-    }
-
-    private class RouterFactory implements ParallelLeastCostPathCalculatorFactory {
-        @Override
-        public LeastCostPathCalculator createRouter() {
-            return new Dijkstra(network, new MASAVTravelDisutility(new OnlyTimeDependentTravelDisutility(travelTime), cordonDisutility), travelTime);
-        }
     }
 }
