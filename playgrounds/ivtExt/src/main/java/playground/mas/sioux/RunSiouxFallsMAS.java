@@ -1,4 +1,4 @@
-package playground.mas;
+package playground.mas.sioux;
 
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -25,6 +25,9 @@ import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.pt.PtConstants;
 import playground.ivt.replanning.BlackListedTimeAllocationMutatorConfigGroup;
 import playground.ivt.replanning.BlackListedTimeAllocationMutatorStrategyModule;
+import playground.mas.CordonCharger;
+import playground.mas.MASConfigGroup;
+import playground.mas.MASModule;
 import playground.mas.scoring.MASScoringFunctionFactory;
 import playground.sebhoerl.avtaxi.config.AVConfig;
 import playground.sebhoerl.avtaxi.framework.AVConfigGroup;

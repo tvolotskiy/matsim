@@ -86,19 +86,16 @@ public class MASModule extends AbstractModule {
             FileInputStream stream = new FileInputStream(ConfigGroup.getInputFileURL(config.getContext(), masConfig.getCordonPath()).getPath());
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
-            final Set<Node> insideNodes = new HashSet<>();
-            final Set<Link> insideLinks = new HashSet<>();
+            final Set<Link> cordonLinks = new HashSet<>();
 
-            reader.lines().forEach((String nodeId) -> insideNodes.add(network.getNodes().get(Id.createNodeId(nodeId))) );
-            insideNodes.forEach((Node node) -> insideLinks.addAll(node.getOutLinks().values()));
-            insideNodes.forEach((Node node) -> insideLinks.addAll(node.getInLinks().values()));
+            reader.lines().forEach((String linkId) -> cordonLinks.add(network.getLinks().get(Id.createLinkId(linkId))) );
 
-            Set<Link> cordonLinks = insideLinks.stream().filter((l) ->
-                    l.getAllowedModes().contains("car") && !insideNodes.contains(l.getFromNode())
+            final Set<Link> filteredCordonLinks = cordonLinks.stream().filter((l) ->
+                    l.getAllowedModes().contains("car")
             ).collect(Collectors.toSet());
 
-            log.info("Loaded " + cordonLinks.size() + " cordon links (from " + insideNodes.size() + " included nodes).");
-            return cordonLinks;
+            log.info("Loaded " + filteredCordonLinks.size() + " cordon links from " + masConfig.getCordonPath());
+            return filteredCordonLinks;
         } catch (FileNotFoundException e) {
             throw new RuntimeException("Cordon input file not found.");
         }
