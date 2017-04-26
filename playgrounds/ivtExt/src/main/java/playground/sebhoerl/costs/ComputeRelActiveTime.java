@@ -24,67 +24,58 @@ import java.util.*;
 
 public class ComputeRelActiveTime {
     public static void main(String[] args) throws IOException {
-        int fleetSizes[] = {
-                2000, 2100, 2200, 2300, 2400, 2500, 2600, 2700, 2800, 2900,
-                3000, 3100, 3200, 3300, 3400, 3500, 3600, 3700, 3800, 3900,
-                4000
-        };
+        String outputPath = args[0];
 
-        FileOutputStream stream = new FileOutputStream("/home/sebastian/belser/analysis/total_results.csv");
+        String inputPath = args[1];
+        String version = args[2];
+        String quantile = args[3];
+        int fleetSize = Integer.parseInt(args[4]);
+
+        boolean outputExists = new File(outputPath).exists();
+
+        FileOutputStream stream = new FileOutputStream(outputPath, true);
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stream));
 
-        String headers[] = {
-                "VERSION",
-                "QUANTILE",
-                "FLEET_SIZE",
-                "UTILZATION_MORNING",
-                "UTILZATION_AFTERNOON",
-                "UTILZATION_OFFPEAK",
-                "WAITING_MEDIAN_MORNING",
-                "WAITING_MEDIAN_AFTERNOON",
-                "WAITING_MEDIAN_OFFPEAK",
-                "WAITING_90P_MORNING",
-                "WAITING_90P_AFTERNOON",
-                "WAITING_90P_OFFPEAK",
-                "WAITING_MEAN_MORNING",
-                "WAITING_MEAN_AFTERNOON",
-                "WAITING_MEAN_OFFPEAK",
-                "MODE_SHARE_MORNING",
-                "MODE_SHARE_AFTERNOON",
-                "MODE_SHARE_OFFPEAK",
-                "UNDERSUPPLY_MORNING",
-                "UNDERSUPPLY_AFTERNOON",
-                "UNDERSUPPLY_OFFPEAK"
-        };
+        if (!outputExists) {
+            String headers[] = {
+                    "VERSION",
+                    "QUANTILE",
+                    "FLEET_SIZE",
+                    "UTILZATION_MORNING",
+                    "UTILZATION_AFTERNOON",
+                    "UTILZATION_OFFPEAK",
+                    "WAITING_MEDIAN_MORNING",
+                    "WAITING_MEDIAN_AFTERNOON",
+                    "WAITING_MEDIAN_OFFPEAK",
+                    "WAITING_90P_MORNING",
+                    "WAITING_90P_AFTERNOON",
+                    "WAITING_90P_OFFPEAK",
+                    "WAITING_MEAN_MORNING",
+                    "WAITING_MEAN_AFTERNOON",
+                    "WAITING_MEAN_OFFPEAK",
+                    "MODE_SHARE_MORNING",
+                    "MODE_SHARE_AFTERNOON",
+                    "MODE_SHARE_OFFPEAK",
+                    "UNDERSUPPLY_MORNING",
+                    "UNDERSUPPLY_AFTERNOON",
+                    "UNDERSUPPLY_OFFPEAK"
+            };
 
-        writer.write(String.join(";", headers) + "\n");
-        writer.flush();
+            writer.write(String.join(";", headers) + "\n");
+            writer.flush();
+        }
 
-        LinkedList<String> elements = new LinkedList<>(Arrays.asList("baseline", "baseline", "2000"));
-        for (double value : runUtilizationAnalysis("/home/sebastian/belser/analysis/baseline.xml.gz", 2000)) {
+        LinkedList<String> elements = new LinkedList<>();
+        elements.add(version);
+        elements.add(quantile);
+        elements.add(String.valueOf(fleetSize));
+
+        for (double value : runUtilizationAnalysis(inputPath, fleetSize)) {
             elements.add(String.valueOf(value));
         }
+
         writer.write(String.join(";", elements) + "\n");
-
-        for (int version : new int[] { 1, 2}) {
-            for (int quantile : new int[] { 1, 5 }) {
-                for (int fleetSize : fleetSizes) {
-                    String path = String.format("/home/sebastian/Downloads/euler/q%d_v%d_%d_output/output_events.xml.gz", quantile, version, fleetSize);
-
-                    elements.clear();
-                    elements.add(String.valueOf(version));
-                    elements.add(String.valueOf(quantile));
-                    elements.add(String.valueOf(fleetSize));
-
-                    for (double value : runUtilizationAnalysis(path, fleetSize)) {
-                        elements.add(String.valueOf(value));
-                    }
-
-                    writer.write(String.join(";", elements) + "\n");
-                    writer.flush();
-                }
-            }
-        }
+        writer.flush();
 
         stream.close();
     }
