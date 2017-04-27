@@ -34,8 +34,8 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
 
     final private double cordonPrice;
 
-    public CordonCharger(Collection<Link> cordonLinks, double cordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
-        this.cordonLinkIds = cordonLinks.stream().map(l -> l.getId()).collect(Collectors.toSet());
+    public CordonCharger(Collection<Id<Link>> cordonLinkIds, double cordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
+        this.cordonLinkIds = cordonLinkIds;
         this.cordonPrice = cordonPrice;
         this.chargedOperators = chargedOperators;
         this.evUserIds = evUserIds;
@@ -59,7 +59,7 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
     }
 
     private boolean isPrivateVehicle(Id<Vehicle> vehicleId) {
-        return !vehicleId.toString().startsWith("av_");
+        return !vehicleId.toString().startsWith("av_") && !vehicleId.toString().startsWith("bus_");
     }
 
     @Override

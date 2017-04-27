@@ -29,7 +29,7 @@ public class MASCordonUtils {
     static public Collection<Link> findInsideCordonLinks(Id<Node> centerId, double radius, Network network) {
         final Node centerNode = network.getNodes().get(centerId);
 
-        return network.getLinks().values().stream().parallel()
+        return network.getLinks().values().stream()
                 .filter(l -> CoordUtils.calcEuclideanDistance(l.getFromNode().getCoord(), centerNode.getCoord()) < radius)
                 .collect(Collectors.toSet());
     }
@@ -37,7 +37,7 @@ public class MASCordonUtils {
     static public Collection<Link> findChargeableCordonLinks(Id<Node> centerId, double radius, Network network) {
         final Node centerNode = network.getNodes().get(centerId);
 
-        return network.getLinks().values().stream().parallel()
+        return network.getLinks().values().stream()
                 .filter(l ->
                         CoordUtils.calcEuclideanDistance(l.getFromNode().getCoord(), centerNode.getCoord()) >= radius &&
                         CoordUtils.calcEuclideanDistance(l.getToNode().getCoord(), centerNode.getCoord()) <= radius

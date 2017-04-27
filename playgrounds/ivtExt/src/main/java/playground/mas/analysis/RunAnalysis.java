@@ -8,6 +8,8 @@ import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.io.MatsimNetworkReader;
+import org.matsim.core.network.io.NetworkWriter;
+import org.matsim.utils.objectattributes.attributable.AttributesXmlWriterDelegate;
 import playground.mas.MASConfigGroup;
 import playground.mas.MASCordonUtils;
 
@@ -25,6 +27,11 @@ public class RunAnalysis {
         Collection<Link> cordonLinks = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), network);
         Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), network);
 
+        for (Link link : network.getLinks().values()) {
+            link.getAttributes().putAttribute("is_cordon", cordonLinks.contains(link));
+            link.getAttributes().putAttribute("is_inside", insideLinks.contains(link));
+        }
 
+        new NetworkWriter(network).write("attr_network.xml");
     }
 }

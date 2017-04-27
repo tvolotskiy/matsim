@@ -40,9 +40,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -70,19 +68,20 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    private MASCordonTravelDisutility provideMASCordonTravelDisutility(@Named(CORDON_LINKS) Collection<Link> cordonLinks, PlanCalcScoreConfigGroup scoreConfig, MASConfigGroup masConfig) {
+    private MASCordonTravelDisutility provideMASCordonTravelDisutility(@Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, PlanCalcScoreConfigGroup scoreConfig, MASConfigGroup masConfig) {
         double cordonDisutility = scoreConfig.getMarginalUtilityOfMoney() * masConfig.getCordonFee();
-        return new MASCordonTravelDisutility(cordonLinks, cordonDisutility);
+        return new MASCordonTravelDisutility(cordonLinkIds, cordonDisutility);
     }
 
     @Provides @Singleton
-    private CordonCharger provideCordonCharger(@Named(CORDON_LINKS) Collection<Link> cordonLinks, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
-        return new CordonCharger(cordonLinks, config.getCordonFee(), config.getChargedOperatorIds(), evUserIds);
+    private CordonCharger provideCordonCharger(@Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
+        return new CordonCharger(cordonLinkIds, config.getCordonFee(), config.getChargedOperatorIds(), evUserIds);
     }
 
     @Provides @Singleton @Named(CORDON_LINKS)
-    public Collection<Link> provideCordonLinks(Config config, MASConfigGroup masConfig, Network network) {
-        return MASCordonUtils.findChargeableCordonLinks(masConfig.getCordonCenterNodeId(), masConfig.getCordonRadius(), network);
+    public Collection<Id<Link>> provideCordonLinkIds(Config config, MASConfigGroup masConfig, Network network) {
+        return MASCordonUtils.findChargeableCordonLinks(masConfig.getCordonCenterNodeId(), masConfig.getCordonRadius(), network)
+                .stream().map(l -> l.getId()).collect(Collectors.toList());
     }
 
     @Provides @Singleton
