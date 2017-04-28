@@ -1,4 +1,4 @@
-package playground.mas;
+package playground.mas.cordon;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;

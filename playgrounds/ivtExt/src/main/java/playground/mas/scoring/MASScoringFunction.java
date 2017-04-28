@@ -1,10 +1,9 @@
 package playground.mas.scoring;
 
-import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.scoring.SumScoringFunction;
-import playground.mas.CordonCharger;
+import playground.mas.cordon.CordonCharger;
 
 public class MASScoringFunction implements SumScoringFunction.BasicScoring {
     final private CordonCharger charger;

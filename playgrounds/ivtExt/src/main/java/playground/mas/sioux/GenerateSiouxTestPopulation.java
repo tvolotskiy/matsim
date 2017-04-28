@@ -11,7 +11,7 @@ import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.population.PopulationUtils;
 import playground.mas.MASConfigGroup;
-import playground.mas.MASCordonUtils;
+import playground.mas.cordon.MASCordonUtils;
 
 import java.util.Collection;
 import java.util.Random;

@@ -8,7 +8,7 @@ import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.core.scoring.SumScoringFunction;
 import org.matsim.core.scoring.functions.ScoringParametersForPerson;
 import org.matsim.core.scoring.functions.SubpopulationScoringParameters;
-import playground.mas.CordonCharger;
+import playground.mas.cordon.CordonCharger;
 
 @Singleton
 public class MASScoringFunctionFactory implements ScoringFunctionFactory {

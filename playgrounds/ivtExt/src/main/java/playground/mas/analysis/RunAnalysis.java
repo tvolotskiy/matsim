@@ -1,6 +1,5 @@
 package playground.mas.analysis;
 
-import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.config.Config;
@@ -9,9 +8,8 @@ import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.network.io.MatsimNetworkReader;
 import org.matsim.core.network.io.NetworkWriter;
-import org.matsim.utils.objectattributes.attributable.AttributesXmlWriterDelegate;
 import playground.mas.MASConfigGroup;
-import playground.mas.MASCordonUtils;
+import playground.mas.cordon.MASCordonUtils;
 
 import java.io.*;
 import java.util.*;
