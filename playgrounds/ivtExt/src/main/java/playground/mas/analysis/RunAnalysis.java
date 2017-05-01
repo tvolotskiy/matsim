@@ -1,35 +1,56 @@
 package playground.mas.analysis;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
-import org.matsim.api.core.v01.network.Network;
+import org.matsim.api.core.v01.population.Person;
+import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
-import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
-import org.matsim.core.network.NetworkUtils;
-import org.matsim.core.network.io.MatsimNetworkReader;
-import org.matsim.core.network.io.NetworkWriter;
+import org.matsim.core.events.EventsUtils;
+import org.matsim.core.events.MatsimEventsReader;
+import org.matsim.core.scenario.ScenarioUtils;
 import playground.mas.MASConfigGroup;
+import playground.mas.MASModule;
 import playground.mas.cordon.MASCordonUtils;
+import playground.sebhoerl.av_paper.BinCalculator;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 public class RunAnalysis {
-    public static void main(String[] args) throws FileNotFoundException {
+    static public void main(String[] args) throws IOException {
+        String configPath = args[0];
+        String eventsPath = args[1];
+        String outputPath = args[2];
+
         MASConfigGroup masConfigGroup = new MASConfigGroup();
-        Config config = ConfigUtils.loadConfig(args[0], masConfigGroup);
+        Config config = ConfigUtils.loadConfig(configPath, masConfigGroup);
 
-        Network network = NetworkUtils.createNetwork();
-        new MatsimNetworkReader(network).readFile(ConfigGroup.getInputFileURL(config.getContext(), config.network().getInputFile()).getPath());
+        Scenario scenario = ScenarioUtils.loadScenario(config);
 
-        Collection<Link> cordonLinks = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), network);
-        Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), network);
+        Collection<Link> cordonLinks = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), scenario.getNetwork());
+        Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), scenario.getNetwork());
 
-        for (Link link : network.getLinks().values()) {
-            link.getAttributes().putAttribute("is_cordon", cordonLinks.contains(link));
-            link.getAttributes().putAttribute("is_inside", insideLinks.contains(link));
-        }
+        Collection<Id<Link>> cordonLinkIds = cordonLinks.stream().map(l -> l.getId()).collect(Collectors.toList());
+        Collection<Id<Link>> insideLinkIds = insideLinks.stream().map(l -> l.getId()).collect(Collectors.toList());
+        Collection<Id<Link>> outsideLinkIds = scenario.getNetwork().getLinks().values().stream().filter(l -> !insideLinkIds.contains(l.getId())).map(l -> l.getId()).collect(Collectors.toList());
 
-        new NetworkWriter(network).write("attr_network.xml");
+        Collection<Id<Person>> evPersonIds = new MASModule().provideEVUserIds(scenario.getPopulation());
+
+        BinCalculator binCalculator = BinCalculator.createByInterval(0.0, 24.0 * 3600.0, 300.0);
+        DataFrame dataFrame = new DataFrame(binCalculator);
+
+        EventsManager eventsManager = EventsUtils.createEventsManager(config);
+        eventsManager.addHandler(new CountsHandler(dataFrame, binCalculator, insideLinkIds, outsideLinkIds));
+        eventsManager.addHandler(new CordonHandler(dataFrame, binCalculator, evPersonIds, masConfigGroup.getChargedOperatorIds(), cordonLinkIds));
+        eventsManager.addHandler(new DistancesHandler(dataFrame, binCalculator, scenario.getNetwork()));
+        eventsManager.addHandler(new AVHandler(dataFrame, binCalculator));
+
+        new MatsimEventsReader(eventsManager).readFile(eventsPath);
+        (new ObjectMapper()).writeValue(new File(outputPath), dataFrame);
     }
 }

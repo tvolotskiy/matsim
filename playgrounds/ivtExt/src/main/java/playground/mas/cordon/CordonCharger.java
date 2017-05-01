@@ -43,25 +43,17 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
         charges.clear();
     }
 
-    private boolean isChargeableDeparture(Id<Person> personId, String mode) {
-        return mode.equals(AVModule.AV_MODE) || (mode.equals(TransportMode.car) && !evUserIds.contains(personId));
-    }
-
     @Override
     public void handleEvent(PersonDepartureEvent event) {
-        if (isChargeableDeparture(event.getPersonId(), event.getLegMode())) {
+        if (MASCordonUtils.isChargeableDeparture(event.getPersonId(), event.getLegMode(), evUserIds)) {
             departures.add(event.getPersonId());
         }
-    }
-
-    private boolean isPrivateVehicle(Id<Vehicle> vehicleId) {
-        return !vehicleId.toString().startsWith("av_") && !vehicleId.toString().startsWith("bus_");
     }
 
     @Override
     public void handleEvent(PersonEntersVehicleEvent event) {
         if (departures.remove(event.getPersonId())) {
-            if (isPrivateVehicle(event.getVehicleId()) || MASCordonUtils.isChargeableOperator(event.getVehicleId(), chargedOperators)) {
+            if (MASCordonUtils.isPrivateVehicle(event.getVehicleId()) || MASCordonUtils.isChargeableOperator(event.getVehicleId(), chargedOperators)) {
                 passengers.put(event.getVehicleId(), event.getPersonId());
             }
         }
