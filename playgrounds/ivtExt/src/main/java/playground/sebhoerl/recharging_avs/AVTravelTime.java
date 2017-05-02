@@ -21,7 +21,7 @@ public class AVTravelTime implements TravelTime {
     @Override
     public double getLinkTravelTime(Link link, double time, Person person, Vehicle vehicle) {
         AVTravelTimeTracker.LinkTravelTime travelTime = travelTimeTracker.getLinkTravelTime(link.getId());
-        double delegateTravelTime = delegate.getLinkTravelTime(link, time, person, vehicle);
+        double delegateTravelTime = delegate.getLinkTravelTime(link, Math.max(0.0, time), person, vehicle);
 
         if (travelTime.updateTime > time - maximumInterpolationTime) {
             return interpolate(delegateTravelTime, travelTime.travelTime, (time - travelTime.updateTime) / maximumInterpolationTime);
