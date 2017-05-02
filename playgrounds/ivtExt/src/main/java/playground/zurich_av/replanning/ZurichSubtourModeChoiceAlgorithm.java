@@ -1,5 +1,6 @@
 package playground.zurich_av.replanning;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Leg;
@@ -16,19 +17,19 @@ import java.util.Collection;
 public class ZurichSubtourModeChoiceAlgorithm implements PlanAlgorithm {
     final private Network network;
     final private StageActivityTypes stageActivityTypes;
-    final private Collection<Link> permissibleLinks;
+    final private Collection<Id<Link>> permissibleLinkIds;
 
     final private PlanAlgorithm choiceAlgorithmWithoutAV;
     final private PlanAlgorithm choiceAlgorithmWithAV;
 
     private Counter rejectionCounter = new Counter("Rejected AV Plans ");
 
-    public ZurichSubtourModeChoiceAlgorithm(Network network, StageActivityTypes stageActivityTypes, PlanAlgorithm choiceAlgorithmWithAV, PlanAlgorithm choiceAlgorithmWithoutAV, Collection<Link> permissibleLinks) {
+    public ZurichSubtourModeChoiceAlgorithm(Network network, StageActivityTypes stageActivityTypes, PlanAlgorithm choiceAlgorithmWithAV, PlanAlgorithm choiceAlgorithmWithoutAV, Collection<Id<Link>> permissibleLinkIds) {
         this.network = network;
         this.stageActivityTypes = stageActivityTypes;
         this.choiceAlgorithmWithAV = choiceAlgorithmWithAV;
         this.choiceAlgorithmWithoutAV = choiceAlgorithmWithoutAV;
-        this.permissibleLinks = permissibleLinks;
+        this.permissibleLinkIds = permissibleLinkIds;
     }
 
     @Override
@@ -52,7 +53,7 @@ public class ZurichSubtourModeChoiceAlgorithm implements PlanAlgorithm {
                 Link origin = network.getLinks().get(trip.getOriginActivity().getLinkId());
                 Link destination = network.getLinks().get(trip.getDestinationActivity().getLinkId());
 
-                if (!permissibleLinks.contains(origin) || !permissibleLinks.contains(destination)) {
+                if (!permissibleLinkIds.contains(origin.getId()) || !permissibleLinkIds.contains(destination.getId())) {
                     return false;
                 }
             }

@@ -34,6 +34,8 @@ import java.util.stream.Collectors;
 
 public class MASModule extends AbstractModule {
     final public static String CORDON_LINKS = "cordon_links";
+    final public static String EV_USER_IDS = "ev_user_ids";
+
     final private Logger log = Logger.getLogger(MASModule.class);
 
     @Override
@@ -67,7 +69,7 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton @Named(CORDON_LINKS)
-    public Collection<Id<Link>> provideCordonLinkIds(Config config, MASConfigGroup masConfig, Network network) {
+    public Collection<Id<Link>> provideCordonLinkIds(MASConfigGroup masConfig, Network network) {
         return MASCordonUtils.findChargeableCordonLinks(masConfig.getCordonCenterNodeId(), masConfig.getCordonRadius(), network)
                 .stream().map(l -> l.getId()).collect(Collectors.toList());
     }
@@ -77,7 +79,7 @@ public class MASModule extends AbstractModule {
         return new MASScoringFunctionFactory(delegate, scenario, charger);
     }
 
-    @Provides @Singleton @Named("ev_user_ids")
+    @Provides @Singleton @Named(EV_USER_IDS)
     public Collection<Id<Person>> provideEVUserIds(Population population) {
         return population.getPersons().keySet().stream().filter(new Predicate<Id<Person>>() {
             @Override

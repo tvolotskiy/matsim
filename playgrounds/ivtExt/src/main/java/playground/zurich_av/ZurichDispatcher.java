@@ -11,6 +11,7 @@ import javax.inject.Named;
 import java.util.Collection;
 import java.util.Map;
 
+@Deprecated
 public class ZurichDispatcher implements AVDispatcher {
     final private AVDispatcher delegate;
     final private Collection<Link> permissibleLinks;
@@ -42,6 +43,7 @@ public class ZurichDispatcher implements AVDispatcher {
         delegate.addVehicle(vehicle);
     }
 
+    @Deprecated
     static public class ZurichDispatcherFactory implements AVDispatcherFactory {
         @Inject
         private Map<String, AVDispatcherFactory> dispatcherFactories;

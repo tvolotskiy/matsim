@@ -41,7 +41,7 @@ public class RunAnalysis {
 
         Collection<Id<Person>> evPersonIds = new MASModule().provideEVUserIds(scenario.getPopulation());
 
-        BinCalculator binCalculator = BinCalculator.createByInterval(0.0, 24.0 * 3600.0, 300.0);
+        BinCalculator binCalculator = BinCalculator.createByInterval(0.0, 24.0 * 3600.0, 900.0);
         DataFrame dataFrame = new DataFrame(binCalculator);
 
         EventsManager eventsManager = EventsUtils.createEventsManager(config);
@@ -51,6 +51,8 @@ public class RunAnalysis {
         eventsManager.addHandler(new AVHandler(dataFrame, binCalculator));
 
         new MatsimEventsReader(eventsManager).readFile(eventsPath);
+        new ScoresReader(dataFrame).read(scenario.getPopulation());
+
         (new ObjectMapper()).writeValue(new File(outputPath), dataFrame);
     }
 }

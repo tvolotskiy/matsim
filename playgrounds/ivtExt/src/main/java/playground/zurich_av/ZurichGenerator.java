@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.dvrp.data.Vehicle;
 import org.matsim.core.gbl.MatsimRandom;
 import playground.sebhoerl.avtaxi.config.AVGeneratorConfig;
@@ -17,17 +18,19 @@ import java.util.Map;
 
 public class ZurichGenerator implements AVGenerator {
     final private AVOperator operator;
-    final private Collection<Link> permissibleLinks;
+    final private Collection<Id<Link>> permissibleLinkIds;
+    final private Network network;
     final private long numberOfVehicles;
 
-    private ArrayList<Link> linkCache;
+    private ArrayList<Id<Link>> linkCache;
     private long generatedVehicleCount = 0;
 
-    public ZurichGenerator(Collection<Link> permissibleLinks, long numberOfVehicles, AVOperator operator) {
+    public ZurichGenerator(Network network, Collection<Id<Link>> permissibleLinkIds, long numberOfVehicles, AVOperator operator) {
+        this.network = network;
         this.operator = operator;
-        this.permissibleLinks = permissibleLinks;
+        this.permissibleLinkIds = permissibleLinkIds;
         this.numberOfVehicles = numberOfVehicles;
-        this.linkCache = new ArrayList<>(permissibleLinks);
+        this.linkCache = new ArrayList<>(permissibleLinkIds);
     }
 
     @Override
@@ -46,7 +49,7 @@ public class ZurichGenerator implements AVGenerator {
 
         return new AVVehicle(
                 Id.create("av_" + operator.getId().toString() + "_" + generatedVehicleCount, Vehicle.class),
-                linkCache.get(MatsimRandom.getRandom().nextInt(linkCache.size())),
+                network.getLinks().get(linkCache.get(MatsimRandom.getRandom().nextInt(linkCache.size()))),
                 4.0,
                 0.0,
                 108000.0,
@@ -56,7 +59,10 @@ public class ZurichGenerator implements AVGenerator {
 
     static public class ZurichGeneratorFactory implements AVGeneratorFactory {
         @Inject @Named("zurich")
-        private Collection<Link> permissibleLinks;
+        private Collection<Id<Link>> permissibleLinkIds;
+
+        @Inject
+        Network network;
 
         @Inject
         private Map<Id<AVOperator>, AVOperator> operators;
@@ -64,7 +70,7 @@ public class ZurichGenerator implements AVGenerator {
         @Override
         public AVGenerator createGenerator(AVGeneratorConfig generatorConfig) {
             long numberOfVehicles = generatorConfig.getNumberOfVehicles();
-            return new ZurichGenerator(permissibleLinks, numberOfVehicles, operators.get(generatorConfig.getParent().getId()));
+            return new ZurichGenerator(network, permissibleLinkIds, numberOfVehicles, operators.get(generatorConfig.getParent().getId()));
         }
     }
 }

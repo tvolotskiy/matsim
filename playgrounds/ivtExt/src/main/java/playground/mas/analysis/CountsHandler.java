@@ -37,6 +37,10 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
 
     @Override
     public void handleEvent(PersonDepartureEvent event) {
+        if (event.getPersonId().toString().startsWith("av_") || event.getPersonId().toString().startsWith("bus_")) {
+            return;
+        }
+
         if (!depatures.containsKey(event.getPersonId())) {
             depatures.put(event.getPersonId(), event);
         }
@@ -58,9 +62,9 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
                 String mode = departureEvent.getLegMode();
 
                 if (mode.equals("av")) {
-                    if (entersVehicleEvent.getVehicleId().toString().contains("Solo")) {
+                    if (entersVehicleEvent.getVehicleId().toString().contains("solo")) {
                         mode = "av_solo";
-                    } else if (entersVehicleEvent.getVehicleId().toString().contains("Pool")) {
+                    } else if (entersVehicleEvent.getVehicleId().toString().contains("pool")) {
                         mode = "av_pool";
                     }
                 }

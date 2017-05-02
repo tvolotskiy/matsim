@@ -1,5 +1,6 @@
 package playground.zurich_av.replanning;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.config.groups.GlobalConfigGroup;
@@ -22,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithreadedModule {
     final private Network network;
-    final private Collection<Link> permissibleLinks;
+    final private Collection<Id<Link>> permissibleLinkIds;
 
     final private Provider<TripRouter> tripRouterProvider;
     final private PermissibleModesCalculator permissibleModesCalculator;
@@ -33,7 +34,7 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
 
     public ZurichSubtourModeChoiceReplanningModule(
             Provider<TripRouter> tripRouterProvider, GlobalConfigGroup globalConfigGroup, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup,
-            Network network, Collection<Link> permissibleLinks) {
+            Network network, Collection<Id<Link>> permissibleLinkIds) {
         super(globalConfigGroup.getNumberOfThreads());
 
         this.tripRouterProvider = tripRouterProvider;
@@ -44,7 +45,7 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
         this.permissibleModesCalculator = new PermissibleModesCalculatorImpl((String[]) this.modes.toArray(), subtourModeChoiceConfigGroup.considerCarAvailability());
 
         this.network = network;
-        this.permissibleLinks = permissibleLinks;
+        this.permissibleLinkIds = permissibleLinkIds;
     }
 
     @Override
@@ -75,6 +76,6 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
                 chainBasedModes,
                 MatsimRandom.getLocalInstance());
 
-        return new ZurichSubtourModeChoiceAlgorithm(network, tripRouter.getStageActivityTypes(), withAVsAlgorithm, withoutAVsAlgorithm, permissibleLinks);
+        return new ZurichSubtourModeChoiceAlgorithm(network, tripRouter.getStageActivityTypes(), withAVsAlgorithm, withoutAVsAlgorithm, permissibleLinkIds);
     }
 }

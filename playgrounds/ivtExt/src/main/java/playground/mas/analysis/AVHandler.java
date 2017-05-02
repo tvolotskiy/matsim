@@ -40,15 +40,13 @@ public class AVHandler implements PersonDepartureEventHandler, PersonArrivalEven
     }
 
     private String getAVMode(String stringId) {
-        String mode = "av";
-
-        if (stringId.contains("Solo")) {
-            mode = "av_solo";
-        } else if (stringId.contains("Pool")) {
-            mode = "av_pool";
+        if (stringId.contains("solo")) {
+            return "av_solo";
+        } else if (stringId.contains("pool")) {
+            return "av_pool";
         }
 
-        return mode;
+        throw new RuntimeException("Cannot infer AV mode from " + stringId);
     }
 
     @Override
@@ -71,9 +69,9 @@ public class AVHandler implements PersonDepartureEventHandler, PersonArrivalEven
     public void handleEvent(ActivityStartEvent event) {
         if (event.getPersonId().toString().startsWith("av_")) {
             if (event.getActType().equals("AVStay")) {
-                Double started = enteredActiveTime.get(event.getPersonId());
+                Double started = enteredActiveTime.remove(event.getPersonId());
 
-                if (started  != null) {
+                if (started != null) {
                     for (BinCalculator.BinEntry entry : binCalculator.getBinEntriesNormalized(started, event.getTime())) {
                         DataFrame.increment(dataFrame.activeAVs, getAVMode(event.getPersonId().toString()), entry.getIndex(), entry.getWeight());
                     }

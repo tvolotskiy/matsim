@@ -32,9 +32,9 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
         String id = vehicleId.toString();
 
         if (id.startsWith("av_")) {
-            if (id.contains("Solo")) {
+            if (id.contains("solo")) {
                 return "av_solo";
-            } else if (id.contains("Pool")) {
+            } else if (id.contains("pool")) {
                 return "av_pool";
             } else {
                 return "av";
@@ -58,7 +58,7 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
 
     @Override
     public void handleEvent(PersonEntersVehicleEvent event) {
-        if (passengers.containsKey(event.getVehicleId())) {
+        if (!passengers.containsKey(event.getVehicleId())) {
             passengers.put(event.getVehicleId(), new HashSet<>());
         }
 

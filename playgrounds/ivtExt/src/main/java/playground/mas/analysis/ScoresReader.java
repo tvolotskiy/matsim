@@ -4,7 +4,13 @@ import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.population.*;
 
 public class ScoresReader {
-    public ScoresReader(Population population, DataFrame dataFrame) {
+    final private DataFrame dataFrame;
+
+    public ScoresReader(DataFrame dataFrame) {
+        this.dataFrame = dataFrame;
+    }
+
+    public void read(Population population) {
         for (Person person : population.getPersons().values()) {
             Plan plan = person.getSelectedPlan();
             Coord homeCoord = findHomeLocation(plan);

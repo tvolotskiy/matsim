@@ -3,6 +3,7 @@ package playground.zurich_av.replanning;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.config.groups.GlobalConfigGroup;
@@ -22,12 +23,12 @@ public class ZurichPlanStrategyProvider implements Provider<PlanStrategy> {
     @Inject private SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup;
     @Inject private ActivityFacilities facilities;
     @Inject private Network network;
-    @Inject @Named("zurich") Collection<Link> permissibleLinks;
+    @Inject @Named("zurich") Collection<Id<Link>> permissibleLinkIds;
 
     @Override
     public PlanStrategy get() {
         PlanStrategyImpl.Builder builder = new PlanStrategyImpl.Builder(new RandomPlanSelector());
-        builder.addStrategyModule(new ZurichSubtourModeChoiceReplanningModule(tripRouterProvider, globalConfigGroup, subtourModeChoiceConfigGroup, network, permissibleLinks));
+        builder.addStrategyModule(new ZurichSubtourModeChoiceReplanningModule(tripRouterProvider, globalConfigGroup, subtourModeChoiceConfigGroup, network, permissibleLinkIds));
         builder.addStrategyModule(new ReRoute(facilities, tripRouterProvider, globalConfigGroup));
         return builder.build();
     }
