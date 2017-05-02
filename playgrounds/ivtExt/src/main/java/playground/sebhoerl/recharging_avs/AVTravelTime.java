@@ -23,7 +23,7 @@ public class AVTravelTime implements TravelTime {
         AVTravelTimeTracker.LinkTravelTime travelTime = travelTimeTracker.getLinkTravelTime(link.getId());
         double delegateTravelTime = delegate.getLinkTravelTime(link, Math.max(0.0, time), person, vehicle);
 
-        if (travelTime.updateTime > time - maximumInterpolationTime) {
+        if (!Double.isNaN(travelTime.travelTime) && !Double.isNaN(travelTime.updateTime) && travelTime.updateTime > time - maximumInterpolationTime) {
             return interpolate(delegateTravelTime, travelTime.travelTime, (time - travelTime.updateTime) / maximumInterpolationTime);
         } else {
             return delegateTravelTime;
