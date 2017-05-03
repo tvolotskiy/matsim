@@ -40,10 +40,6 @@ public class MASCordonUtils {
     static public Collection<Link> findInsideCordonLinks(Id<Node> centerId, double radius, Network network) {
         final Node centerNode = network.getNodes().get(centerId);
 
-        if (centerNode == null) {
-            throw new RuntimeException();
-        }
-
         return network.getLinks().values().stream()
                 .filter(l -> CoordUtils.calcEuclideanDistance(l.getFromNode().getCoord(), centerNode.getCoord()) < radius)
                 .collect(Collectors.toSet());

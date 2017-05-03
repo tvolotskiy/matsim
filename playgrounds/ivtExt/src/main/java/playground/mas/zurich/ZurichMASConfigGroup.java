@@ -4,8 +4,8 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.core.config.ReflectiveConfigGroup;
 
-public class ZurichMASConfigGroup extends ReflectiveConfigGroup{
-    final static public String ZURICH_MAS = "zurich_mas";
+public class ZurichMASConfigGroup extends ReflectiveConfigGroup {
+    final static public String ZURICH_MAS = "mas_zurich";
 
     final static public String AV_AREA_CENTER_NODE_ID = "avAreaCenterNodeId";
     final static public String AV_AREA_RADIUS = "avAreaRadius";
