@@ -41,8 +41,12 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonEntersV
 
     @Override
     public void handleEvent(PersonEntersVehicleEvent event) {
-        if (MASCordonUtils.isPrivateVehicle(event.getVehicleId()) || MASCordonUtils.isChargeableOperator(event.getVehicleId(), chargedOperatorIds)) {
-            vehicles.add(event.getVehicleId());
+        PersonDepartureEvent departureEvent = departures.remove(event.getVehicleId());
+
+        if (departureEvent != null) {
+            if (MASCordonUtils.isPrivateVehicle(event.getVehicleId()) || MASCordonUtils.isChargeableOperator(event.getVehicleId(), chargedOperatorIds)) {
+                vehicles.add(event.getVehicleId());
+            }
         }
     }
 
@@ -53,9 +57,15 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonEntersV
 
     @Override
     public void handleEvent(LinkEnterEvent event) {
-        if (cordonLinkIds.contains(event.getLinkId()) && vehicles.contains(event.getVehicleId())) {
-            if (binCalculator.isCoveredValue(event.getTime())) {
-                DataFrame.increment(dataFrame.cordonCrossings, binCalculator.getIndex(event.getTime()));
+        if (cordonLinkIds.contains(event.getLinkId())) {
+            if (vehicles.contains(event.getVehicleId())) {
+                if (binCalculator.isCoveredValue(event.getTime())) {
+                    DataFrame.increment(dataFrame.chargeableCordonCrossings, binCalculator.getIndex(event.getTime()));
+                }
+            } else {
+                if (binCalculator.isCoveredValue(event.getTime())) {
+                    DataFrame.increment(dataFrame.cordonCrossings, binCalculator.getIndex(event.getTime()));
+                }
             }
         }
     }

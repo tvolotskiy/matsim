@@ -2,10 +2,7 @@ package playground.mas.analysis;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.events.*;
-import org.matsim.api.core.v01.events.handler.ActivityStartEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonArrivalEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonDepartureEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonEntersVehicleEventHandler;
+import org.matsim.api.core.v01.events.handler.*;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.events.handler.BasicEventHandler;
 import org.matsim.vehicles.Vehicle;
@@ -15,12 +12,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AVHandler implements PersonDepartureEventHandler, PersonArrivalEventHandler, PersonEntersVehicleEventHandler, ActivityStartEventHandler {
+public class AVHandler implements PersonDepartureEventHandler, PersonArrivalEventHandler, PersonEntersVehicleEventHandler, ActivityStartEventHandler, ActivityEndEventHandler {
     final private DataFrame dataFrame;
     final private BinCalculator binCalculator;
 
     final private Map<Id<Person>, PersonDepartureEvent> departures = new HashMap<>();
-    final private Map<Id<Person>, Double> enteredActiveTime = new HashMap<>();
+    final private Map<Id<Person>, Double> stayStartTime = new HashMap<>();
 
     public AVHandler(DataFrame dataFrame, BinCalculator binCalculator) {
         this.dataFrame = dataFrame;
@@ -67,21 +64,22 @@ public class AVHandler implements PersonDepartureEventHandler, PersonArrivalEven
 
     @Override
     public void handleEvent(ActivityStartEvent event) {
-        if (event.getPersonId().toString().startsWith("av_")) {
-            if (event.getActType().equals("AVStay")) {
-                Double started = enteredActiveTime.remove(event.getPersonId());
-
-                if (started != null) {
-                    for (BinCalculator.BinEntry entry : binCalculator.getBinEntriesNormalized(started, event.getTime())) {
-                        DataFrame.increment(dataFrame.activeAVs, getAVMode(event.getPersonId().toString()), entry.getIndex(), entry.getWeight());
-                    }
-                }
-            } else {
-                enteredActiveTime.put(event.getPersonId(), event.getTime());
-            }
+        if (event.getActType().equals("AVStay")) {
+            stayStartTime.put(event.getPersonId(), event.getTime());
         }
     }
 
     @Override
     public void reset(int iteration) {}
+
+    @Override
+    public void handleEvent(ActivityEndEvent event) {
+        Double startTime = stayStartTime.remove(event.getPersonId());
+
+        if (startTime != null) {
+            for (BinCalculator.BinEntry entry : binCalculator.getBinEntriesNormalized(startTime, event.getTime())) {
+                DataFrame.increment(dataFrame.inactiveAVs, getAVMode(event.getPersonId().toString()), entry.getIndex(), entry.getWeight());
+            }
+        }
+    }
 }

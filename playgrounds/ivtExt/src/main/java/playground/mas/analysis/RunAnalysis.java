@@ -45,10 +45,12 @@ public class RunAnalysis {
         DataFrame dataFrame = new DataFrame(binCalculator);
 
         EventsManager eventsManager = EventsUtils.createEventsManager(config);
-        eventsManager.addHandler(new CountsHandler(dataFrame, binCalculator, insideLinkIds, outsideLinkIds));
+        eventsManager.addHandler(new CountsHandler(dataFrame, binCalculator, insideLinkIds, outsideLinkIds, evPersonIds));
         eventsManager.addHandler(new CordonHandler(dataFrame, binCalculator, evPersonIds, masConfigGroup.getChargedOperatorIds(), cordonLinkIds));
-        eventsManager.addHandler(new DistancesHandler(dataFrame, binCalculator, scenario.getNetwork()));
+        eventsManager.addHandler(new DistancesHandler(dataFrame, binCalculator, scenario.getNetwork(), evPersonIds));
         eventsManager.addHandler(new AVHandler(dataFrame, binCalculator));
+
+
 
         new MatsimEventsReader(eventsManager).readFile(eventsPath);
         new ScoresReader(dataFrame).read(scenario.getPopulation());

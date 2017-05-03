@@ -22,10 +22,13 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
     final private Map<Id<Vehicle>, Set<Id<Person>>> passengers = new HashMap<>();
     final private Map<Id<Vehicle>, LinkEnterEvent> enterEvents = new HashMap<>();
 
-    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network) {
+    final private Collection<Id<Person>> evPersonIds;
+
+    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Collection<Id<Person>> evPersonIds) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
         this.network = network;
+        this.evPersonIds = evPersonIds;
     }
 
     private String findModeForVehicle(Id<Vehicle> vehicleId) {
@@ -87,11 +90,20 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
 
         if (enterEvent != null) {
             String mode = findModeForVehicle(event.getVehicleId());
+
             double length = getLinkLength(event.getLinkId());
-            int occupancy = 0;
+            long occupancy = 0;
 
             if (passengers.containsKey(event.getVehicleId())) {
                 occupancy = passengers.get(event.getVehicleId()).size();
+
+                if (mode.equals("car") && occupancy == 1) {
+                    Id<Person> driverId = passengers.get(event.getVehicleId()).stream().findAny().get();
+
+                    if (evPersonIds.contains(driverId)) {
+                        mode = "ev";
+                    }
+                }
             }
 
             List<Double> occupancySlot = mode.equals("av_pool") ? dataFrame.distanceByPoolOccupancy.get(occupancy) : null;

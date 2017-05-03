@@ -5,7 +5,7 @@ import playground.sebhoerl.av_paper.BinCalculator;
 import java.util.*;
 
 public class DataFrame {
-    final private List<String> modes = Collections.unmodifiableList(Arrays.asList("car", "pt", "walk", "av_solo", "av_pool"));
+    final private List<String> modes = Collections.unmodifiableList(Arrays.asList("car", "pt", "walk", "av_solo", "av_pool", "ev"));
     final private List<String> ptModes = Collections.unmodifiableList(Arrays.asList("pt", "av_solo", "av_pool"));
     final private List<String> avModes = Collections.unmodifiableList(Arrays.asList("av_solo", "av_pool"));
 
@@ -16,14 +16,16 @@ public class DataFrame {
     final public Map<String, List<Double>> outsideDepartures;
 
     final public Collection<Double[]> scores;
+
     final public List<Double> cordonCrossings;
+    final public List<Double> chargeableCordonCrossings;
 
     final public Map<String, List<Double>> vehicleDistances;
     final public Map<String, List<Double>> passengerDistances;
     final public Map<Long, List<Double>> distanceByPoolOccupancy;
 
     final public Map<String, List<List<Double>>> waitingTimes;
-    final public Map<String, List<Double>> activeAVs;
+    final public Map<String, List<Double>> inactiveAVs;
 
     static public Double[] createScore(double x, double y, double score) {
         return new Double[] { x, y, score };
@@ -43,6 +45,7 @@ public class DataFrame {
 
         scores = new LinkedList<>();
         cordonCrossings = new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0));
+        chargeableCordonCrossings = new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0));
 
         vehicleDistances = new HashMap<>();
         passengerDistances = new HashMap<>();
@@ -62,9 +65,9 @@ public class DataFrame {
             for (int i = 0; i < binCalculator.getBins(); i++) waitingTimes.get(mode).add(new LinkedList<>());
         }
 
-        activeAVs = new HashMap<>();
+        inactiveAVs = new HashMap<>();
         for (String mode : avModes) {
-            activeAVs.put(mode, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
+            inactiveAVs.put(mode, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
         }
     }
 

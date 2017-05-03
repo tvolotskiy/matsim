@@ -28,11 +28,14 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
     final private Collection<Id<Link>> insideLinkIds;
     final private Collection<Id<Link>> outsideLinkIds;
 
-    public CountsHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> insideLinkdIds, Collection<Id<Link>> outsideLinkIds) {
+    final private Collection<Id<Person>> evPersonIds;
+
+    public CountsHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> insideLinkdIds, Collection<Id<Link>> outsideLinkIds, Collection<Id<Person>> evPersonIds) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
         this.insideLinkIds = insideLinkdIds;
         this.outsideLinkIds = outsideLinkIds;
+        this.evPersonIds = evPersonIds;
     }
 
     @Override
@@ -67,6 +70,10 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
                     } else if (entersVehicleEvent.getVehicleId().toString().contains("pool")) {
                         mode = "av_pool";
                     }
+                }
+
+                if (mode.equals("car") && evPersonIds.contains(event.getPersonId())) {
+                    mode = "ev";
                 }
 
                 if (binCalculator.isCoveredValue(departureEvent.getTime())) {
