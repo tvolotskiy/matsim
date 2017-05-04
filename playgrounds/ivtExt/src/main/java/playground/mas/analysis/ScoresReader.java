@@ -15,7 +15,9 @@ public class ScoresReader {
             Plan plan = person.getSelectedPlan();
             Coord homeCoord = findHomeLocation(plan);
 
-            dataFrame.scores.add(DataFrame.createScore(homeCoord.getX(), homeCoord.getY(), plan.getScore()));
+            if (homeCoord != null) {
+                dataFrame.scores.add(DataFrame.createScore(homeCoord.getX(), homeCoord.getY(), plan.getScore()));
+            }
         }
     }
 
@@ -30,6 +32,6 @@ public class ScoresReader {
             }
         }
 
-        throw new RuntimeException("No home location found.");
+        return null;
     }
 }
