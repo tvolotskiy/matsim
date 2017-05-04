@@ -7,6 +7,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.vehicles.Vehicle;
+import playground.mas.cordon.CordonState;
 import playground.mas.cordon.MASCordonUtils;
 import playground.sebhoerl.av_paper.BinCalculator;
 import playground.sebhoerl.avtaxi.data.AVOperator;
@@ -24,12 +25,15 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonEntersV
     final private Map<Id<Person>, PersonDepartureEvent> departures = new HashMap<>();
     final private Set<Id<Vehicle>> vehicles = new HashSet<>();
 
-    public CordonHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Person>> evPersonIds, Collection<Id<AVOperator>> chargedOperatorIds, Collection<Id<Link>> cordonLinkIds) {
+    final private CordonState cordonState;
+
+    public CordonHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Person>> evPersonIds, Collection<Id<AVOperator>> chargedOperatorIds, Collection<Id<Link>> cordonLinkIds, CordonState cordonState) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
         this.evPersonIds = evPersonIds;
         this.chargedOperatorIds = chargedOperatorIds;
         this.cordonLinkIds = cordonLinkIds;
+        this.cordonState = cordonState;
     }
 
     @Override
@@ -57,14 +61,16 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonEntersV
 
     @Override
     public void handleEvent(LinkEnterEvent event) {
-        if (cordonLinkIds.contains(event.getLinkId())) {
-            if (vehicles.contains(event.getVehicleId())) {
-                if (binCalculator.isCoveredValue(event.getTime())) {
-                    DataFrame.increment(dataFrame.chargeableCordonCrossings, binCalculator.getIndex(event.getTime()));
-                }
-            } else {
-                if (binCalculator.isCoveredValue(event.getTime())) {
-                    DataFrame.increment(dataFrame.cordonCrossings, binCalculator.getIndex(event.getTime()));
+        if (cordonState.isCordonActive(event.getTime())) {
+            if (cordonLinkIds.contains(event.getLinkId())) {
+                if (vehicles.contains(event.getVehicleId())) {
+                    if (binCalculator.isCoveredValue(event.getTime())) {
+                        DataFrame.increment(dataFrame.chargeableCordonCrossings, binCalculator.getIndex(event.getTime()));
+                    }
+                } else {
+                    if (binCalculator.isCoveredValue(event.getTime())) {
+                        DataFrame.increment(dataFrame.cordonCrossings, binCalculator.getIndex(event.getTime()));
+                    }
                 }
             }
         }

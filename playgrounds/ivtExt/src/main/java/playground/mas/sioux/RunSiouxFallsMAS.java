@@ -50,18 +50,6 @@ public class RunSiouxFallsMAS {
         controler.addOverridingModule(new AVModule());
         controler.addOverridingModule(new MASModule());
 
-        // 3. Scoring
-
-        controler.addOverridingModule(new AbstractModule() {
-            @Override
-            public void install() {}
-
-            @Provides @Singleton
-            ScoringFunctionFactory provideScoringFunctionFactory(AVScoringFunctionFactory delegate, Scenario scenario, AVConfig config, CordonCharger charger) {
-                return new MASScoringFunctionFactory(delegate, scenario, charger);
-            }
-        });
-
         // 4. Run
 
         controler.run();

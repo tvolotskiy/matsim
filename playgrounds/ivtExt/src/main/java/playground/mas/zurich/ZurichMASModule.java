@@ -48,11 +48,6 @@ public class ZurichMASModule extends AbstractModule {
                 scenario, config);
     }
 
-    @Provides @Singleton
-    ScoringFunctionFactory provideScoringFunctionFactory(AVScoringFunctionFactory delegate, Scenario scenario, AVConfig config, CordonCharger charger) {
-        return new MASScoringFunctionFactory(delegate, scenario, charger);
-    }
-
     @Provides @Singleton @Named(AV_AREA_LINKS)
     public Collection<Id<Link>> provideAVAreaLinkIds(ZurichMASConfigGroup masConfig, Network network) {
         return MASCordonUtils.findInsideCordonLinks(masConfig.getAVAreaCenterNodeId(), masConfig.getAVAreaRadius(), network)

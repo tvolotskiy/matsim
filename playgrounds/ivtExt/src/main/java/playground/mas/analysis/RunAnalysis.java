@@ -13,6 +13,8 @@ import org.matsim.core.events.MatsimEventsReader;
 import org.matsim.core.scenario.ScenarioUtils;
 import playground.mas.MASConfigGroup;
 import playground.mas.MASModule;
+import playground.mas.cordon.CordonState;
+import playground.mas.cordon.IntervalCordonState;
 import playground.mas.cordon.MASCordonUtils;
 import playground.sebhoerl.av_paper.BinCalculator;
 
@@ -30,6 +32,9 @@ public class RunAnalysis {
         MASConfigGroup masConfigGroup = new MASConfigGroup();
         Config config = ConfigUtils.loadConfig(configPath, masConfigGroup);
 
+        IntervalCordonState cordonState = new IntervalCordonState();
+        new IntervalCordonState.Reader(cordonState).read(masConfigGroup.getCordonIntervals());
+
         Scenario scenario = ScenarioUtils.loadScenario(config);
 
         Collection<Link> cordonLinks = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), scenario.getNetwork());
@@ -46,7 +51,7 @@ public class RunAnalysis {
 
         EventsManager eventsManager = EventsUtils.createEventsManager(config);
         eventsManager.addHandler(new CountsHandler(dataFrame, binCalculator, insideLinkIds, outsideLinkIds, evPersonIds));
-        eventsManager.addHandler(new CordonHandler(dataFrame, binCalculator, evPersonIds, masConfigGroup.getChargedOperatorIds(), cordonLinkIds));
+        eventsManager.addHandler(new CordonHandler(dataFrame, binCalculator, evPersonIds, masConfigGroup.getChargedOperatorIds(), cordonLinkIds, cordonState));
         eventsManager.addHandler(new DistancesHandler(dataFrame, binCalculator, scenario.getNetwork(), evPersonIds));
         eventsManager.addHandler(new AVHandler(dataFrame, binCalculator));
 

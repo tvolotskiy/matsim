@@ -21,7 +21,7 @@ public class MASCarTravelDisutility implements TravelDisutility {
 
     @Override
     public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-        return delegate.getLinkTravelDisutility(link, time, person, vehicle) + (evUserIds.contains(person.getId()) ? 0.0 : cordonDisutility.getCordonDisutility(link));
+        return delegate.getLinkTravelDisutility(link, time, person, vehicle) + (evUserIds.contains(person.getId()) ? 0.0 : cordonDisutility.getCordonDisutility(link, time));
     }
 
     @Override

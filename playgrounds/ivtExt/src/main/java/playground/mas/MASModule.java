@@ -17,7 +17,11 @@ import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.router.costcalculators.RandomizingTimeDistanceTravelDisutilityFactory;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.scoring.ScoringFunctionFactory;
+import org.matsim.core.utils.collections.Tuple;
+import org.matsim.core.utils.misc.Time;
 import playground.mas.cordon.CordonCharger;
+import playground.mas.cordon.CordonState;
+import playground.mas.cordon.IntervalCordonState;
 import playground.mas.cordon.MASCordonUtils;
 import playground.mas.dispatcher.MASPoolDispatcherFactory;
 import playground.mas.dispatcher.MASSoloDispatcherFactory;
@@ -49,6 +53,8 @@ public class MASModule extends AbstractModule {
 
         AVUtils.bindDispatcherFactory(binder(), "MAS_Solo").to(MASSoloDispatcherFactory.class);
         AVUtils.bindDispatcherFactory(binder(), "MAS_Pool").to(MASPoolDispatcherFactory.class);
+
+        bind(CordonState.class).to(IntervalCordonState.class);
     }
 
     @Provides @Singleton
@@ -58,14 +64,28 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    private MASCordonTravelDisutility provideMASCordonTravelDisutility(@Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, PlanCalcScoreConfigGroup scoreConfig, MASConfigGroup masConfig) {
-        double cordonDisutility = scoreConfig.getMarginalUtilityOfMoney() * masConfig.getCordonFee();
-        return new MASCordonTravelDisutility(cordonLinkIds, cordonDisutility);
+    private IntervalCordonState provideIntervalCordonState(MASConfigGroup masConfigGroup) {
+        IntervalCordonState intervalCordonState = new IntervalCordonState();
+
+        IntervalCordonState.Reader reader = new IntervalCordonState.Reader(intervalCordonState);
+        reader.read(masConfigGroup.getCordonIntervals());
+
+        for (Tuple<Double, Double> interval : intervalCordonState.getIntervals()) {
+            log.info("Adding cordon charge interval from " + Time.writeTime(interval.getFirst()) + " to " + Time.writeTime(interval.getSecond()));
+        }
+
+        return intervalCordonState;
     }
 
     @Provides @Singleton
-    private CordonCharger provideCordonCharger(@Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
-        return new CordonCharger(cordonLinkIds, config.getCordonFee(), config.getChargedOperatorIds(), evUserIds);
+    private MASCordonTravelDisutility provideMASCordonTravelDisutility(CordonState cordonState, @Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, PlanCalcScoreConfigGroup scoreConfig, MASConfigGroup masConfig) {
+        double cordonDisutility = scoreConfig.getMarginalUtilityOfMoney() * masConfig.getCordonFee();
+        return new MASCordonTravelDisutility(cordonState, cordonLinkIds, cordonDisutility);
+    }
+
+    @Provides @Singleton
+    private CordonCharger provideCordonCharger(CordonState cordonState, @Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
+        return new CordonCharger(cordonState, cordonLinkIds, config.getCordonFee(), config.getChargedOperatorIds(), evUserIds);
     }
 
     @Provides @Singleton @Named(CORDON_LINKS)
@@ -75,8 +95,8 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    public MASScoringFunctionFactory provideScoringFunctionFactory(AVScoringFunctionFactory delegate, Scenario scenario, AVConfig config, CordonCharger charger) {
-        return new MASScoringFunctionFactory(delegate, scenario, charger);
+    public MASScoringFunctionFactory provideScoringFunctionFactory(AVScoringFunctionFactory delegate, Scenario scenario, MASConfigGroup masConfig, CordonCharger charger, @Named(EV_USER_IDS) Collection<Id<Person>> evUserIds) {
+        return new MASScoringFunctionFactory(delegate, scenario, charger, masConfig.getAdditionalEVCostsPerKm(), evUserIds);
     }
 
     @Provides @Singleton @Named(EV_USER_IDS)

@@ -29,12 +29,14 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
     final private Collection<Id<AVOperator>> chargedOperators;
 
     final private double cordonPrice;
+    final private CordonState cordonState;
 
-    public CordonCharger(Collection<Id<Link>> cordonLinkIds, double cordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
+    public CordonCharger(CordonState cordonState, Collection<Id<Link>> cordonLinkIds, double cordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
         this.cordonLinkIds = cordonLinkIds;
         this.cordonPrice = cordonPrice;
         this.chargedOperators = chargedOperators;
         this.evUserIds = evUserIds;
+        this.cordonState = cordonState;
     }
 
     @Override
@@ -69,7 +71,7 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
         if (cordonLinkIds.contains(event.getLinkId())) {
             Id<Person> passengerId = passengers.get(event.getVehicleId());
 
-            if (passengerId != null) {
+            if (passengerId != null && cordonState.isCordonActive(event.getTime())) {
                 Double charge = charges.get(passengerId);
                 charge = (charge == null) ? cordonPrice : charge + cordonPrice;
                 charges.put(passengerId, charge);

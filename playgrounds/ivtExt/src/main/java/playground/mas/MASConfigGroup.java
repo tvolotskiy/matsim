@@ -18,13 +18,19 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     final static public String CORDON_RADIUS = "cordonRadius";
 
     final static public String CORDON_FEE = "cordonFee";
+    final static public String CORDON_INTERVALS = "cordonIntervals";
     final static public String CHARGED_OPERATORS = "chargedOperators";
+
+    final static public String ADDITIONAL_EV_COSTS_PER_KM = "additionalEVCostsPerKm";
 
     private double cordonFee = 0.0;
     private Set<Id<AVOperator>> chargedOperators = new HashSet<>();
 
     private Id<Node> cordonCenterNodeId = null;
     private double cordonRadius = 0.0;
+
+    private double additionalEVCostsPerKm = 0.0;
+    private String cordonIntervals = "";
 
     public MASConfigGroup() {
         super(MAS);
@@ -76,5 +82,25 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     @StringSetter(CORDON_RADIUS)
     public void setCordonRadius(double radius) {
         this.cordonRadius = radius;
+    }
+
+    @StringGetter(ADDITIONAL_EV_COSTS_PER_KM)
+    public double getAdditionalEVCostsPerKm() {
+        return additionalEVCostsPerKm;
+    }
+
+    @StringSetter(ADDITIONAL_EV_COSTS_PER_KM)
+    public void setAdditionalEVCostsPerKm(double additionalEVCostsPerKm) {
+        this.additionalEVCostsPerKm = additionalEVCostsPerKm;
+    }
+
+    @StringGetter(CORDON_INTERVALS)
+    public String getCordonIntervals() {
+        return cordonIntervals;
+    }
+
+    @StringSetter(CORDON_INTERVALS)
+    public void setCordonIntervals(String cordonIntervals) {
+        this.cordonIntervals = cordonIntervals;
     }
 }
