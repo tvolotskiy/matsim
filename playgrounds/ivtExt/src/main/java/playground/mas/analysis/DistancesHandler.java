@@ -42,7 +42,7 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
             } else {
                 return "av";
             }
-        } else if (id.startsWith("bus_")) {
+        } else if (id.startsWith("bus_") || id.startsWith("pt_")) {
             return "pt";
         } else {
             return "car";
@@ -52,7 +52,7 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
     private boolean isValidAgent(Id<Person> personId) {
         String stringId = personId.toString();
 
-        if (stringId.startsWith("av_") || stringId.startsWith("bus_")) {
+        if (stringId.startsWith("av_") || stringId.startsWith("bus_") || stringId.startsWith("pt_")) {
             return false;
         }
 

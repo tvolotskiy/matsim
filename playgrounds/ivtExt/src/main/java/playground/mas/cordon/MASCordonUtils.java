@@ -34,7 +34,7 @@ public class MASCordonUtils {
     }
 
     static public boolean isPrivateVehicle(Id<Vehicle> vehicleId) {
-        return !vehicleId.toString().startsWith("av_") && !vehicleId.toString().startsWith("bus_");
+        return !vehicleId.toString().startsWith("av_") && !vehicleId.toString().startsWith("bus_") && !vehicleId.toString().startsWith("pt_");
     }
 
     static public Collection<Link> findInsideCordonLinks(Id<Node> centerId, double radius, Network network) {

@@ -5,7 +5,7 @@ import playground.sebhoerl.av_paper.BinCalculator;
 import java.util.*;
 
 public class DataFrame {
-    final private List<String> modes = Collections.unmodifiableList(Arrays.asList("car", "pt", "walk", "av_solo", "av_pool", "ev"));
+    final private List<String> modes = Collections.unmodifiableList(Arrays.asList("car", "pt", "walk", "av_solo", "av_pool", "ev", "bike"));
     final private List<String> ptModes = Collections.unmodifiableList(Arrays.asList("pt", "av_solo", "av_pool"));
     final private List<String> avModes = Collections.unmodifiableList(Arrays.asList("av_solo", "av_pool"));
 

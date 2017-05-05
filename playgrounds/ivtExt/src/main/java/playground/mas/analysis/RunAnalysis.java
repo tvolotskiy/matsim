@@ -59,6 +59,7 @@ public class RunAnalysis {
 
         new MatsimEventsReader(eventsManager).readFile(eventsPath);
         new ScoresReader(dataFrame).read(scenario.getPopulation());
+        new SlowModeReader(dataFrame, binCalculator).read(scenario.getPopulation());
 
         (new ObjectMapper()).writeValue(new File(outputPath), dataFrame);
     }
