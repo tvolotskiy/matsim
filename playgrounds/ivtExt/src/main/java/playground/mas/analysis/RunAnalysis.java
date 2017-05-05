@@ -16,6 +16,7 @@ import playground.mas.MASModule;
 import playground.mas.cordon.CordonState;
 import playground.mas.cordon.IntervalCordonState;
 import playground.mas.cordon.MASCordonUtils;
+import playground.mas.zurich.ZurichMASConfigGroup;
 import playground.sebhoerl.av_paper.BinCalculator;
 
 import java.io.File;
@@ -29,6 +30,8 @@ public class RunAnalysis {
         String eventsPath = args[1];
         String outputPath = args[2];
 
+        ZurichMASConfigGroup zurichMASConfigGroup = new ZurichMASConfigGroup();
+
         MASConfigGroup masConfigGroup = new MASConfigGroup();
         Config config = ConfigUtils.loadConfig(configPath, masConfigGroup);
 
@@ -40,9 +43,16 @@ public class RunAnalysis {
         Collection<Link> cordonLinks = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), scenario.getNetwork());
         Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), scenario.getNetwork());
 
+        Collection<Id<Link>> allLinks = scenario.getNetwork().getLinks().values().stream().map(l -> l.getId()).collect(Collectors.toList());
+
+        if (zurichMASConfigGroup.getAVAreaCenterNodeId() != null) {
+            allLinks = MASCordonUtils.findInsideCordonLinks(zurichMASConfigGroup.getAVAreaCenterNodeId(), zurichMASConfigGroup.getAVAreaRadius(), scenario.getNetwork())
+                    .stream().map(l -> l.getId()).collect(Collectors.toList());
+        }
+
         Collection<Id<Link>> cordonLinkIds = cordonLinks.stream().map(l -> l.getId()).collect(Collectors.toList());
         Collection<Id<Link>> insideLinkIds = insideLinks.stream().map(l -> l.getId()).collect(Collectors.toList());
-        Collection<Id<Link>> outsideLinkIds = scenario.getNetwork().getLinks().values().stream().filter(l -> !insideLinkIds.contains(l.getId())).map(l -> l.getId()).collect(Collectors.toList());
+        Collection<Id<Link>> outsideLinkIds = allLinks.stream().filter(id -> !insideLinkIds.contains(id)).collect(Collectors.toList());
 
         Collection<Id<Person>> evPersonIds = new MASModule().provideEVUserIds(scenario.getPopulation());
 

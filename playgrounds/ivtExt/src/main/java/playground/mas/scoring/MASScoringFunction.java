@@ -34,7 +34,7 @@ public class MASScoringFunction implements SumScoringFunction.BasicScoring, SumS
     @Override
     public void handleLeg(Leg leg) {
         if (leg.getMode().equals("car") && isEVUser) {
-            score += additionalEVCostPerKm * marginalUtilityOfMoney * leg.getRoute().getDistance() / 1000.0;
+            score -= additionalEVCostPerKm * marginalUtilityOfMoney * leg.getRoute().getDistance() / 1000.0;
         }
     }
 }
