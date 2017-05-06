@@ -5,11 +5,14 @@ import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.events.EventsUtils;
 import org.matsim.core.events.MatsimEventsReader;
+import org.matsim.core.population.PopulationUtils;
+import org.matsim.core.population.io.PopulationReader;
 import org.matsim.core.scenario.ScenarioUtils;
 import playground.mas.MASConfigGroup;
 import playground.mas.MASModule;
@@ -28,12 +31,15 @@ public class RunAnalysis {
     static public void main(String[] args) throws IOException {
         String configPath = args[0];
         String eventsPath = args[1];
-        String outputPath = args[2];
+        String populationPath = args[2];
+        String outputPath = args[3];
 
         ZurichMASConfigGroup zurichMASConfigGroup = new ZurichMASConfigGroup();
 
         MASConfigGroup masConfigGroup = new MASConfigGroup();
         Config config = ConfigUtils.loadConfig(configPath, masConfigGroup);
+
+        config.plans().setInputFile(populationPath);
 
         IntervalCordonState cordonState = new IntervalCordonState();
         new IntervalCordonState.Reader(cordonState).read(masConfigGroup.getCordonIntervals());
@@ -56,7 +62,7 @@ public class RunAnalysis {
 
         Collection<Id<Person>> evPersonIds = new MASModule().provideEVUserIds(scenario.getPopulation());
 
-        BinCalculator binCalculator = BinCalculator.createByInterval(0.0, 24.0 * 3600.0, 900.0);
+        BinCalculator binCalculator = BinCalculator.createByInterval(0.0, 24.0 * 3600.0, 300.0);
         DataFrame dataFrame = new DataFrame(binCalculator);
 
         EventsManager eventsManager = EventsUtils.createEventsManager(config);
@@ -64,8 +70,6 @@ public class RunAnalysis {
         eventsManager.addHandler(new CordonHandler(dataFrame, binCalculator, evPersonIds, masConfigGroup.getChargedOperatorIds(), cordonLinkIds, cordonState));
         eventsManager.addHandler(new DistancesHandler(dataFrame, binCalculator, scenario.getNetwork(), evPersonIds));
         eventsManager.addHandler(new AVHandler(dataFrame, binCalculator));
-
-
 
         new MatsimEventsReader(eventsManager).readFile(eventsPath);
         new ScoresReader(dataFrame).read(scenario.getPopulation());

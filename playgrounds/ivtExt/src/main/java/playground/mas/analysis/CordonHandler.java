@@ -61,16 +61,14 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonEntersV
 
     @Override
     public void handleEvent(LinkEnterEvent event) {
-        if (cordonState.isCordonActive(event.getTime())) {
-            if (cordonLinkIds.contains(event.getLinkId())) {
-                if (vehicles.contains(event.getVehicleId())) {
-                    if (binCalculator.isCoveredValue(event.getTime())) {
-                        DataFrame.increment(dataFrame.chargeableCordonCrossings, binCalculator.getIndex(event.getTime()));
-                    }
-                } else {
-                    if (binCalculator.isCoveredValue(event.getTime())) {
-                        DataFrame.increment(dataFrame.cordonCrossings, binCalculator.getIndex(event.getTime()));
-                    }
+        if (cordonLinkIds.contains(event.getLinkId())) {
+            if (vehicles.contains(event.getVehicleId()) && cordonState.isCordonActive(event.getTime())) {
+                if (binCalculator.isCoveredValue(event.getTime())) {
+                    DataFrame.increment(dataFrame.chargeableCordonCrossings, binCalculator.getIndex(event.getTime()));
+                }
+            } else {
+                if (binCalculator.isCoveredValue(event.getTime())) {
+                    DataFrame.increment(dataFrame.cordonCrossings, binCalculator.getIndex(event.getTime()));
                 }
             }
         }

@@ -20,10 +20,8 @@ public class SlowModeReader {
                 if (planElement instanceof Leg) {
                     Leg leg = (Leg) planElement;
 
-                    if (leg.getMode().equals("walk") || leg.getMode().equals("bike")) {
-                        for (BinCalculator.BinEntry entry : binCalculator.getBinEntriesNormalized(leg.getDepartureTime(), leg.getDepartureTime() + leg.getTravelTime())) {
-                            DataFrame.increment(dataFrame.passengerDistances, leg.getMode(), entry.getIndex(), entry.getWeight() * leg.getRoute().getDistance());
-                        }
+                    if ((leg.getMode().equals("walk") || leg.getMode().equals("bike")) && binCalculator.isCoveredValue(leg.getDepartureTime())) {
+                        DataFrame.increment(dataFrame.passengerDistances, leg.getMode(), binCalculator.getIndex(leg.getDepartureTime()));
                     }
                 }
             }

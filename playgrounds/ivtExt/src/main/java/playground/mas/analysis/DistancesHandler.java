@@ -13,7 +13,7 @@ import playground.sebhoerl.avtaxi.data.AVOperator;
 import javax.xml.crypto.Data;
 import java.util.*;
 
-public class DistancesHandler implements PersonEntersVehicleEventHandler, PersonLeavesVehicleEventHandler, LinkEnterEventHandler, LinkLeaveEventHandler, VehicleLeavesTrafficEventHandler {
+public class DistancesHandler implements TransitDriverStartsEventHandler, PersonEntersVehicleEventHandler, PersonLeavesVehicleEventHandler, LinkEnterEventHandler, LinkLeaveEventHandler, VehicleLeavesTrafficEventHandler {
     final private DataFrame dataFrame;
     final private BinCalculator binCalculator;
 
@@ -23,6 +23,7 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
     final private Map<Id<Vehicle>, LinkEnterEvent> enterEvents = new HashMap<>();
 
     final private Collection<Id<Person>> evPersonIds;
+    final private Set<Id<Vehicle>> transitVehicleIds = new HashSet<>();
 
     DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Collection<Id<Person>> evPersonIds) {
         this.dataFrame = dataFrame;
@@ -42,7 +43,7 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
             } else {
                 return "av";
             }
-        } else if (id.startsWith("bus_") || id.startsWith("pt_")) {
+        } else if (id.startsWith("bus_") || id.startsWith("pt_") || transitVehicleIds.contains(vehicleId)) {
             return "pt";
         } else {
             return "car";
@@ -108,10 +109,10 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
 
             List<Double> occupancySlot = mode.equals("av_pool") ? dataFrame.distanceByPoolOccupancy.get(occupancy) : null;
 
-            for (BinCalculator.BinEntry binEntry : binCalculator.getBinEntriesNormalized(enterEvent.getTime(), event.getTime())) {
-                DataFrame.increment(dataFrame.vehicleDistances, mode, binEntry.getIndex(), binEntry.getWeight() * length);
-                DataFrame.increment(dataFrame.passengerDistances, mode, binEntry.getIndex(), binEntry.getWeight() * length * occupancy);
-                if (occupancySlot != null) DataFrame.increment(occupancySlot, binEntry.getIndex(), binEntry.getWeight() * length);
+            if (binCalculator.isCoveredValue(enterEvent.getTime())) {
+                DataFrame.increment(dataFrame.vehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
+                DataFrame.increment(dataFrame.passengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
+                if (occupancySlot != null) DataFrame.increment(occupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
             }
         }
     }
@@ -123,4 +124,9 @@ public class DistancesHandler implements PersonEntersVehicleEventHandler, Person
 
     @Override
     public void reset(int iteration) {}
+
+    @Override
+    public void handleEvent(TransitDriverStartsEvent event) {
+        transitVehicleIds.add(event.getVehicleId());
+    }
 }
