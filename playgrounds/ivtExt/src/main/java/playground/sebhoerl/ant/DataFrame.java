@@ -9,11 +9,13 @@ import java.util.*;
 
 public class DataFrame {
     @JsonIgnore final public List<String> modes = Arrays.asList("car", "pt", "walk", "av");
+    @JsonIgnore final public List<String> avStates = Arrays.asList("AVStay", "AVRecharge", "AVPickup", "AVDropoff");
     @JsonIgnore final public BinCalculator binCalculator;
 
     final public Map<String, List<Integer>> departureCount;
     final public Map<String, List<Integer>> arrivalCount;
     final public Map<String, List<Double>> travellerCount;
+    final public Map<String, List<Double>> avStateCount;
 
     final public List<Double> waitingCount;
     final public List<List<Double>> waitingTimes;
@@ -43,6 +45,7 @@ public class DataFrame {
         this.relevantOperator = relevantOperator;
         this.binCalculator = binCalculator;
 
+        avStateCount = initialize(avStates, 0.0);
         departureCount = initialize(modes, 0);
         arrivalCount = initialize(modes, 0);
         travellerCount = initialize(modes, 0.0);
