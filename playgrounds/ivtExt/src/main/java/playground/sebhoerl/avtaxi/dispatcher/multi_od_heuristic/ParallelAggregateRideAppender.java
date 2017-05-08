@@ -103,7 +103,7 @@ public class ParallelAggregateRideAppender implements AggregateRideAppender {
 
             currentTime += shortestTravelTime + timing.getDropoffDurationPerPassenger();
 
-            if (currentLink.equals(closestRequest.getFromLink())) {
+            if (!currentLink.equals(closestRequest.getFromLink())) {
                 currentTime += timing.getDropoffDurationPerStop();
             }
 
@@ -128,7 +128,7 @@ public class ParallelAggregateRideAppender implements AggregateRideAppender {
 
             currentTime += shortestTravelTime + timing.getDropoffDurationPerPassenger();
 
-            if (currentLink.equals(closestRequest.getToLink())) {
+            if (!currentLink.equals(closestRequest.getToLink())) {
                 currentTime += timing.getDropoffDurationPerStop();
             }
 
@@ -156,7 +156,7 @@ public class ParallelAggregateRideAppender implements AggregateRideAppender {
             }
         }
 
-        for (OrderedRequest dropoff : pickupOrder) {
+        for (OrderedRequest dropoff : dropoffOrder) {
             if (!dropoff.request.getToLink().equals(currentLink)) {
                 appendTask.dropoffPaths.add(router.calcLeastCostPath(currentLink.getToNode(), dropoff.request.getToLink().getFromNode(), dropoff.startTime, null, null));
                 currentLink = dropoff.request.getToLink();
