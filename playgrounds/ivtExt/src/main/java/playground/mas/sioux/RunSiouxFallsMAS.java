@@ -23,6 +23,8 @@ import playground.sebhoerl.avtaxi.framework.AVQSimProvider;
 import playground.sebhoerl.avtaxi.routing.AVRoute;
 import playground.sebhoerl.avtaxi.routing.AVRouteFactory;
 import playground.sebhoerl.avtaxi.scoring.AVScoringFunctionFactory;
+import playground.sebhoerl.recharging_avs.AVTravelTimeConfigGroup;
+import playground.sebhoerl.recharging_avs.AVTravelTimeModule;
 
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
@@ -36,7 +38,7 @@ public class RunSiouxFallsMAS {
         DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
         dvrpConfigGroup.setTravelTimeEstimationAlpha(0.05);
 
-        Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new MASConfigGroup());
+        Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new MASConfigGroup(), new AVTravelTimeConfigGroup());
 
         Scenario scenario = ScenarioUtils.createScenario(config);
         scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(AVRoute.class, new AVRouteFactory());
@@ -49,6 +51,7 @@ public class RunSiouxFallsMAS {
         controler.addOverridingModule(new DynQSimModule<>(AVQSimProvider.class));
         controler.addOverridingModule(new AVModule());
         controler.addOverridingModule(new MASModule());
+        controler.addOverridingModule(new AVTravelTimeModule());
 
         // 4. Run
 

@@ -14,8 +14,12 @@ public class AVTravelTimeModule extends AbstractModule {
         bind(AVTravelTimeTracker.class).asEagerSingleton();
         addEventHandlerBinding().to(AVTravelTimeTracker.class).asEagerSingleton();
 
-        bind(TravelTime.class).annotatedWith(Names.named(AVModule.AV_MODE))
-                .to(AVTravelTime.class);
+        AVTravelTimeConfigGroup config = (AVTravelTimeConfigGroup) getConfig().getModules().get(AVTravelTimeConfigGroup.AV_TRAVEL_TIME);
+
+        if (config.getTravelTimeType() == AVTravelTimeConfigGroup.AVTravelTimeType.ONLINE) {
+            bind(TravelTime.class).annotatedWith(Names.named(AVModule.AV_MODE))
+                    .to(AVTravelTime.class);
+        }
     }
 
     @Provides @Singleton
