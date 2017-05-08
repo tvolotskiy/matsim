@@ -98,6 +98,8 @@ public class ScheduleImpl implements Schedule {
 			Task previousTask = tasks.get(taskIdx - 1);
 
 			if (previousTask.getEndTime() != beginTime) {
+				System.err.println(previousTask.getClass().toString());
+				System.err.println(task.getClass().toString());
 				throw new IllegalArgumentException();
 			}
 

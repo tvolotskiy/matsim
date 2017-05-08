@@ -24,6 +24,7 @@ import playground.sebhoerl.avtaxi.framework.AVModule;
 import playground.sebhoerl.avtaxi.passenger.AVRequest;
 import playground.sebhoerl.avtaxi.schedule.AVStayTask;
 import playground.sebhoerl.avtaxi.schedule.AVTask;
+import playground.sebhoerl.plcpc.ParallelLeastCostPathCalculator;
 
 import java.util.*;
 
@@ -48,13 +49,13 @@ public class MultiODHeuristic implements AVDispatcher {
     private SingleHeuristicDispatcher.HeuristicMode mode = SingleHeuristicDispatcher.HeuristicMode.OVERSUPPLY;
 
     final private AggregateRideAppender appender;
-    final private TravelTimeEstimator estimator;
+    final private FactorTravelTimeEstimator estimator;
 
     final private Map<Long, Long> shareHistogram = new HashMap<>();
 
     private double now;
 
-    public MultiODHeuristic(Id<AVOperator> operatorId, EventsManager eventsManager, Network network, AggregateRideAppender appender, TravelTimeEstimator estimator) {
+    public MultiODHeuristic(Id<AVOperator> operatorId, EventsManager eventsManager, Network network, AggregateRideAppender appender, FactorTravelTimeEstimator estimator) {
         this.operatorId = operatorId;
         this.eventsManager = eventsManager;
         this.appender = appender;
@@ -128,6 +129,7 @@ public class MultiODHeuristic implements AVDispatcher {
 
     @Override
     public void onNextTimestep(double now) {
+        appender.update();
         this.now = now;
         if (reoptimize) reoptimize(now);
     }
@@ -217,18 +219,25 @@ public class MultiODHeuristic implements AVDispatcher {
         private LeastCostPathCalculator router;
 
         @Inject @Named(AVModule.AV_MODE)
+        private ParallelLeastCostPathCalculator paralellRouter;
+
+        @Inject @Named(AVModule.AV_MODE)
         private TravelTime travelTime;
 
         @Override
         public AVDispatcher createDispatcher(AVDispatcherConfig config) {
-            double threshold = Double.parseDouble(config.getParams().getOrDefault("aggregationThreshold", "600.0"));
-            TravelTimeEstimator estimator = new TravelTimeEstimator(router, threshold);
+            double threshold = Double.parseDouble(config.getParams().getOrDefault("maximumTimeRadius", "600.0"));
+            boolean useParallelImplementation = Boolean.parseBoolean(config.getParams().getOrDefault("useParallelImplementation", "true"));
+
+            FactorTravelTimeEstimator estimator = new FactorTravelTimeEstimator(threshold);
 
             return new MultiODHeuristic(
                     config.getParent().getId(),
                     eventsManager,
                     network,
-                    new AggregateRideAppender(config, router, travelTime, estimator),
+                    useParallelImplementation ?
+                            new ParallelAggregateRideAppender(config, paralellRouter, travelTime, estimator) :
+                            new SerialAggregateRideAppender(config, router, travelTime, estimator),
                     estimator
             );
         }
