@@ -56,7 +56,6 @@ public class AVTravelTimeTracker implements LinkEnterEventHandler, LinkLeaveEven
     }
 
     public LinkTravelTime getLinkTravelTime(Id<Link> linkId) {
-        LinkTravelTime travelTime = travelTimes.get(linkId);
-        return (travelTime == null) ? new LinkTravelTime() : travelTime;
+        return travelTimes.get(linkId);
     };
 }

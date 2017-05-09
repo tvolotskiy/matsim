@@ -34,6 +34,8 @@ import playground.sebhoerl.avtaxi.framework.AVConfigGroup;
 import playground.sebhoerl.avtaxi.framework.AVModule;
 import playground.sebhoerl.avtaxi.framework.AVQSimProvider;
 import playground.sebhoerl.avtaxi.framework.AVUtils;
+import playground.sebhoerl.avtaxi.routing.AVRoute;
+import playground.sebhoerl.avtaxi.routing.AVRouteFactory;
 import playground.sebhoerl.avtaxi.scoring.AVScoringFunctionFactory;
 import playground.sebhoerl.recharging_avs.AVTravelTimeConfigGroup;
 import playground.sebhoerl.recharging_avs.AVTravelTimeModule;
@@ -59,7 +61,10 @@ public class RunZurichMAS {
         dvrpConfigGroup.setTravelTimeEstimationAlpha(0.05);
 
         Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new BlackListedTimeAllocationMutatorConfigGroup(), new MASConfigGroup(), new ZurichMASConfigGroup(), new AVTravelTimeConfigGroup());
-        Scenario scenario = ScenarioUtils.loadScenario(config);
+
+        Scenario scenario = ScenarioUtils.createScenario(config);
+        scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(AVRoute.class, new AVRouteFactory());
+        ScenarioUtils.loadScenario(scenario);
 
         // 2. Controller setup
 

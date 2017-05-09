@@ -71,9 +71,22 @@ public class ParallelLeastCostPathCalculator implements MobsimAfterSimStepListen
 
     @Override
     public void notifyMobsimAfterSimStep(MobsimAfterSimStepEvent e) {
-        for (ParallelLeastCostPathCalculatorWorker worker : workers) {
-            worker.waitForTasksToFinish();
+        long nextNotice = System.currentTimeMillis() + 10000;
+
+        while (workers.stream().filter(w -> !w.isDone()).count() > 0) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e1) {}
+
+            if (System.currentTimeMillis() >= nextNotice) {
+                nextNotice += 10000;
+                log.info("Waiting for parallel routers ...");
+            }
         }
+
+        //for (ParallelLeastCostPathCalculatorWorker worker : workers) {
+        //    worker.waitForTasksToFinish();
+        //}
 
         if (sequentialWorker != null) {
             sequentialWorker.run();

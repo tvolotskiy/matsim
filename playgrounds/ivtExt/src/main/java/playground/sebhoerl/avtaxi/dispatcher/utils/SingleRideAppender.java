@@ -58,8 +58,16 @@ public class SingleRideAppender {
         Schedule schedule = vehicle.getSchedule();
         AVStayTask stayTask = (AVStayTask) Schedules.getLastTask(schedule);
 
-        LeastCostPathFuture pickup = router.calcLeastCostPath(stayTask.getLink().getToNode(), request.getFromLink().getFromNode(), now, null, null);
-        LeastCostPathFuture dropoff = router.calcLeastCostPath(request.getFromLink().getToNode(), request.getToLink().getFromNode(), now, null, null);
+        double startTime;
+
+        if (stayTask.getStatus() == Task.TaskStatus.STARTED) {
+            startTime = now;
+        } else {
+            startTime = stayTask.getBeginTime();
+        }
+
+        LeastCostPathFuture pickup = router.calcLeastCostPath(stayTask.getLink().getToNode(), request.getFromLink().getFromNode(), startTime, null, null);
+        LeastCostPathFuture dropoff = router.calcLeastCostPath(request.getFromLink().getToNode(), request.getToLink().getFromNode(), startTime, null, null);
 
         tasks.add(new AppendTask(request, vehicle, now, pickup, dropoff));
     }

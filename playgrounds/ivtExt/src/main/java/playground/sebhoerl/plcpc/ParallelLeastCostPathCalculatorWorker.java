@@ -24,6 +24,11 @@ public class ParallelLeastCostPathCalculatorWorker extends Thread implements Lea
     }
 
     @Override
+    public boolean isDone() {
+        return pending.peek() == null;
+    }
+
+    @Override
     public void run() {
         try {
             while (true) {

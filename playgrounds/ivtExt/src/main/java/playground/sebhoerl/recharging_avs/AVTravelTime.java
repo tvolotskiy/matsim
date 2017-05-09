@@ -1,5 +1,6 @@
 package playground.sebhoerl.recharging_avs;
 
+import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
@@ -23,10 +24,10 @@ public class AVTravelTime implements TravelTime {
         AVTravelTimeTracker.LinkTravelTime travelTime = travelTimeTracker.getLinkTravelTime(link.getId());
         double delegateTravelTime = delegate.getLinkTravelTime(link, Math.max(0.0, time), person, vehicle);
 
-        if (!Double.isNaN(travelTime.travelTime) && !Double.isNaN(travelTime.updateTime) && travelTime.updateTime > time - maximumInterpolationTime) {
-            return interpolate(delegateTravelTime, travelTime.travelTime, (time - travelTime.updateTime) / maximumInterpolationTime);
+        if (travelTime != null && !Double.isNaN(travelTime.travelTime) && !Double.isNaN(travelTime.updateTime) && time < travelTime.updateTime + maximumInterpolationTime) {
+            return Math.max(1.0, interpolate(delegateTravelTime, travelTime.travelTime, Math.max(0.0, (time - travelTime.updateTime)) / maximumInterpolationTime));
         } else {
-            return delegateTravelTime;
+            return Math.max(1.0, delegateTravelTime);
         }
     }
 
