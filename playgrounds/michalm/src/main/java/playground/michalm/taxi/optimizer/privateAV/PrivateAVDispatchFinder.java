@@ -17,15 +17,13 @@
  *                                                                         *
  * *********************************************************************** */
 
-package playground.michalm.taxi.privateAV;
+package playground.michalm.taxi.optimizer.privateAV;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.matsim.contrib.dvrp.data.Vehicle;
 import org.matsim.contrib.taxi.data.TaxiRequest;
 import org.matsim.contrib.taxi.optimizer.*;
-import org.matsim.contrib.taxi.scheduler.TaxiScheduleInquiry;
 
 /**
  * @author michalm
