@@ -30,6 +30,7 @@ import org.matsim.contrib.taxi.optimizer.*;
 import org.matsim.contrib.taxi.schedule.*;
 import org.matsim.contrib.taxi.schedule.TaxiTask.TaxiTaskType;
 import org.matsim.contrib.zone.*;
+import org.matsim.core.trafficmonitoring.OptimisticTravelTimeAggregator;
 
 /**
  * @author michalm
@@ -128,9 +129,15 @@ public class RuleBasedTaxiOptimizer extends AbstractTaxiOptimizer {
 			}
 
 			BestDispatchFinder.Dispatch<TaxiRequest> best = dispatchFinder.findBestVehicleForRequest(req, selectedVehs);
-
+			if (best!=null){
+				// we can schedule the vehicle
 			getOptimContext().scheduler.scheduleRequest(best.vehicle, best.destination, best.path);
-
+			}
+			else {
+				// no vehicle found == 
+				// we set the agent to abort. Note this does not automatically create a Stuck Event, for that we would need the events manager here
+				req.getPassenger().setStateToAbort(req.getSubmissionTime());
+			}
 			reqIter.remove();
 			unplannedRequestRegistry.removeRequest(req);
 			idleCount--;
