@@ -30,16 +30,19 @@ public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 	private static final boolean logForDebug = false;
 	
 	private Network network;
-	private static final double MIN_THRESHOLD_PROB_FUNCTION = 10;
-	private static final double MAX_THRESHOLD_PROB_FUNCTION = 30;
-	private static final double ACCEPTED_DISTANCE_INCREASING_RATE_PER_MIN = 30;
-	private static final double ACCEPTED_DISTANCE_MAX = 600;
-	private final Random random = MatsimRandom.getLocalInstance();
+	private static final double MIN_THRESHOLD_PROB_FUNCTION = 2;
+	private static final double MAX_THRESHOLD_PROB_FUNCTION = 4;
 	
 	//Grenzen für Übergang von Phase 1 -> 2 bzw. 2->3
-	private static final double THRESHOLD_OBSERVING_METER = 500;
-	private static final double THRESHOLD_PARKING_METER = 210;	
-
+	private static final double THRESHOLD_OBSERVING_METER = 1000;
+	private static final double THRESHOLD_PARKING_METER = 500;
+	
+	private static final double ACCEPTED_DISTANCE_START = 100;
+	private static final double ACCEPTED_DISTANCE_INCREASING_RATE_PER_MIN = 100;
+	private static final double ACCEPTED_DISTANCE_MAX = 600;
+	
+	private final Random random = MatsimRandom.getLocalInstance();
+	
 	public BenensonParkingSearchLogic(Network network) {
 		this.network = network;
 	}
@@ -113,7 +116,7 @@ public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 			if(keys.size() == 0){	//kein outlink in acceptaple Distance
 				keys = new ArrayList<>(currentLink.getToNode().getOutLinks().keySet());
 				logger.error("vehicle " + vehicleId + " finds no outlink in acceptable distance going out from link " + currentLinkId + ". it just takes a random next link");
-				return nextLink;
+				return keys.get(random.nextInt(keys.size()));
 			}
 			nextLink= keys.get(random.nextInt(keys.size()));	
 		}
@@ -164,7 +167,7 @@ public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 	 * @param timeOfDay
 	 * @return
 	 */
-	public boolean isDriverInAcceptableDistance(Id<Link> currentLinkId, Id<Link> endLinkId,	double firstDestLinkEnterTime, double timeOfDay) {
+	private boolean isDriverInAcceptableDistance(Id<Link> currentLinkId, Id<Link> endLinkId,	double firstDestLinkEnterTime, double timeOfDay) {
 
 		// if we're on the destinationLink, we always want to park
 		if(currentLinkId.equals(endLinkId)) return true;
@@ -172,7 +175,7 @@ public class BenensonParkingSearchLogic implements ParkingSearchLogic {
 		double distToDest = NetworkUtils.getEuclideanDistance(network.getLinks().get(currentLinkId).getCoord(), network.getLinks().get(endLinkId).getCoord());
 
 		double timeSpent = timeOfDay - firstDestLinkEnterTime;
-		double acceptedDistance = 100 + ACCEPTED_DISTANCE_INCREASING_RATE_PER_MIN * (timeSpent / 60);
+		double acceptedDistance = ACCEPTED_DISTANCE_START + ACCEPTED_DISTANCE_INCREASING_RATE_PER_MIN * (timeSpent / 60);
 		
 		if (acceptedDistance > ACCEPTED_DISTANCE_MAX) acceptedDistance = ACCEPTED_DISTANCE_MAX;
 		

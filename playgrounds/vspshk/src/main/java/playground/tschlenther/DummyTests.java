@@ -1,9 +1,17 @@
 package playground.tschlenther;
 
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
+
+import org.matsim.api.core.v01.Coord;
+import org.matsim.core.utils.collections.Tuple;
 
 import playground.tschlenther.parkingSearch.utils.ParkingTuple;
 import playground.tschlenther.processing.testapplet;
@@ -11,7 +19,19 @@ import playground.tschlenther.processing.testapplet;
 public class DummyTests {
 	
 	public static void main(String[] argS){
-		testListIndex();
+//		testListIndex();
+//		testDecimalFormat();
+//		testDateFormat();
+		testCollectionModification();
+	}
+	
+	private static void testDateFormat(){
+		String now = new SimpleDateFormat("ddMM").format(new Date());
+		System.out.println(now);
+		now = new SimpleDateFormat("ddMMyy").format(new Date());
+		System.out.println(now);
+		now = new SimpleDateFormat("ddMMyy_HH.mm").format(new Date());
+		System.out.println(now);
 	}
 	
 	private static void testListIndex(){
@@ -46,9 +66,11 @@ public class DummyTests {
 		System.out.println("halbe stunde:" + (int) (39551/1800) );
 		System.out.println("Stunde:" + (int) (39551/3600) );
 		
+		
+		
+		
 	}
-	
-	
+
 
 	private static void testArray(){
 		double[] arr1 = new double[3];
@@ -71,6 +93,16 @@ public class DummyTests {
 		System.out.println("\n ARRAY \n" + printarray(arr2));
 		
 		
+	}
+	
+	private static  void testDecimalFormat(){
+		double x = 389;
+		double y = 0.8298;
+		double z = 23.61599;
+		
+		DecimalFormat df = new DecimalFormat("##.##");
+		
+		System.out.println("x = " + df.format(x) + "\t y= " + df.format(y) + "\t z= " + df.format(z) );
 	}
 	
 	private static void testTreeSet(){
@@ -99,6 +131,44 @@ public class DummyTests {
 			str += "" + i + ":" + arr[i] + "\n";
 		}
 		return str;
+	}
+	
+	private static void testCollectionModification(){
+		List<Tuple<Coord,Double>> freeSlots = new ArrayList<Tuple<Coord,Double>>();
+
+		freeSlots.add(new Tuple<Coord, Double>(new Coord(0, 0), 1.0));
+		freeSlots.add(new Tuple<Coord, Double>(new Coord(1, 0), 2.0));
+		freeSlots.add(new Tuple<Coord, Double>(new Coord(0, 1), 3.0));
+		
+		System.out.println(freeSlots.toString());
+		List<Tuple<Coord,Double>> nList = new ArrayList<Tuple<Coord,Double>>();
+		for (Tuple<Coord, Double> t : freeSlots){ 
+			Coord c = t.getFirst();
+			nList.add(new Tuple<Coord, Double>(c,0.0));
+		}
+		System.out.println(freeSlots.toString());
+		System.out.println(nList.toString());
+		
+		Map<String,Double> map = new HashMap<String,Double>();
+		map.put("eins", 1.0);
+		map.put("zwei", 2.0);
+		map.put("drei", 3.0);
+		map.put("vier", 4.0);
+		
+		
+		for(String key: map.keySet()){
+			System.out.println("Vorher");
+			Double d = map.get(key);
+			System.out.println(key + ":" + d);
+			map.put(key, d-1);
+		}
+		
+		for(String key: map.keySet()){
+			System.out.println("Nachher");
+			Double d = map.get(key);
+			System.out.println(key + ":" + d);
+		}
+		
 	}
 
 }

@@ -20,11 +20,9 @@
 package playground.jbischoff.taxibus.scenario;
 
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.contrib.drt.taxibus.run.configuration.ConfigBasedTaxibusLaunchUtils;
-import org.matsim.contrib.drt.taxibus.run.configuration.TaxibusConfigGroup;
 import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
-import org.matsim.core.config.Config;
-import org.matsim.core.config.ConfigUtils;
+import org.matsim.contrib.taxibus.run.configuration.*;
+import org.matsim.core.config.*;
 import org.matsim.core.controler.Controler;
 import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
 import org.matsim.core.scenario.ScenarioUtils;
@@ -43,7 +41,7 @@ public class RunConfigBasedExample {
 		Scenario scenario = ScenarioUtils.loadScenario(config);
 
 		Controler controler = new Controler(scenario);
-		new ConfigBasedTaxibusLaunchUtils(controler).initiateTaxibusses();
+		new TaxibusControlerCreator(controler).initiateTaxibusses();
 		controler.run();
 	}
 }

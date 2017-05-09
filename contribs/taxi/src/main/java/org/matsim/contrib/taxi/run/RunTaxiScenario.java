@@ -20,8 +20,6 @@
 package org.matsim.contrib.taxi.run;
 
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.contrib.dvrp.data.FleetImpl;
-import org.matsim.contrib.dvrp.data.file.VehicleReader;
 import org.matsim.contrib.dvrp.run.DvrpConfigGroup;
 import org.matsim.contrib.otfvis.OTFVisLiveModule;
 import org.matsim.core.config.*;
@@ -37,17 +35,14 @@ public class RunTaxiScenario {
 	}
 
 	public static Controler createControler(Config config, boolean otfvis) {
-		TaxiConfigGroup taxiCfg = TaxiConfigGroup.get(config);
 		config.addConfigConsistencyChecker(new TaxiConfigConsistencyChecker());
 		config.checkConsistency();
 
 		Scenario scenario = ScenarioUtils.loadScenario(config);
-		FleetImpl fleet = new FleetImpl();
-		new VehicleReader(scenario.getNetwork(), fleet).parse(taxiCfg.getTaxisFileUrl(config.getContext()));
 
 		Controler controler = new Controler(scenario);
 		controler.addOverridingModule(new TaxiOutputModule());
-		controler.addOverridingModule(TaxiOptimizerModules.createDefaultModule(fleet));
+		controler.addOverridingModule(new TaxiModule());
 
 		if (otfvis) {
 			controler.addOverridingModule(new OTFVisLiveModule());
@@ -57,8 +52,9 @@ public class RunTaxiScenario {
 	}
 
 	public static void main(String[] args) {
-		String configFile = "one_taxi/one_taxi_config.xml";
-		// String configFile = "mielec_2014_02/config.xml";
-		RunTaxiScenario.run(configFile, true);
+		if (args.length != 1) {
+			throw new IllegalArgumentException("RunTaxiScenario needs one argument: path to the configuration file");
+		}
+		RunTaxiScenario.run(args[0], false);
 	}
 }

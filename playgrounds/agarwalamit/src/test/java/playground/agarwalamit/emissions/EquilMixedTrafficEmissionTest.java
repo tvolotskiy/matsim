@@ -21,6 +21,7 @@ package playground.agarwalamit.emissions;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import com.google.inject.name.Names;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -38,18 +39,21 @@ import org.matsim.api.core.v01.events.handler.LinkLeaveEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonMoneyEventHandler;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.emissions.EmissionModule;
-import org.matsim.contrib.emissions.events.*;
+import org.matsim.contrib.emissions.events.ColdEmissionEvent;
+import org.matsim.contrib.emissions.events.ColdEmissionEventHandler;
+import org.matsim.contrib.emissions.events.WarmEmissionEvent;
+import org.matsim.contrib.emissions.events.WarmEmissionEventHandler;
 import org.matsim.contrib.emissions.types.ColdPollutant;
 import org.matsim.contrib.emissions.types.HbefaVehicleCategory;
 import org.matsim.contrib.emissions.types.WarmPollutant;
 import org.matsim.contrib.emissions.utils.EmissionSpecificationMarker;
 import org.matsim.contrib.emissions.utils.EmissionsConfigGroup;
-import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.groups.QSimConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
-import org.matsim.core.events.EventsUtils;
+import org.matsim.core.router.costcalculators.RandomizingTimeDistanceTravelDisutilityFactory;
+import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.utils.collections.Tuple;
 import org.matsim.testcases.MatsimTestUtils;
 import org.matsim.vehicles.Vehicle;
@@ -78,20 +82,27 @@ public class EquilMixedTrafficEmissionTest {
 
 	private final boolean isConsideringCO2Costs ;
 
-	public EquilMixedTrafficEmissionTest (boolean isConsideringCO2Costs) {
+	private final QSimConfigGroup.VehiclesSource vehiclesSource;
+
+	public EquilMixedTrafficEmissionTest (boolean isConsideringCO2Costs, QSimConfigGroup.VehiclesSource vehiclesSource) {
 		this.isConsideringCO2Costs = isConsideringCO2Costs;
+		this.vehiclesSource = vehiclesSource;
 		logger.info("Each parameter will be used in all the tests i.e. all tests will be run while inclusing and excluding CO2 costs.");
 	}
 
-	@Parameterized.Parameters(name = "{index}: considerCO2 == {0}")
+	@Parameterized.Parameters(name = "{index}: considerCO2 == {0}; vehicleSource == {1}")
 	public static List<Object> considerCO2 () {
-		Object[] considerCO2 = new Object [] { true ,false };
+		Object[] [] considerCO2 = new Object [] [] {
+				{true, QSimConfigGroup.VehiclesSource.fromVehiclesData} ,
+				{false,QSimConfigGroup.VehiclesSource.fromVehiclesData},
+				{true, QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData} ,
+				{false, QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData} ,
+				};
 		return Arrays.asList(considerCO2);
 	}
 
 	@Test
 	public void emissionTollTest() {
-		//see an example with detailed explanations -- package opdytsintegration.example.networkparameters.RunNetworkParameters 
 		List<String> mainModes = Arrays.asList("car","bicycle");
 
 		EquilTestSetUp equilTestSetUp = new EquilTestSetUp();
@@ -106,6 +117,11 @@ public class EquilMixedTrafficEmissionTest {
 
 		String carPersonId = "567417.1#12424";
 		String bikePersonId = "567417.1#12425"; // no emissions
+		String bikeVehicleId = bikePersonId;
+
+		if (this.vehiclesSource.equals(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData)) {
+			bikeVehicleId = bikePersonId+"_bicycle";
+		}
 
 		Vehicles vehs = sc.getVehicles();
 
@@ -120,9 +136,6 @@ public class EquilMixedTrafficEmissionTest {
 		// thus, reading from vehicles file and directly passing to vehicles container is not the same.
 		vehs.addVehicleType(car);
 
-		Vehicle carVeh = vehs.getFactory().createVehicle(Id.createVehicleId(carPersonId),car);
-		vehs.addVehicle(carVeh);
-
 		VehicleType bike = vehs.getFactory().createVehicleType(Id.create("bicycle",VehicleType.class));
 		bike.setMaximumVelocity(20./3.6);
 		bike.setPcuEquivalents(0.25);
@@ -131,17 +144,25 @@ public class EquilMixedTrafficEmissionTest {
 				EmissionSpecificationMarker.END_EMISSIONS.toString() );
 		vehs.addVehicleType(bike);
 
-		Vehicle bikeVeh = vehs.getFactory().createVehicle(Id.createVehicleId(bikePersonId),bike);
-		vehs.addVehicle(bikeVeh);
+		if(! this.vehiclesSource.equals(QSimConfigGroup.VehiclesSource.modeVehicleTypesFromVehiclesData)) {
+			Vehicle carVeh = vehs.getFactory().createVehicle(Id.createVehicleId(carPersonId),car);
+			vehs.addVehicle(carVeh);
+
+			Vehicle bikeVeh = vehs.getFactory().createVehicle(Id.createVehicleId(bikeVehicleId),bike);
+			vehs.addVehicle(bikeVeh);
+		}
 
 		sc.getConfig().qsim().setMainModes(mainModes);
 		sc.getConfig().qsim().setLinkDynamics(QSimConfigGroup.LinkDynamics.PassingQ);
-		sc.getConfig().qsim().setVehiclesSource(QSimConfigGroup.VehiclesSource.fromVehiclesData); //TODO the test will fail for VehiclesSource.modeVehicleTypesFromVehiclesData; Amit Oct 2016
+		sc.getConfig().qsim().setVehiclesSource(this.vehiclesSource);
 		sc.getConfig().qsim().setUsePersonIdForMissingVehicleId(true);
 
 		sc.getConfig().plansCalcRoute().getOrCreateModeRoutingParams(TransportMode.pt).setTeleportedModeFreespeedFactor(1.5);
 		sc.getConfig().plansCalcRoute().setNetworkModes(mainModes);
 		sc.getConfig().planCalcScore().getOrCreateModeParams("bicycle").setConstant(0.0);
+
+		sc.getConfig().travelTimeCalculator().setAnalyzedModes("car,bicycle");
+		sc.getConfig().travelTimeCalculator().setFilterModes(true);
 
 		equilTestSetUp.createActiveAgents(sc, carPersonId, TransportMode.car, 6.0 * 3600.);
 		equilTestSetUp.createActiveAgents(sc, bikePersonId, "bicycle", 6.0 * 3600. - 5.0);
@@ -152,35 +173,34 @@ public class EquilMixedTrafficEmissionTest {
 		String outputDirectory = classOutputDir + helper.getMethodName() + "/" + (isConsideringCO2Costs ? "considerCO2Costs/" : "notConsiderCO2Costs/");
 		sc.getConfig().controler().setOutputDirectory(outputDirectory);
 
-		EmissionModule emissionModule = new EmissionModule(sc);
-		emissionModule.setEmissionEfficiencyFactor( 1.0 );
-		emissionModule.createLookupTables();
-		emissionModule.createEmissionHandler();
-
-		EmissionCostModule emissionCostModule = new EmissionCostModule( 1.0, isConsideringCO2Costs );
+		EmissionsConfigGroup emissionsConfigGroup = ( (EmissionsConfigGroup) sc.getConfig().getModules().get(EmissionsConfigGroup.GROUP_NAME) );
+		emissionsConfigGroup.setEmissionEfficiencyFactor(1.0);
+		emissionsConfigGroup.setConsideringCO2Costs(isConsideringCO2Costs);
+		emissionsConfigGroup.setEmissionCostMultiplicationFactor(1.);
 
 		controler.addOverridingModule(new AbstractModule() {
 			@Override
 			public void install() {
-				bind(EmissionModule.class).toInstance(emissionModule);
-				bind(EmissionCostModule.class).toInstance(emissionCostModule);
-				bindCarTravelDisutilityFactory().to(EmissionModalTravelDisutilityCalculatorFactory.class);
+				bind(EmissionModule.class).asEagerSingleton();
+				bind(EmissionCostModule.class).asEagerSingleton();
+				addControlerListenerBinding().to(InternalizeEmissionsControlerListener.class);
+
+				bindCarTravelDisutilityFactory().toInstance(new EmissionModalTravelDisutilityCalculatorFactory(new RandomizingTimeDistanceTravelDisutilityFactory("car", sc.getConfig().planCalcScore())));
+				bind(TravelDisutilityFactory.class).annotatedWith(Names.named("bicycle")).toInstance(new EmissionModalTravelDisutilityCalculatorFactory(new RandomizingTimeDistanceTravelDisutilityFactory("bicycle", sc.getConfig().planCalcScore())));
 			}
 		});
-		controler.addControlerListener(new InternalizeEmissionsControlerListener(emissionModule, emissionCostModule));
 
 		MyPersonMoneyEventHandler personMoneyHandler = new MyPersonMoneyEventHandler();
 		VehicleLinkEnterLeaveTimeEventHandler enterLeaveTimeEventHandler = new VehicleLinkEnterLeaveTimeEventHandler(Id.createLinkId("23"));
+		MyEmissionEventHandler emissEventHandler = new MyEmissionEventHandler();
 
 		controler.addOverridingModule(new AbstractModule() {
 
 			@Override
 			public void install() {
-				addTravelTimeBinding("bicycle").to(networkTravelTime());
-				addTravelDisutilityFactoryBinding("bicycle").to(carTravelDisutilityFactoryKey());
-
 				addEventHandlerBinding().toInstance(personMoneyHandler);
 				addEventHandlerBinding().toInstance(enterLeaveTimeEventHandler);
+				addEventHandlerBinding().toInstance(emissEventHandler);
 			}
 		});
 
@@ -188,19 +208,11 @@ public class EquilMixedTrafficEmissionTest {
 
 		// first check for emissions
 
-		//TODO dont know how to catch emission event during simulation.
-		EventsManager events = EventsUtils.createEventsManager();
-		EmissionEventsReader reader = new EmissionEventsReader(events);
-		MyEmissionEventHandler emissEventHandler = new MyEmissionEventHandler();
-		events.addHandler(emissEventHandler);
-		int lastIt = sc.getConfig().controler().getLastIteration();
-		reader.readFile(outputDirectory + "/ITERS/it."+lastIt+"/"+lastIt+".emission.events.xml.gz");
-
 		// first check for cold emission, which are generated only on departure link.
 		for (ColdEmissionEvent e : emissEventHandler.coldEvents ) {
 			if( ! ( e.getLinkId().equals(Id.createLinkId(12)) || e.getLinkId().equals(Id.createLinkId(45)) ) ) {
 				throw new RuntimeException("Cold emission event can occur only on departure link.");
-			} else if (e.getVehicleId().toString().equals(bikePersonId)) {
+			} else if (e.getVehicleId().toString().equals(bikeVehicleId)) {
 				for(double d : e.getColdEmissions().values()){
 					if (d!=0.) throw new RuntimeException("There should not be any cold emissions from bicycle mode.");
 				}
@@ -214,7 +226,7 @@ public class EquilMixedTrafficEmissionTest {
 		}
 
 		for(WarmEmissionEvent e : emissEventHandler.warmEvents) {
-			if (e.getVehicleId().toString().equals(bikePersonId)) {
+			if (e.getVehicleId().toString().equals(bikeVehicleId)) {
 				for(double d : e.getWarmEmissions().values()){
 					if (d!=0.) throw new RuntimeException("There should not be any cold emissions from bicycle mode.");
 				}
@@ -280,7 +292,7 @@ public class EquilMixedTrafficEmissionTest {
 		// now check if car is passing bike
 		// checking enter and leave time of car and bike on link 23
 		Tuple<Double,Double> carEnterLeaveTime = enterLeaveTimeEventHandler.vehicle_link23_enterLeaveTimes.get(Id.createVehicleId(carPersonId));
-		Tuple<Double,Double> bikeEnterLeaveTime = enterLeaveTimeEventHandler.vehicle_link23_enterLeaveTimes.get(Id.createVehicleId(bikePersonId));
+		Tuple<Double,Double> bikeEnterLeaveTime = enterLeaveTimeEventHandler.vehicle_link23_enterLeaveTimes.get(Id.createVehicleId(bikeVehicleId));
 
 		Assert.assertTrue("Car should enter after bicycle.",carEnterLeaveTime.getFirst() > bikeEnterLeaveTime.getFirst());
 		Assert.assertTrue("Car should leave before bicycle.",carEnterLeaveTime.getSecond() < bikeEnterLeaveTime.getSecond());

@@ -109,7 +109,7 @@ public class PatnaNetworkModesCalibrator {
 		modes2consider.add("bike");
 		modes2consider.add("motorbike");
 
-		DistanceDistribution referenceStudyDistri = new PatnaOneBinDistanceDistribution(PATNA_1_PCT);
+		DistanceDistribution referenceStudyDistri = new PatnaNetworkModesOneBinDistanceDistribution(PATNA_1_PCT);
 		OpdytsModalStatsControlerListener stasControlerListner = new OpdytsModalStatsControlerListener(modes2consider,referenceStudyDistri);
 
 		// following is the  entry point to start a matsim controler together with opdyts
@@ -181,7 +181,7 @@ public class PatnaNetworkModesCalibrator {
 		// remove the unused iterations
 		for (int index =0; index < maxIterations; index++) {
 			String dir2remove = OUT_DIR+"_"+index+"/ITERS/";
-			IOUtils.deleteDirectory(new File(dir2remove));
+			IOUtils.deleteDirectoryRecursively(new File(dir2remove).toPath());
 		}
 	}
 }
