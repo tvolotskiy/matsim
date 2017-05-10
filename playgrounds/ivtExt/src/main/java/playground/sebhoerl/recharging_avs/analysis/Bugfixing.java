@@ -51,7 +51,7 @@ public class Bugfixing {
 
         new MatsimEventsReader(eventsManager).readFile(args[1]);
 
-        OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream("dists_" + args[2])));
+        OutputStreamWriter writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(args[2].replace(".csv", ".waitingTime.csv"))));
 
         writer.write("BIN;MEAN;MEDIAN;Q90\n");
 
@@ -65,7 +65,7 @@ public class Bugfixing {
         writer.flush();
         writer.close();
 
-        writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream("recharge_" + args[2])));
+        writer = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(args[2].replace(".csv", ".recharging.csv"))));
 
         writer.write("BIN;RECHARGING\n");
 

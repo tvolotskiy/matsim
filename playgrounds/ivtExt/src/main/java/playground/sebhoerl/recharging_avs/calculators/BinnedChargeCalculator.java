@@ -77,7 +77,9 @@ public class BinnedChargeCalculator implements ChargeCalculator {
     public double getRechargeTime(double now) {
         int currentBin = data.calculateBin(now);
 
-        double charge = data.getMinimumCharge(currentBin);
+        // TODO: maybe introduce another parameter here.
+        // recharging ALWAYS starts at 0.0 now
+        double charge = 0.0; // data.getMinimumCharge(currentBin);
         double time = 0.0;
         double duration;
 
