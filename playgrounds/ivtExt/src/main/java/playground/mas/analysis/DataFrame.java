@@ -24,6 +24,10 @@ public class DataFrame {
     final public Map<String, List<Double>> passengerDistances;
     final public Map<Long, List<Double>> distanceByPoolOccupancy;
 
+    final public Map<String, List<Double>> insideVehicleDistances;
+    final public Map<String, List<Double>> insidePassengerDistances;
+    final public Map<Long, List<Double>> insideDistanceByPoolOccupancy;
+
     final public Map<String, List<List<Double>>> waitingTimes;
     final public Map<String, List<Double>> inactiveAVs;
 
@@ -49,15 +53,22 @@ public class DataFrame {
 
         vehicleDistances = new HashMap<>();
         passengerDistances = new HashMap<>();
+        insideVehicleDistances = new HashMap<>();
+        insidePassengerDistances = new HashMap<>();
 
-        for (Map<String, List<Double>> item : Arrays.asList(vehicleDistances, passengerDistances)) {
+        for (Map<String, List<Double>> item : Arrays.asList(vehicleDistances, passengerDistances, insideVehicleDistances, insidePassengerDistances)) {
             for (String mode : modes) {
                 item.put(mode, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
             }
         }
 
         distanceByPoolOccupancy = new HashMap<>();
-        for (long i = 1; i < 5; i++) distanceByPoolOccupancy.put(i, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
+        insideDistanceByPoolOccupancy = new HashMap<>();
+
+        for (long i = 1; i < 5; i++) {
+            distanceByPoolOccupancy.put(i, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
+            insideDistanceByPoolOccupancy.put(i, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
+        }
 
         waitingTimes = new HashMap<>();
         for (String mode : ptModes) {

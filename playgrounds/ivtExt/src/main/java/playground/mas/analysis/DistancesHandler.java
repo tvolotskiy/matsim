@@ -25,11 +25,14 @@ public class DistancesHandler implements TransitDriverStartsEventHandler, Person
     final private Collection<Id<Person>> evPersonIds;
     final private Set<Id<Vehicle>> transitVehicleIds = new HashSet<>();
 
-    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Collection<Id<Person>> evPersonIds) {
+    final private Collection<Id<Link>> insideCordonLinkIds;
+
+    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Collection<Id<Person>> evPersonIds, Collection<Id<Link>> insideCordonLinkIds) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
         this.network = network;
         this.evPersonIds = evPersonIds;
+        this.insideCordonLinkIds = insideCordonLinkIds;
     }
 
     private String findModeForVehicle(Id<Vehicle> vehicleId) {
@@ -108,11 +111,18 @@ public class DistancesHandler implements TransitDriverStartsEventHandler, Person
             }
 
             List<Double> occupancySlot = mode.equals("av_pool") ? dataFrame.distanceByPoolOccupancy.get(occupancy) : null;
+            List<Double> insideOccupancySlot = mode.equals("av_pool") ? dataFrame.insideDistanceByPoolOccupancy.get(occupancy) : null;
 
             if (binCalculator.isCoveredValue(enterEvent.getTime())) {
                 DataFrame.increment(dataFrame.vehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
                 DataFrame.increment(dataFrame.passengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
                 if (occupancySlot != null) DataFrame.increment(occupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
+
+                if (insideCordonLinkIds.contains(event.getLinkId())) {
+                    DataFrame.increment(dataFrame.insideVehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
+                    DataFrame.increment(dataFrame.insidePassengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
+                    if (insideOccupancySlot != null) DataFrame.increment(insideOccupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
+                }
             }
         }
     }
