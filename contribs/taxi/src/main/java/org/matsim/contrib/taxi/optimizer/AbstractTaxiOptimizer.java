@@ -33,7 +33,7 @@ import org.matsim.core.mobsim.framework.events.MobsimBeforeSimStepEvent;
  * @author michalm
  */
 public abstract class AbstractTaxiOptimizer implements TaxiOptimizer {
-	private final TaxiOptimizerContext optimContext;
+	protected final TaxiOptimizerContext optimContext;
 	private final Collection<TaxiRequest> unplannedRequests;
 
 	private final boolean doUnscheduleAwaitingRequests;// PLANNED

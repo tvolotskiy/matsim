@@ -30,6 +30,7 @@ import org.matsim.contrib.taxi.optimizer.fifo.*;
 import org.matsim.contrib.taxi.optimizer.rules.*;
 import org.matsim.contrib.taxi.run.TaxiConfigGroup;
 import org.matsim.contrib.taxi.scheduler.*;
+import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.mobsim.qsim.QSim;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.router.util.*;
@@ -53,15 +54,18 @@ public class DefaultTaxiOptimizerProvider implements Provider<TaxiOptimizer> {
 
 	@Inject(optional = true)
 	private @Named(TAXI_OPTIMIZER) TravelDisutilityFactory travelDisutilityFactory;
+	private EventsManager events;
 
 	@Inject
 	public DefaultTaxiOptimizerProvider(TaxiConfigGroup taxiCfg, @Named(DvrpModule.DVRP_ROUTING) Network network,
-			Fleet fleet, @Named(VrpTravelTimeModules.DVRP_ESTIMATED) TravelTime travelTime, QSim qSim) {
+			Fleet fleet, @Named(VrpTravelTimeModules.DVRP_ESTIMATED) TravelTime travelTime, QSim qSim, EventsManager events) {
 		this.taxiCfg = taxiCfg;
 		this.network = network;
 		this.fleet = fleet;
 		this.travelTime = travelTime;
 		this.qSim = qSim;
+		this.events = events;
+		
 	}
 
 	@Override
@@ -75,7 +79,7 @@ public class DefaultTaxiOptimizerProvider implements Provider<TaxiOptimizer> {
 				travelTime, travelDisutility);
 
 		TaxiOptimizerContext optimContext = new TaxiOptimizerContext(fleet, network, qSim.getSimTimer(), travelTime,
-				travelDisutility, scheduler);
+				travelDisutility, scheduler, events);
 
 		Configuration optimizerConfig = new MapConfiguration(taxiCfg.getOptimizerConfigGroup().getParams());
 		OptimizerType type = OptimizerType.valueOf(optimizerConfig.getString(TYPE));

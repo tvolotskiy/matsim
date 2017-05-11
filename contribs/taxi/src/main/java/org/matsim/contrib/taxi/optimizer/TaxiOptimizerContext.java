@@ -3,6 +3,7 @@ package org.matsim.contrib.taxi.optimizer;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.dvrp.data.Fleet;
 import org.matsim.contrib.taxi.scheduler.TaxiScheduler;
+import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.mobsim.framework.MobsimTimer;
 import org.matsim.core.router.util.*;
 
@@ -13,14 +14,16 @@ public class TaxiOptimizerContext {
 	public final TravelTime travelTime;
 	public final TravelDisutility travelDisutility;
 	public final TaxiScheduler scheduler;
+	public final EventsManager events;
 
 	public TaxiOptimizerContext(Fleet fleet, Network network, MobsimTimer timer, TravelTime travelTime,
-			TravelDisutility travelDisutility, TaxiScheduler scheduler) {
+			TravelDisutility travelDisutility, TaxiScheduler scheduler, EventsManager events) {
 		this.fleet = fleet;
 		this.network = network;
 		this.timer = timer;
 		this.travelTime = travelTime;
 		this.travelDisutility = travelDisutility;
 		this.scheduler = scheduler;
+		this.events =events;
 	}
 }

@@ -21,6 +21,7 @@ package org.matsim.contrib.taxi.optimizer.rules;
 
 import java.util.*;
 
+import org.matsim.api.core.v01.events.PersonStuckEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.contrib.dvrp.data.*;
 import org.matsim.contrib.dvrp.schedule.*;
@@ -45,6 +46,7 @@ public class RuleBasedTaxiOptimizer extends AbstractTaxiOptimizer {
 
 	public RuleBasedTaxiOptimizer(TaxiOptimizerContext optimContext, RuleBasedTaxiOptimizerParams params) {
 		this(optimContext, params, new SquareGridSystem(optimContext.network, params.cellSize));
+		
 	}
 
 	public RuleBasedTaxiOptimizer(TaxiOptimizerContext optimContext, RuleBasedTaxiOptimizerParams params,
@@ -137,6 +139,9 @@ public class RuleBasedTaxiOptimizer extends AbstractTaxiOptimizer {
 				// no vehicle found == 
 				// we set the agent to abort. Note this does not automatically create a Stuck Event, for that we would need the events manager here
 				req.getPassenger().setStateToAbort(req.getSubmissionTime());
+			
+				//now throw a stuck event:
+				optimContext.events.processEvent(new PersonStuckEvent(optimContext.timer.getTimeOfDay(), req.getPassenger().getId(), req.getFromLink().getId(), "taxi"));
 			}
 			reqIter.remove();
 			unplannedRequestRegistry.removeRequest(req);

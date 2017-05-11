@@ -65,7 +65,7 @@ public class JbTaxiOptimizerProvider implements Provider<TaxiOptimizer> {
 				travelTime, travelDisutility);
 
 		TaxiOptimizerContext optimContext = new TaxiOptimizerContext(fleet, network, qSim.getSimTimer(), travelTime,
-				travelDisutility, scheduler);
+				travelDisutility, scheduler, null);
 
 		Configuration optimizerConfig = new MapConfiguration(taxiCfg.getOptimizerConfigGroup().getParams());
 		return new InclusionRuleBasedTaxiOptimizer(optimContext,
