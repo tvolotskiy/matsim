@@ -13,6 +13,8 @@ public interface AVDispatcher {
     void onNextTimestep(double now);
 
     void addVehicle(AVVehicle vehicle);
+    void removeVehicle(AVVehicle vehicle);
+    boolean hasVehicle(AVVehicle vehicle);
 
     interface AVDispatcherFactory {
         AVDispatcher createDispatcher(AVDispatcherConfig config);
