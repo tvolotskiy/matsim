@@ -93,11 +93,7 @@ public class RechargingDispatcher implements AVDispatcher {
         Schedule schedule = vehicle.getSchedule();
         Task currentTask = schedule.getCurrentTask();
 
-        if (currentChargeState != null && currentTask instanceof AVStayTask && chargeCalculator.isCritical(currentChargeState, now)) {
-            if (!(currentTask == Schedules.getLastTask(schedule))) {
-                throw new RuntimeException();
-            }
-
+        if (currentChargeState != null && currentTask instanceof AVStayTask && chargeCalculator.isCritical(currentChargeState, now) && currentTask == Schedules.getLastTask(schedule)) {
             double scheduleEndTime = schedule.getEndTime();
             double rechargingEndTime = Math.min(now + chargeCalculator.getRechargeTime(now), scheduleEndTime);
 
