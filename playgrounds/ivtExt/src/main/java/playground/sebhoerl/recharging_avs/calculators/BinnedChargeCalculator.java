@@ -15,13 +15,23 @@ public class BinnedChargeCalculator implements ChargeCalculator {
     }
 
     @Override
-    public double calculateConsumption(VrpPathWithTravelData path) {
-        double consumption = 0.0;
-        double now = path.getDepartureTime();
+    public double calculateConsumption(double from, double until, double distance) {
+        int fromBin = data.calculateBin(from);
+        int untilBin = data.calculateBin(until);
 
-        for (int i = 0; i < path.getLinkCount(); i++) {
-            consumption += data.getDischargeRateByDistance(data.calculateBin(now)) * path.getLink(i).getLength() / 1e-3;
-            now += path.getLinkTravelTime(i);
+        double speed = distance / (until - from);
+
+        if (fromBin == untilBin) {
+            return data.getDischargeRateByDistance(fromBin) * distance / 1e3;
+        }
+
+        double consumption = 0.0;
+
+        consumption += ((data.getBinEndTime(fromBin) - from) * speed / 1e3) * data.getDischargeRateByDistance(fromBin);
+        consumption += ((until - data.getBinStartTime(untilBin)) * speed / 1e3) * data.getDischargeRateByDistance(untilBin);
+
+        for (int b = fromBin + 1; b < untilBin; b++) {
+            consumption += (data.getBinDuration(b) * speed / 1e3) * data.getDischargeRateByTime(b);
         }
 
         return consumption;
@@ -41,7 +51,7 @@ public class BinnedChargeCalculator implements ChargeCalculator {
         consumption += (data.getBinEndTime(fromBin) - from) / S_PER_H * data.getDischargeRateByTime(fromBin);
         consumption += (until - data.getBinStartTime(untilBin)) / S_PER_H * data.getDischargeRateByTime(untilBin);
 
-        for (int b = fromBin; b < untilBin; b++) {
+        for (int b = fromBin + 1; b < untilBin; b++) {
             consumption += data.getBinDuration(b) / S_PER_H * data.getDischargeRateByTime(b);
         }
 
@@ -67,7 +77,9 @@ public class BinnedChargeCalculator implements ChargeCalculator {
     public double getRechargeTime(double now) {
         int currentBin = data.calculateBin(now);
 
-        double charge = data.getMinimumCharge(currentBin);
+        // TODO: maybe introduce another parameter here.
+        // recharging ALWAYS starts at 0.0 now
+        double charge = 0.0; // data.getMinimumCharge(currentBin);
         double time = 0.0;
         double duration;
 
@@ -78,7 +90,7 @@ public class BinnedChargeCalculator implements ChargeCalculator {
             time += duration;
 
             currentBin += 1;
-        } while (charge < data.getMaximumCharge(currentBin - 1));
+        } while (charge < data.getMaximumCharge(currentBin - 1) && currentBin < data.getNumberOfBins());
 
         return time - S_PER_H * (charge - data.getMaximumCharge(currentBin - 1)) / data.getRechgargeRate(currentBin - 1);
     }
