@@ -43,6 +43,10 @@ public final class PScoreContainer {
 	private int servedTrips = 0;
 	private double costs = 0;
 	private double earnings = 0;
+
+	private double totalMeterDriven = 0.0;
+	private double totalTimeDriven = 0.0;
+	private double passengerKilometer = 0.0;
 	
 	public PScoreContainer(Id<Vehicle> vehicleId, TicketMachineI ticketMachine) {
 		this.vehicleId = vehicleId;
@@ -51,6 +55,7 @@ public final class PScoreContainer {
 
 	public void handleStageContainer(StageContainer stageContainer) {
 		this.servedTrips++;
+		this.passengerKilometer += this.ticketMachine.getPassengerDistanceKilometer(stageContainer);
 		this.earnings += this.ticketMachine.getFare(stageContainer);
 	}
 
@@ -59,6 +64,8 @@ public final class PScoreContainer {
 			this.costs += operatorCostContainer.getFixedCostPerDay();
 			this.isFirstTour = false;
 		}
+		this.totalMeterDriven  += operatorCostContainer.getTotalMeterDriven();
+		this.totalTimeDriven += operatorCostContainer.getTotalTimeDriven();
 		this.costs += operatorCostContainer.getRunningCostDistance();
 		this.costs += operatorCostContainer.getRunningCostTime();
 	}
@@ -77,6 +84,18 @@ public final class PScoreContainer {
 	
 	public int getTripsServed(){
 		return this.servedTrips;
+	}
+	
+	public double getTotalMeterDriven()	{
+		return this.totalMeterDriven;
+	}
+	
+	public double getTotalTimeDriven()	{
+		return this.totalTimeDriven;
+	}
+	
+	public double getTotalPassengerKilometer()	{
+		return this.passengerKilometer;
 	}
 	
 	@Override

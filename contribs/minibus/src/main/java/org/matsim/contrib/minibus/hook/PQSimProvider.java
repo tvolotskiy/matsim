@@ -44,6 +44,7 @@ import org.matsim.core.mobsim.qsim.qnetsimengine.QNetsimEngineModule;
  * @author aneumann
  *
  */
+
 class PQSimProvider implements Provider<Mobsim> {
 
 	@SuppressWarnings("unused")
@@ -59,7 +60,8 @@ class PQSimProvider implements Provider<Mobsim> {
 		if (conf == null) {
 			throw new NullPointerException("There is no configuration set for the QSim. Please add the module 'qsim' to your config file.");
 		}
-
+		
+		
 		QSim qSim = new QSim(scenario, eventsManager);
 		ActivityEngine activityEngine = new ActivityEngine(eventsManager, qSim.getAgentCounter());
 		qSim.addMobsimEngine(activityEngine);
@@ -67,6 +69,8 @@ class PQSimProvider implements Provider<Mobsim> {
 		QNetsimEngineModule.configure(qSim);
 		TeleportationEngine teleportationEngine = new TeleportationEngine(scenario, eventsManager);
 		qSim.addMobsimEngine(teleportationEngine);
+		
+		
 		AgentFactory agentFactory;
 
 		if (scenario.getConfig().transit().isUseTransit()) {

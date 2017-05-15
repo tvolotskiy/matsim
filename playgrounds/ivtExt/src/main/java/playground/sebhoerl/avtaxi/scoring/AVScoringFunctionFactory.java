@@ -40,11 +40,11 @@ public class AVScoringFunctionFactory implements ScoringFunctionFactory {
 	public ScoringFunction createNewScoringFunction(Person person) {
 		SumScoringFunction sf = (SumScoringFunction) standardFactory.createNewScoringFunction(person);
 
-		double marginalUtilityOfMoney = params.getScoringParameters(person).marginalUtilityOfMoney;
-		double marginalUtilityOfTraveling = params.getScoringParameters(person)
-                .modeParams.get(AVModule.AV_MODE).marginalUtilityOfTraveling_s;
+		//double marginalUtilityOfMoney = params.getScoringParameters(person).marginalUtilityOfMoney;
+		//double marginalUtilityOfTraveling = params.getScoringParameters(person)
+        //        .modeParams.get(AVModule.AV_MODE).marginalUtilityOfTraveling_s;
 
-        sf.addScoringFunction(new AVScoringFunction(config, person, marginalUtilityOfMoney, marginalUtilityOfTraveling));
+        //sf.addScoringFunction(new AVScoringFunction(config, person, marginalUtilityOfMoney, marginalUtilityOfTraveling));
 
 		return sf;
 	}

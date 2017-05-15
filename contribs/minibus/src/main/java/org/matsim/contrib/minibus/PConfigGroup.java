@@ -66,9 +66,11 @@ public final class PConfigGroup extends ConfigGroup{
 	private static final String NUMBER_OF_ITERATIONS_FOR_PROSPECTING = "numberOfIterationsForProspecting";
 	private static final String INITIAL_BUDGET = "initialBudget";
 	private static final String COST_PER_VEHICLE_AND_DAY = "costPerVehicleAndDay";
-	private static final String COST_PER_KILOMETER = "costPerKilometer";
-	private static final String COST_PER_HOUR = "costPerHour";
+	//private static final String COST_PER_KILOMETER = "costPerKilometer";
+	//private static final String COST_PER_HOUR = "costPerHour";
 	private static final String EARNINGS_PER_BOARDING_PASSENGER = "earningsPerBoardingPassenger";
+	private static final String SUBSIDY_PER_BOARDING_PASSENGER = "subsidyPerBoardingPassenger";
+	private static final String SUBSIDIZED_STOPS = "listOfSubsidizedStops";
 	private static final String EARNINGS_PER_KILOMETER_AND_PASSENGER = "earningsPerKilometerAndPassenger";
 	private static final String PRICE_PER_VEHICLE_BOUGHT = "pricePerVehicleBought";
 	private static final String PRICE_PER_VEHICLE_SOLD = "pricePerVehicleSold";
@@ -76,6 +78,7 @@ public final class PConfigGroup extends ConfigGroup{
 	private static final String MIN_OPERATION_TIME = "minOperationTime";
 	private static final String MIN_INITIAL_STOP_DISTANCE = "minInitialStopDistance";
 	private static final String USEFRANCHISE = "useFranchise";
+	private static final String USEAVCONTRIB = "useAVContrib";
 	private static final String WRITESTATS_INTERVAL = "writeStatsInterval";
 	private static final String LOG_OPERATORS = "logOperators";
 	private static final String WRITE_METRICS = "writeMetrics";
@@ -103,7 +106,16 @@ public final class PConfigGroup extends ConfigGroup{
 	private static final String PMODULE_DISABLEINITERATION = "ModuleDisableInIteration_";
 	private static final String PMODULE_PARAMETER = "ModuleParameter_";
 	
-	private static final String SUBSIDY_APPROACH = "subsidyApproach";
+	private static final String PVEHICLE = "PVeh_";
+	private static final String PVEHICLE_COST_PER_HOUR = "VehCostPerHour_";
+	private static final String PVEHICLE_COST_PER_KILOMETER = "VehCostPerKilometer_";
+	private static final String PVEHICLE_COST_PER_DAY = "VehCostPerDay_";
+	private static final String PVEHICLE_CAPACITY = "VehCapacity_";
+	private static final String PVEHICLE_EARNINGSPERPASSENGERANDKILOMETER = "VehEarningsPerPaxKilometer_";
+	private static final String PVEHICLE_EARNINGSPERBOARDINGANDPASSENGER = "VehEarningsPerPaxBoarding_";
+
+	private static final String WELFARE_MAXIMIZATION = "welfareMaximization";
+	private static final String INITIAL_SCORES_FILE = "initialScoresFile";
 	
 	// Defaults
 	private String pIdentifier = "p_";
@@ -123,16 +135,19 @@ public final class PConfigGroup extends ConfigGroup{
 	private int numberOfIterationsForProspecting = 0;
 	private double initialBudget = 0.0;
 	private double costPerVehicleAndDay = 0.0;
-	private double costPerKilometer = 0.30;
-	private double costPerHour = 0.0;
+	//private double costPerKilometer = 0.30;
+	//private double costPerHour = 0.0;
 	private boolean startWith24Hours = false;
 	private double minOperationTime = 6 * 3600;
 	private double minInitialStopDistance = 1.0;
 	private double earningsPerBoardingPassenger = 0.0;
+	private double subsidyPerBoardingPassenger = 0.0;
+	private String subsidizedStopFile = null;
 	private double earningsPerKilometerAndPassenger = 0.50;
 	private double pricePerVehicleBought = 1000.0;
 	private double pricePerVehicleSold = 1000.0;
 	private boolean useFranchise = false;
+	private boolean useAVContrib = false;
 	private int writeStatsInterval = 0;
 	private boolean logOperators = false;
 	private boolean writeMetrics = false;
@@ -158,6 +173,9 @@ public final class PConfigGroup extends ConfigGroup{
 
 	// Strategies
 	private final LinkedHashMap<Id<PStrategySettings>, PStrategySettings> strategies = new LinkedHashMap<>();
+	
+	// Vehicles
+	private final LinkedHashMap<Id<PVehicleSettings>, PVehicleSettings> pVehicleTypes = new LinkedHashMap<>();
 	
 	
 	public PConfigGroup(){
@@ -211,14 +229,18 @@ public final class PConfigGroup extends ConfigGroup{
 			} 
 		} else if (COST_PER_VEHICLE_AND_DAY.equals(key)){
 			this.costPerVehicleAndDay = Double.parseDouble(value);
-		} else if (COST_PER_KILOMETER.equals(key)){
-			this.costPerKilometer = Double.parseDouble(value);
-		} else if (COST_PER_HOUR.equals(key)){
-			this.costPerHour = Double.parseDouble(value);
+		//} else if (COST_PER_KILOMETER.equals(key)){
+		//	this.costPerKilometer = Double.parseDouble(value);
+		//} else if (COST_PER_HOUR.equals(key)){
+		//	this.costPerHour = Double.parseDouble(value);
 		} else if (EARNINGS_PER_BOARDING_PASSENGER.equals(key)){
 			this.earningsPerBoardingPassenger = Double.parseDouble(value);
 		} else if (EARNINGS_PER_KILOMETER_AND_PASSENGER.equals(key)){
 			this.earningsPerKilometerAndPassenger = Double.parseDouble(value);
+		} else if (SUBSIDIZED_STOPS.equals(key)){
+			this.subsidizedStopFile = value;
+		} else if (SUBSIDY_PER_BOARDING_PASSENGER.equals(key)){
+			this.subsidyPerBoardingPassenger = Double.parseDouble(value);
 		} else if (PRICE_PER_VEHICLE_BOUGHT.equals(key)){
 			this.pricePerVehicleBought = Double.parseDouble(value);
 		} else if (PRICE_PER_VEHICLE_SOLD.equals(key)){
@@ -231,6 +253,8 @@ public final class PConfigGroup extends ConfigGroup{
 			this.minInitialStopDistance = Double.parseDouble(value);
 		} else if (USEFRANCHISE.equals(key)){
 			this.useFranchise = Boolean.parseBoolean(value);
+		} else if (USEAVCONTRIB.equals(key)){
+			this.useAVContrib = Boolean.parseBoolean(value);
 		} else if (WRITESTATS_INTERVAL.equals(key)){
 			this.writeStatsInterval = Integer.parseInt(value);
 		} else if (LOG_OPERATORS.equals(key)){
@@ -285,8 +309,39 @@ public final class PConfigGroup extends ConfigGroup{
 		} else if (key != null && key.startsWith(PMODULE_PARAMETER)) {
 			PStrategySettings settings = getStrategySettings(Id.create(key.substring(PMODULE_PARAMETER.length()), PStrategySettings.class), true);
 			settings.setParameters(value);
-		} else if (SUBSIDY_APPROACH.equals(key)) {
-			this.subsidyApproach = value;
+
+			
+		} else if (key != null && key.startsWith(PVEHICLE)) {
+			PVehicleSettings pVehicleSettings = getPVehicleSettings(Id.create(key.substring(PVEHICLE.length()), PVehicleSettings.class), true);
+			pVehicleSettings.setPVehicleName(value);
+		} else if (key != null && key.startsWith(PVEHICLE_COST_PER_HOUR)) {
+			PVehicleSettings pVehicleSettings = getPVehicleSettings(Id.create(key.substring(PVEHICLE_COST_PER_HOUR.length()), PVehicleSettings.class), true);
+			pVehicleSettings.setCostPerHour(Double.parseDouble(value));
+		} else if (key != null && key.startsWith(PVEHICLE_COST_PER_KILOMETER)) {
+			PVehicleSettings pVehicleSettings = getPVehicleSettings(Id.create(key.substring(PVEHICLE_COST_PER_KILOMETER.length()), PVehicleSettings.class), true);
+			pVehicleSettings.setCostPerKilometer(Double.parseDouble(value));	
+		} else if (key != null && key.startsWith(PVEHICLE_COST_PER_DAY)) {
+			PVehicleSettings pVehicleSettings = getPVehicleSettings(Id.create(key.substring(PVEHICLE_COST_PER_DAY.length()), PVehicleSettings.class), true);
+			pVehicleSettings.setCostPerVehicleAndDay(Double.parseDouble(value));
+		} else if (key != null && key.startsWith(PVEHICLE_CAPACITY)) {
+			PVehicleSettings pVehicleSettings = getPVehicleSettings(Id.create(key.substring(PVEHICLE_CAPACITY.length()), PVehicleSettings.class), true);
+			pVehicleSettings.setCapacityPerVehicle(Integer.parseInt(value));
+		} else if (key != null && key.startsWith(PVEHICLE_EARNINGSPERPASSENGERANDKILOMETER)) {
+			PVehicleSettings pVehicleSettings = getPVehicleSettings(Id.create(key.substring(PVEHICLE_EARNINGSPERPASSENGERANDKILOMETER.length()), PVehicleSettings.class), true);
+			pVehicleSettings.setEarningsPerKilometerAndPassenger(Double.parseDouble(value));
+		} else if (key != null && key.startsWith(PVEHICLE_EARNINGSPERBOARDINGANDPASSENGER)) {
+			PVehicleSettings pVehicleSettings = getPVehicleSettings(Id.create(key.substring(PVEHICLE_EARNINGSPERBOARDINGANDPASSENGER.length()), PVehicleSettings.class), true);
+			pVehicleSettings.setEarningsPerBoardingPassenger(Double.parseDouble(value));
+			
+		} else if (WELFARE_MAXIMIZATION.equals(key)) {
+			this.welfareMaximization = Boolean.parseBoolean(value);
+		} else if(INITIAL_SCORES_FILE.equals(key)){
+			this.initialScoresFile = value;
+		/*	
+		}else if (key != null && key.startsWith(PVEHICLE)) {
+			VehicleSettings settings = getVehicleSettings(Id.create(key.substring(PVEHICLE.length()), VehicleSettings.class), true);
+			settings.setModuleName(value);
+			*/
 		} else {
 			log.error("unknown parameter: " + key + "...");
 		}
@@ -315,9 +370,11 @@ public final class PConfigGroup extends ConfigGroup{
 		map.put(PCE, Double.toString(this.passengerCarEquivalents));
 		map.put(VEHICLE_MAXIMUM_VELOCITY, Double.toString(this.vehicleMaximumVelocity));
 		map.put(COST_PER_VEHICLE_AND_DAY, Double.toString(this.costPerVehicleAndDay));
-		map.put(COST_PER_KILOMETER, Double.toString(this.costPerKilometer));
-		map.put(COST_PER_HOUR, Double.toString(this.costPerHour));
+		//map.put(COST_PER_KILOMETER, Double.toString(this.costPerKilometer));
+		//map.put(COST_PER_HOUR, Double.toString(this.costPerHour));
 		map.put(EARNINGS_PER_BOARDING_PASSENGER, Double.toString(this.earningsPerBoardingPassenger));
+		map.put(SUBSIDY_PER_BOARDING_PASSENGER, Double.toString(this.subsidyPerBoardingPassenger));
+		map.put(SUBSIDIZED_STOPS, (this.subsidizedStopFile));
 		map.put(EARNINGS_PER_KILOMETER_AND_PASSENGER, Double.toString(this.earningsPerKilometerAndPassenger));
 		map.put(PRICE_PER_VEHICLE_BOUGHT, Double.toString(this.pricePerVehicleBought));
 		map.put(PRICE_PER_VEHICLE_SOLD, Double.toString(this.pricePerVehicleSold));
@@ -325,6 +382,7 @@ public final class PConfigGroup extends ConfigGroup{
 		map.put(MIN_OPERATION_TIME, Double.toString(this.minOperationTime));
 		map.put(MIN_INITIAL_STOP_DISTANCE, Double.toString(this.minInitialStopDistance));
 		map.put(USEFRANCHISE, Boolean.toString(this.useFranchise));
+		map.put(USEAVCONTRIB, Boolean.toString(this.useAVContrib));
 		map.put(WRITESTATS_INTERVAL, Integer.toString(this.writeStatsInterval));
 		map.put(LOG_OPERATORS, Boolean.toString(this.logOperators));
 		map.put(WRITE_METRICS, Boolean.toString(this.writeMetrics));
@@ -354,6 +412,16 @@ public final class PConfigGroup extends ConfigGroup{
 			map.put(PMODULE_PARAMETER + entry.getKey().toString(), entry.getValue().getParametersAsString());
 		}
 		
+		for (Entry<Id<PVehicleSettings>, PVehicleSettings> entry : this.pVehicleTypes.entrySet()) {
+			map.put(PVEHICLE + entry.getKey().toString(), entry.getValue().getPVehicleName());
+			map.put(PVEHICLE_COST_PER_HOUR + entry.getKey().toString(), Double.toString(entry.getValue().getCostPerHour()));
+			map.put(PVEHICLE_COST_PER_KILOMETER + entry.getKey().toString(), Double.toString(entry.getValue().getCostPerKilometer()));
+			map.put(PVEHICLE_COST_PER_DAY + entry.getKey().toString(), Double.toString(entry.getValue().getCostPerVehicleAndDay()));
+			map.put(PVEHICLE_CAPACITY + entry.getKey().toString(), Double.toString(entry.getValue().getCapacityPerVehicle()));
+			map.put(PVEHICLE_EARNINGSPERPASSENGERANDKILOMETER + entry.getKey().toString(), Double.toString(entry.getValue().getEarningsPerKilometerAndPassenger()));
+			map.put(PVEHICLE_EARNINGSPERBOARDINGANDPASSENGER + entry.getKey().toString(), Double.toString(entry.getValue().getEarningsPerBoardingPassenger()));
+		}
+		
 		return map;
 	}
 	
@@ -377,10 +445,12 @@ public final class PConfigGroup extends ConfigGroup{
 		map.put(DELAY_PER_BOARDING_PASSENGER, "The amount of time a vehicle is delayed by one single boarding passenger in seconds.");
 		map.put(DELAY_PER_ALIGHTING_PASSENGER, "The amount of time a vehicle is delayed by one single alighting passenger in seconds.");
 		map.put(DOOR_OPERATION_MODE, "serial and parallel are permitted. Default is serial.");
-		map.put(COST_PER_VEHICLE_AND_DAY, "cost per vehicle and day - will prevent companies from operating only short periods of a day");
-		map.put(COST_PER_KILOMETER, "cost per vehicle and kilometer travelled");
-		map.put(COST_PER_HOUR, "cost per vehicle and hour in service");
+		map.put(COST_PER_VEHICLE_AND_DAY, "cost per vehicle and day - is used for vehicles not in service");
+		//map.put(COST_PER_KILOMETER, "cost per vehicle and kilometer travelled");
+		//map.put(COST_PER_HOUR, "cost per vehicle and hour in service");
 		map.put(EARNINGS_PER_BOARDING_PASSENGER, "Price an agent has to pay when boarding, regardless how far he will travel");
+		map.put(SUBSIDY_PER_BOARDING_PASSENGER, "An additional income for the operator when boarding at a subsidized stop");
+		map.put(SUBSIDIZED_STOPS, "CSV File with a list of stops IDs which will be subsidized");
 		map.put(EARNINGS_PER_KILOMETER_AND_PASSENGER, "earnings per passenger kilometer");
 		map.put(PRICE_PER_VEHICLE_BOUGHT, "price of one vehicle bought");
 		map.put(PRICE_PER_VEHICLE_SOLD, "price of one vehicle sold");
@@ -388,6 +458,7 @@ public final class PConfigGroup extends ConfigGroup{
 		map.put(MIN_OPERATION_TIME, "min time of operation of each operator in seconds");
 		map.put(MIN_INITIAL_STOP_DISTANCE, "min distance the two initial stops of a new operator's first route should be apart. Default is 1.0. Set to 0.0 to allow for the same stop being picked as start and end stop.");
 		map.put(USEFRANCHISE, "Will use a franchise system if set to true");
+		map.put(USEAVCONTRIB, "Will use the AV-Taxi Contrib if set to true");
 		map.put(WRITESTATS_INTERVAL, "interval in which statistics will be plotted. Set to zero to turn this feature off. Set to something larger than the total number of iterations to turn off the plots, but write the statistics file anyway");
 		map.put(LOG_OPERATORS, "will log operators individually if set to true");
 		map.put(WRITE_METRICS, "will calculate common performance metrics if set to true, default is false");
@@ -415,6 +486,16 @@ public final class PConfigGroup extends ConfigGroup{
 			map.put(PMODULE_PROBABILITY + entry.getKey().toString(), "probability that a strategy is applied to a given a plan. despite its name, this really is a ``weight''");
 			map.put(PMODULE_DISABLEINITERATION + entry.getKey().toString(), "removes the strategy from the choice set at the beginning of the given iteration");
 			map.put(PMODULE_PARAMETER + entry.getKey().toString(), "parameters of the strategy");
+		}
+		
+		for (Entry<Id<PVehicleSettings>, PVehicleSettings> entry : this.pVehicleTypes.entrySet()) {
+			map.put(PVEHICLE + entry.getKey().toString(), "type of the vehicle");
+			map.put(PVEHICLE_COST_PER_HOUR + entry.getKey().toString(), "cost per hour in service");
+			map.put(PVEHICLE_COST_PER_KILOMETER + entry.getKey().toString(), "cost per kilometer");
+			map.put(PVEHICLE_COST_PER_DAY + entry.getKey().toString(), "cost per vehicle and day - will prevent companies from operating only short periods of a day");
+			map.put(PVEHICLE_CAPACITY + entry.getKey().toString(), "capacity of the vehicle");
+			map.put(PVEHICLE_EARNINGSPERPASSENGERANDKILOMETER + entry.getKey().toString(), "earnings per passenger and kilometer");
+			map.put(PVEHICLE_EARNINGSPERBOARDINGANDPASSENGER + entry.getKey().toString(), "earnings per boarding passenger");
 		}
 
 		return map;
@@ -484,10 +565,12 @@ public final class PConfigGroup extends ConfigGroup{
 		return this.doorOperationMode;
 	}
 	
+	
 	public double getCostPerVehicleAndDay() {
 		return this.costPerVehicleAndDay;
 	}
 	
+	/*
 	public double getCostPerKilometer() {
 		return this.costPerKilometer;
 	}
@@ -495,7 +578,8 @@ public final class PConfigGroup extends ConfigGroup{
 	public double getCostPerHour() {
 		return this.costPerHour;
 	}
-
+	*/
+	
 	public double getEarningsPerBoardingPassenger() {
 		return this.earningsPerBoardingPassenger;
 	}
@@ -504,6 +588,14 @@ public final class PConfigGroup extends ConfigGroup{
 		return this.earningsPerKilometerAndPassenger;
 	}
 		
+	public String getSubsidizedStops() {
+		return this.subsidizedStopFile;
+	}
+	
+	public double getSubsidiesPerBoardingPassenger() {
+		return this.subsidyPerBoardingPassenger;
+	}
+	
 	public double getPricePerVehicleBought() {
 		return this.pricePerVehicleBought;
 	}
@@ -526,6 +618,10 @@ public final class PConfigGroup extends ConfigGroup{
 
 	public boolean getUseFranchise() {
 		return this.useFranchise;
+	}
+	
+	public boolean getUseAVContrib() {
+		return this.useAVContrib;
 	}
 	
 	public int getWriteStatsInterval() {
@@ -608,8 +704,15 @@ public final class PConfigGroup extends ConfigGroup{
 		return this.operationMode;
 	}
 	
-	public void setSubsidyApproach( String val ) {
-		this.subsidyApproach = val ;
+	public void setUseAVContrib( boolean useAVs )	{
+		this.useAVContrib = useAVs;
+	}
+	
+	public void setWelfareMaximization( boolean val ) {
+		this.welfareMaximization = val ;
+	}
+	public boolean getWelfareMaximization() {
+		return this.welfareMaximization;
 	}
 	public String getSubsidyApproach() {
 		return this.subsidyApproach;
@@ -624,6 +727,99 @@ public final class PConfigGroup extends ConfigGroup{
 			list.add(Integer.parseInt(s.trim()));
 		}
 		return list;
+	}
+	
+	public Collection<PVehicleSettings> getPVehicleSettings() {
+		return this.pVehicleTypes.values();
+	}
+	
+	private PVehicleSettings getPVehicleSettings(final Id<PVehicleSettings> vehicleId, final boolean createIfMissing) {
+		PVehicleSettings pVehicleSettings = this.pVehicleTypes.get(vehicleId);
+		if (pVehicleSettings == null && createIfMissing) {
+			pVehicleSettings = new PVehicleSettings(vehicleId);
+			this.pVehicleTypes.put(vehicleId, pVehicleSettings);
+		}
+		return pVehicleSettings;
+	}
+	
+	public static class PVehicleSettings	{
+		private Id<PVehicleSettings> id;
+		private String pVehicleName = null;
+		private double costPerHour = 0.0;
+		private double costPerKilometer = 0.0;
+		private double costPerVehicleAndDay = 0.0;
+		private double earningsPerBoardingPassenger = 0.0;
+		private double earningsPerKilometerAndPassenger = 0.0;
+		private int capacityPerVehicle = 0;
+		
+		public PVehicleSettings(final Id<PVehicleSettings> id)	{
+			this.id = id;
+		}
+		
+		public void setId(final Id<PVehicleSettings> id)	{
+			this.id = id;
+		}
+		
+		public Id<PVehicleSettings> getId()	{
+			return this.id;
+		}
+		
+		public void setPVehicleName(final String pVehicleName)	{
+			this.pVehicleName = pVehicleName;
+		}
+		
+		public String getPVehicleName()	{
+			return this.pVehicleName;
+		}
+		
+		public void setCostPerHour(final double costPerHour)	{
+			this.costPerHour = costPerHour;
+		}
+		
+		public double getCostPerHour()	{
+			return this.costPerHour;
+		}
+		
+		public void setCostPerKilometer(final double costPerKilometer)	{
+			this.costPerKilometer = costPerKilometer;
+		}
+		
+		public double getCostPerKilometer()	{
+			return this.costPerKilometer;
+		}
+		
+		public void setCostPerVehicleAndDay(final double costPerVehicleAndDay)	{
+			this.costPerVehicleAndDay = costPerVehicleAndDay;
+		}
+		
+		public double getCostPerVehicleAndDay()	{
+			return this.costPerVehicleAndDay;
+		}
+		
+		public void setEarningsPerBoardingPassenger(final double earningsPerBoardingPassenger)	{
+			this.earningsPerBoardingPassenger = earningsPerBoardingPassenger;
+		}
+		
+		public double getEarningsPerBoardingPassenger()	{
+			return this.earningsPerBoardingPassenger;
+		}
+		
+		public void setEarningsPerKilometerAndPassenger(final double earningsPerKilometerAndPassenger)	{
+			this.earningsPerKilometerAndPassenger = earningsPerKilometerAndPassenger;
+		}
+		
+		public double getEarningsPerKilometerAndPassenger()	{
+			return this.earningsPerKilometerAndPassenger;
+		}
+		
+		public void setCapacityPerVehicle(final int capacityPerVehicle)	{
+			this.capacityPerVehicle = capacityPerVehicle;
+		}
+		
+		public int getCapacityPerVehicle()	{
+			return this.capacityPerVehicle;
+		}
+	
 	}
 
 	public Collection<PStrategySettings> getStrategySettings() {
@@ -719,6 +915,7 @@ public final class PConfigGroup extends ConfigGroup{
 		}
 
 	}
+	
 	@Override
 	protected void checkConsistency( Config config ) {
 		

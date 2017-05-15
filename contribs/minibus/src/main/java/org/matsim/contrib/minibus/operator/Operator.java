@@ -57,6 +57,8 @@ public interface Operator {
 	public PRouteProvider getRouteProvider();
 
 	public PFranchise getFranchise();
+	
+	public PRouteOverlap getPRouteOverlap();
 
 	public Id<Operator> getId();
 	

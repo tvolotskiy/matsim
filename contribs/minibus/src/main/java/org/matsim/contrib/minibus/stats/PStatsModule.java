@@ -48,7 +48,7 @@ public final class PStatsModule extends AbstractModule {
 		this.addControlerListenerBinding().toInstance(new POperatorLogger());
 		this.addControlerListenerBinding().toInstance(new GexfPStat(false, pConfig));
 		this.addControlerListenerBinding().to(GexfPStatLight.class);
-		this.addControlerListenerBinding().to(Line2GexfPStat.class);
+		//this.addControlerListenerBinding().to(Line2GexfPStat.class);
 
 		if (pConfig.getWriteMetrics()) {
 			this.addControlerListenerBinding().toInstance(new PAnalysisManager(pConfig));

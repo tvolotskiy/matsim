@@ -116,8 +116,13 @@ public final class POperatorLogger implements StartupListener, IterationEndsList
 					local.setPlanId(plan.getId());
 					local.setCreatorId(plan.getCreator());
 					local.setParentId(plan.getParentId());
+					local.setVehicleType(plan.getPVehicleType());
 					
 					local.setnVeh(plan.getNVehicles());
+					
+					local.setDistanceDriven(plan.getTotalKilometersDrivenPerVehicle());
+					local.setTimeDriven(plan.getTotalHoursDrivenPerVehicle());
+					local.setPassengerKilometer(plan.getPassengerKilometerPerVehicle());
 					
 					local.setnPax(plan.getTripsServed());
 					total.setnPax(total.getnPax() + local.getnPax());

@@ -62,6 +62,7 @@ public final class MaxRandomEndTimeAllocator extends AbstractPStrategyModule {
 		newPlan.setNVehicles(1);
 		newPlan.setStopsToBeServed(operator.getBestPlan().getStopsToBeServed());
 		newPlan.setStartTime(operator.getBestPlan().getStartTime());
+		newPlan.setPVehicleType(operator.getBestPlan().getPVehicleType());
 		
 		// get a valid new end time
 		double timeMutation;

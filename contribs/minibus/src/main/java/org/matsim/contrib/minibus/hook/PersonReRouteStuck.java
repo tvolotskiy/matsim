@@ -49,6 +49,7 @@ final class PersonReRouteStuck extends AbstractPersonReRouteStuck {
 	@Override
 	public void run(final Person person) {
 		Plan selectedPlan = person.getSelectedPlan();
+		
 		if (selectedPlan == null) {
 			// the only way no plan can be selected should be when the person has no plans at all
 			log.warn("Person " + person.getId() + " has no plans!");
@@ -57,7 +58,9 @@ final class PersonReRouteStuck extends AbstractPersonReRouteStuck {
 		
 		if(this.agentsStuck.contains(person.getId())){
 			this.transitActsRemover.run(selectedPlan);
+			
 			this.router.run(selectedPlan);
+		
 		}
 	}
 }

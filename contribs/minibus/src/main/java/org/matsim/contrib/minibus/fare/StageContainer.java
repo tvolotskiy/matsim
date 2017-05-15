@@ -56,8 +56,10 @@ public final class StageContainer {
 		this.vehArrivesAtFacilityELeft = vehArrivesAtFacilityE;
 	}
 	
+	
+	// TODO: set this in the config
 	public void addDistanceTravelled(double meterTravelled){
-		this.meterTravelled  += meterTravelled;
+		this.meterTravelled  += 5 * meterTravelled;
 	}
 
 	public Id<TransitStopFacility> getStopEntered() {

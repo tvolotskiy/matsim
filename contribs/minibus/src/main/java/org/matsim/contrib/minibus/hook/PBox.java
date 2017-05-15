@@ -19,9 +19,12 @@
 
 package org.matsim.contrib.minibus.hook;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 //import javax.inject.Inject;
 
@@ -35,7 +38,7 @@ import org.matsim.contrib.minibus.operator.Operator;
 import org.matsim.contrib.minibus.operator.OperatorInitializer;
 import org.matsim.contrib.minibus.operator.PFranchise;
 import org.matsim.contrib.minibus.operator.POperators;
-import org.matsim.contrib.minibus.operator.SubsidyI;
+import org.matsim.contrib.minibus.operator.PRouteOverlap;
 import org.matsim.contrib.minibus.operator.TimeProvider;
 import org.matsim.contrib.minibus.replanning.PStrategyManager;
 import org.matsim.contrib.minibus.schedule.PStopsFactory;
@@ -84,17 +87,35 @@ public final class PBox implements POperators {
 	@Inject(optional=true)
 	private SubsidyI subsidy;
 
+	private PRouteOverlap routeOverlap;
+
 	/**
 	 * Constructor that allows to set the ticketMachine.  Deliberately in constructor and not as setter to keep the variable final.  Might be
 	 * replaced by a builder and/or guice at some later point in time.  But stay with "direct" injection for the time being.  kai, jan'17
 	 */
 	@Inject PBox(PConfigGroup pConfig, TicketMachineI ticketMachine) {
 		this.pConfig = pConfig;
-		this.ticketMachine = ticketMachine ;
+		this.ticketMachine = ticketMachine;
 		this.scorePlansHandler = new PScorePlansHandler(this.ticketMachine);
 		this.stageCollectorHandler = new StageContainerCreator(this.pConfig.getPIdentifier());
-		this.operatorCostCollectorHandler = new OperatorCostCollectorHandler(this.pConfig.getPIdentifier(), this.pConfig.getCostPerVehicleAndDay(), this.pConfig.getCostPerKilometer() / 1000.0, this.pConfig.getCostPerHour() / 3600.0);
-		this.franchise = new PFranchise(this.pConfig.getUseFranchise(), pConfig.getGridSize());	
+		
+		//this.operatorCostCollectorHandler = new OperatorCostCollectorHandler(this.pConfig.getPIdentifier(), this.pConfig.getCostPerVehicleAndDay(), this.pConfig.getCostPerKilometer() / 1000.0, this.pConfig.getCostPerHour() / 3600.0);
+		this.operatorCostCollectorHandler = new OperatorCostCollectorHandler(this.pConfig.getPIdentifier(), this.pConfig.getPVehicleSettings());
+
+		
+		this.routeOverlap = new PRouteOverlap(true, pConfig.getGridSize());
+		this.franchise = new PFranchise(this.pConfig.getUseFranchise(), pConfig.getGridSize());
+
+		if (pConfig.getWelfareMaximization()) {
+			log.info("Objective Function: Welfare");
+			this.welfareAnalyzer = new WelfareAnalyzer(pConfig.getInitialScoresFile());
+		} else {
+			log.info("Objective Function: Operator Profit");
+			this.welfareAnalyzer = null;
+		}
+
+		this.welfareStats = new WelfareStatsContainer(pConfig, this.welfareAnalyzer);
+
 	}
 
 	void notifyStartup(StartupEvent event) {
@@ -104,7 +125,7 @@ public final class PBox implements POperators {
 		event.getServices().getEvents().addHandler(timeProvider);
 
 		// initialize strategy manager
-		this.strategyManager.init(this.pConfig, this.stageCollectorHandler, this.ticketMachine, timeProvider);
+		this.strategyManager.init(this.pConfig, this.stageCollectorHandler, this.ticketMachine, timeProvider, event.getServices().getControlerIO().getOutputPath());
 
 		// init fare collector
 		this.stageCollectorHandler.init(event.getServices().getScenario().getNetwork());
@@ -126,7 +147,9 @@ public final class PBox implements POperators {
 		this.pStopsOnly = PStopsFactory.createPStops(event.getServices().getScenario().getNetwork(), this.pConfig, event.getServices().getScenario().getTransitSchedule());
 
 		this.operators = new LinkedList<>();
-		this.operatorInitializer = new OperatorInitializer(this.pConfig, this.franchise, this.pStopsOnly, event.getServices(), timeProvider);
+
+		this.operatorInitializer = new OperatorInitializer(this.pConfig, this.franchise, this.pStopsOnly, event.getServices(), timeProvider, this.welfareAnalyzer, this.routeOverlap);
+
 
 		// init additional operators from a given transit schedule file
 		LinkedList<Operator> operatorsFromSchedule = this.operatorInitializer.createOperatorsFromSchedule(event.getServices().getScenario().getTransitSchedule());
@@ -147,10 +170,11 @@ public final class PBox implements POperators {
 
 		// Reset the franchise system - TODO necessary?
 		this.franchise.reset(this.operators);
+		this.routeOverlap.reset(this.operators);
 	}
 
 	void notifyIterationStarts(IterationStartsEvent event) {
-
+		
 		this.strategyManager.updateStrategies(event.getIteration());
 
 		// Adapt number of operators
@@ -173,6 +197,7 @@ public final class PBox implements POperators {
 
 		// Reset the franchise system
 		this.franchise.reset(this.operators);
+		this.routeOverlap.reset(this.operators);
 	}
 
 	void notifyScoring(ScoringEvent event) {

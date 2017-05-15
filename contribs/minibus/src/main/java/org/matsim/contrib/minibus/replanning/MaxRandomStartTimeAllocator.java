@@ -61,6 +61,7 @@ public final class MaxRandomStartTimeAllocator extends AbstractPStrategyModule {
 		PPlan newPlan = new PPlan(operator.getNewPlanId(), this.getStrategyName(), operator.getBestPlan().getId());
 		newPlan.setNVehicles(1);
 		newPlan.setStopsToBeServed(operator.getBestPlan().getStopsToBeServed());
+		newPlan.setPVehicleType(operator.getBestPlan().getPVehicleType());
 		
 		// get a valid new start time
 		double timeMutation;

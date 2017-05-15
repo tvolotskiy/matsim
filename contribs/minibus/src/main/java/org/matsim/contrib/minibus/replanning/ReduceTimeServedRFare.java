@@ -96,6 +96,7 @@ public final class ReduceTimeServedRFare extends AbstractPStrategyModule impleme
 		PPlan newPlan = new PPlan(operator.getNewPlanId(), this.getStrategyName(), operator.getBestPlan().getId());
 		newPlan.setNVehicles(1);
 		newPlan.setStopsToBeServed(operator.getBestPlan().getStopsToBeServed());
+		newPlan.setPVehicleType(operator.getBestPlan().getPVehicleType());
 		
 		newPlan.setStartTime(timeToBeServed.getFirst());
 		newPlan.setEndTime(timeToBeServed.getSecond());

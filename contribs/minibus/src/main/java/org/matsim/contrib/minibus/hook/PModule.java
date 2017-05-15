@@ -80,8 +80,12 @@ public final class PModule extends AbstractModule {
 
 		bind(POperators.class).to(PBox.class).asEagerSingleton();
 		// (needs to be a singleton since it is a data container, and all clients should use the same data container. kai, jan'17)
-
-		bindMobsim().toProvider(PQSimProvider.class) ;
+		
+		
+		if ( !ConfigUtils.addOrGetModule(getConfig(), PConfigGroup.class ).getUseAVContrib() ) {
+			bindMobsim().toProvider(PQSimProvider.class) ;
+		}
+		
 		bind(LineId2PtMode.class).to( BVGLines2PtModes.class ) ;
 
 		install( new PStatsModule() ) ;

@@ -28,7 +28,7 @@ import org.matsim.core.mobsim.qsim.pt.MobsimDriverPassengerAgent;
 /**
  * @author aneumann
  */
-class PTransitAgentFactory implements AgentFactory {
+public class PTransitAgentFactory implements AgentFactory {
 
 	private final Netsim simulation;
 

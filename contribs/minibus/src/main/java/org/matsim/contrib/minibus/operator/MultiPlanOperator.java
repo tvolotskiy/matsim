@@ -44,8 +44,8 @@ public final class MultiPlanOperator extends AbstractOperator{
 	
 	private final List<PPlan> plans;
 
-	public MultiPlanOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise){
-		super(id, pConfig, franchise);
+	public MultiPlanOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise, PRouteOverlap pRouteOverlap){
+		super(id, pConfig, franchise, pRouteOverlap);
 		this.plans = new LinkedList<>();
 	}
 	

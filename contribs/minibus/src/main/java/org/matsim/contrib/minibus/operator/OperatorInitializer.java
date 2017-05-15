@@ -50,9 +50,9 @@ public final class OperatorInitializer {
 
 
 	public OperatorInitializer(PConfigGroup pConfig, PFranchise franchise, TransitSchedule pStopsOnly, MatsimServices controler, 
-			TimeProvider timeProvider) {
+			TimeProvider timeProvider, WelfareAnalyzer welfareAnalyzer, PRouteOverlap pRouteOverlap) {
 		this.pConfig = pConfig;
-		this.operatorFactory = new OperatorFactory(this.pConfig, franchise);
+		this.operatorFactory = new OperatorFactory(this.pConfig, franchise, welfareAnalyzer, pRouteOverlap);
 		this.routeProvider = PRouteProviderFactory.createRouteProvider(controler.getScenario().getNetwork(), controler.getScenario().getPopulation(), this.pConfig, pStopsOnly, controler.getControlerIO().getOutputPath(), controler.getEvents());
 
 		if (this.pConfig.getStartWith24Hours()) {

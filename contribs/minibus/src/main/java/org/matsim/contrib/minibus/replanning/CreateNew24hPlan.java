@@ -71,6 +71,9 @@ public final class CreateNew24hPlan extends AbstractPStrategyModule {
 			newPlan.setNVehicles(1);
 			newPlan.setStopsToBeServed(stopsToBeServed);
 			
+			String pVehicleType = operator.getRouteProvider().getRandomPVehicle();
+			newPlan.setPVehicleType(pVehicleType);
+			
 			newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
 		} while (operator.getFranchise().planRejected(newPlan));		
 
