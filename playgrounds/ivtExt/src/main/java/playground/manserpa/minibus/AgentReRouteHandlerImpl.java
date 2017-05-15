@@ -42,18 +42,20 @@ class AgentReRouteHandlerImpl	{
 
 	private Map<Id<Person>, ? extends Person> agents;
 
-	public AgentReRouteHandlerImpl(Map<Id<Person>, ? extends Person> agents) {
+	public AgentReRouteHandlerImpl(Map<Id<Person>, ? extends Person> agents, int iteration) {
 		this.agents = agents;
 		
 		this.agentsToReRoute = new TreeSet<>();
 		
+		double percentageToReRoute = -1 * Math.pow(2,0.02 * iteration) / 35 + 0.65;
+		
 		for( Id<Person> e : this.agents.keySet())	{
 			double rand = MatsimRandom.getRandom().nextDouble();
-			if ( rand > 0.4 )
+			if ( rand > (1 - percentageToReRoute) )
 				this.agentsToReRoute.add(e);
 		}
 		
-		log.info("initialized");
+		log.info("initialized " + (1 - percentageToReRoute));
 	}
 	
 	public Set<Id<Person>> resetAgentsToReRoute() {

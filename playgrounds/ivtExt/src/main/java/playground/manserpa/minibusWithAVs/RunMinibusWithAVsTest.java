@@ -41,15 +41,15 @@ public final class RunMinibusWithAVsTest {
 
 		Scenario scenario = ScenarioUtils.loadScenario(config);
 
-
+		
 		Controler controler = new Controler(scenario);
 		controler.getConfig().controler().setCreateGraphs(false);
+		ConfigUtils.addOrGetModule(controler.getConfig(), PConfigGroup.class ).setUseAVContrib(true);
 		controler.addOverridingModule(VrpTravelTimeModules.createTravelTimeEstimatorModule());
 		controler.addOverridingModule(new DynQSimModule<>(AVQSimProvider.class));
 		controler.addOverridingModule(new AVModule());
 
 		controler.addOverridingModule(new PModule()) ;
-
 
 		controler.run();
 		

@@ -47,6 +47,8 @@ import org.matsim.vehicles.Vehicles;
 
 import com.google.inject.Inject;
 
+import playground.manserpa.minibus.PseudoReplanning;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -90,6 +92,9 @@ final class PControlerListener implements IterationStartsListener, StartupListen
 
 	@Override
 	public void notifyIterationStarts(IterationStartsEvent event) {
+		
+	if(((event.getIteration() + 1) % 2 == 0 && event.getIteration() <= 200) || event.getIteration() > 200) {
+		
 		PBox pBox = (PBox) operators ;
 		final MatsimServices controler = event.getServices();
 		if(event.getIteration() == controler.getConfig().controler().getFirstIteration()){
@@ -101,7 +106,7 @@ final class PControlerListener implements IterationStartsListener, StartupListen
 			removePreviousPVehiclesFromScenario(event.getServices().getScenario().getTransitVehicles());
 			addPVehiclesToOriginalOnes(event.getServices().getScenario().getTransitVehicles(), this.pVehiclesFactory.createVehicles(pBox.getpTransitSchedule()));
 
-			//			this.pTransitRouterFactory.updateTransitSchedule();
+			// this.pTransitRouterFactory.updateTransitSchedule();
 
 			if(this.agentsStuckHandler != null){
 				ParallelPersonAlgorithmRunner.run(controler.getScenario().getPopulation(), controler.getConfig().global().getNumberOfThreads(), new ParallelPersonAlgorithmRunner.PersonAlgorithmProvider() {
@@ -114,14 +119,27 @@ final class PControlerListener implements IterationStartsListener, StartupListen
 					}
 				});
 			}
+			
+			if((event.getIteration() + 1) % 2 == 0 && event.getIteration() <= 200)
+				new PseudoReplanning(controler, event.getIteration());
+
 		}
 		this.dumpTransitScheduleAndVehicles(event.getServices(), event.getIteration());
+	
+	}
+	
 	}
 
 	@Override
 	public void notifyScoring(ScoringEvent event) {
-		PBox pBox = (PBox) operators ;
-		pBox.notifyScoring(event);
+		
+		if ( (event.getIteration() <= 200 && event.getIteration() % 2 == 0) || event.getIteration() > 200 )	{
+			
+			PBox pBox = (PBox) operators ;
+			pBox.notifyScoring(event);
+		
+		}
+		
 	}
 
 	private final Set<Id<TransitStopFacility>> currentExclusivePFacilityIDs = new HashSet<>();

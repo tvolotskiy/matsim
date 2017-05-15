@@ -35,8 +35,8 @@ public final class BasicOperator extends AbstractOperator{
 	
 	public static final String OPERATOR_NAME = "BasicOperator"; 
 
-	public BasicOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise){
-		super(id, pConfig, franchise);
+	public BasicOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise, PRouteOverlap pRouteOverlap){
+		super(id, pConfig, franchise, pRouteOverlap);
 	}
 
 	@Override

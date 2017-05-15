@@ -1,14 +1,20 @@
 package org.matsim.contrib.minibus.replanning;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.contrib.minibus.PConfigGroup;
+import org.matsim.contrib.minibus.PConstants;
 import org.matsim.contrib.minibus.PConfigGroup.PVehicleSettings;
 import org.matsim.contrib.minibus.operator.Operator;
 import org.matsim.contrib.minibus.operator.PPlan;
+import org.matsim.contrib.minibus.stats.operatorLogger.LogElement;
 import org.matsim.core.gbl.MatsimRandom;
+import org.matsim.core.utils.io.IOUtils;
+import org.matsim.core.utils.io.UncheckedIOException;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
 
@@ -18,8 +24,10 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 	private final static Logger log = Logger.getLogger(ChooseVehicleType.class);
 	public static final String STRATEGY_NAME = "ChooseVehicleType";
 	private PConfigGroup pConfig;
+	private BufferedWriter writer;
+	private String outputDir;
 	
-	public ChooseVehicleType(ArrayList<String> parameter) {
+	public ChooseVehicleType(ArrayList<String> parameter)  {
 		super();
 		if(parameter.size() != 0){
 			log.error("No parameter needed here");
@@ -71,7 +79,6 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 			
 			// modify that according to the departure intervals
 			double occupancy = oldPlan.getPassengerKilometerPerVehicle() / oldPlan.getTotalKilometersDrivenPerVehicle();
-			
 			
 			// this is for the decision between old and new vehicle type
 			double nVehiclesOld = oldPlan.getNVehicles();
@@ -129,6 +136,8 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 			else
 				timeFactor = -.04444444 * operationTime + 1.133333333; 
 			
+			
+			// calculate the marginal occupancy
 			double marginalOccupancy = timeFactor * (seatCostsNew - seatCostsOld) / (seatEarningsNew - seatEarningsOld);
 			
 			
@@ -144,6 +153,7 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 			
 			double occupancyNew = expectedPaxKilometer / (oldPlan.getTotalKilometersDrivenPerVehicle() * newPlan.getNVehicles());
 			
+			/*
 			log.info(" ");
 			log.info("Operator " + operator.getId() + " Old Plan " + oldPlan.getId());
 			log.info("Old vehicle type " + pVehicleTypeOld + " number of vehicles: " +nVehicles);
@@ -155,6 +165,7 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 			log.info("PaxKilometer Old " + oldPlan.getTotalPassengerKilometer());
 			log.info("Vehicles Per Hour New " + vehiclesPerHourNew);
 			log.info("PaxKilometer Expected " + expectedPaxKilometer);
+			*/
 			
 			double deltaOccupancy = occupancyNew - marginalOccupancy;
 			
@@ -163,7 +174,7 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 				//it's an upgrade
 				if (doChangeVehicleType(deltaOccupancy, true, false))	{
 					// reset the old plan
-					log.info("Will change: true");
+					//log.info("Will change: true");
 					oldPlan.setNVehicles(0);
 					oldPlan.setScore(0.0);
 					
@@ -175,7 +186,7 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 				//it's a downgrade
 				if (doChangeVehicleType((-1 * deltaOccupancy), false, true))	{
 					// reset the old plan
-					log.info("Will change: true");
+					//log.info("Will change: true");
 					oldPlan.setNVehicles(0);
 					oldPlan.setScore(0.0);
 					
@@ -199,301 +210,52 @@ public final class ChooseVehicleType extends AbstractPStrategyModule {
 		else if (isDowngrade)
 			probabilityToChange = 1 / ( 1 + 15 * Math.exp(-deltaOccupancy / 2.2));
 		
-		log.info("Probability to change: " + probabilityToChange);
+		//log.info("Probability to change: " + probabilityToChange);
 			
 		double rndTreshold = MatsimRandom.getRandom().nextDouble();
-		log.info("Treshold: " + rndTreshold);
+		//log.info("Treshold: " + rndTreshold);
 		if(probabilityToChange > rndTreshold)	{
+			writeLine(deltaOccupancy, isUpgrade);
 			return true;
 		}
 		
 		return false;
-	}
+	}	
 	
-		/*
-		double occupancy = oldPlan.getTotalPassengerKilometer() * 1000 / oldPlan.getTotalMeterDriven();
+	public void writeLine(final double deltaOccupancy, final boolean wasUpgrade) {
 		
-		// now calculate the occupancy needed to the other vehicle types
-		double costsOld = 0.0;
-		double revenueOld = 0.0;
-		int capacityOld = 0;
+		this.outputDir = this.outputDir + PConstants.statsOutputFolder;
 		
-		
-		
-		for (PVehicleSettings pVS : this.pConfig.getPVehicleSettings()) {
-            if (pVehicleTypeOld.equals(pVS.getPVehicleName())) {
-            	costsOld = pVS.getCapacityPerVehicle() * (pVS.getCostPerKilometer() * oldPlan.getTotalMeterDriven() / 1000 + 
-            			pVS.getCostPerHour() * oldPlan.getTotalTimeDriven() / 3600);
-            	revenueOld = pVS.getCapacityPerVehicle() * pVS.getEarningsPerKilometerAndPassenger() * oldPlan.getTotalMeterDriven() / 1000;
-            	capacityOld = pVS.getCapacityPerVehicle();
-            }
-        }
+		if(this.writer == null){
+			this.writer = IOUtils.getBufferedWriter(this.outputDir + "pChooseVehicleTypeLogger.txt");
+			try {
+				this.writer.write("DeltaOccupancy; IsUpgrade");
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		}
 		
 		
-		
-		double maxDeltaOccupancyNeg = 0.0;
-		double maxDeltaOccupancyPos = 0.0;
-		String vehicleTypeNewNeg = null;
-		String vehicleTypeNewPos = null;
-		
-		
-		// if the old plan does not have a score, it is not possible to change the vehicle type
-		if(oldPlan.getScore() != 0)	{
-			
-			for (PVehicleSettings pVS : this.pConfig.getPVehicleSettings()) {
-	            if (!pVehicleTypeOld.equals(pVS.getPVehicleName())) {
-	            	
-	            	double costsNew = pVS.getCapacityPerVehicle() * (pVS.getCostPerKilometer() * oldPlan.getTotalMeterDriven() / 1000 + 
-                			pVS.getCostPerHour() * oldPlan.getTotalTimeDriven() / 3600);
-            		double revenueNew = pVS.getCapacityPerVehicle() * pVS.getEarningsPerKilometerAndPassenger() * oldPlan.getTotalMeterDriven() / 1000;
-            		
-            		double marginalOccupancy = (costsNew - costsOld) / (revenueNew - revenueOld);
-            		
-            		double deltaOccupancy = occupancy - marginalOccupancy;
-            		
-	            	// should the operator use smaller vehicles?
-	            	if(pVS.getCapacityPerVehicle() < capacityOld && deltaOccupancy < 0)	{
-	            		
-	            		if ( deltaOccupancy < maxDeltaOccupancyNeg )	{
-	            			maxDeltaOccupancyNeg = deltaOccupancy;
-	            			vehicleTypeNewNeg = pVS.getPVehicleName();
-	            		}
+		try {
+			this.writer.newLine();
+			this.writer.write(deltaOccupancy + ";" + wasUpgrade);
+			this.writer.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
-	            	}
-	            	// should the operator use bigger vehicles?
-	            	if(pVS.getCapacityPerVehicle() > capacityOld && deltaOccupancy > 0)	{
-	            		
-	            		if ( deltaOccupancy > maxDeltaOccupancyPos )	{
-	            			maxDeltaOccupancyPos = deltaOccupancy;
-	            			vehicleTypeNewPos = pVS.getPVehicleName();
-	            		}
-	            		
-	            	}
-	            }
-	        }
-			
-			double maxDeltaOccupancy = 0.0;
-			
-			if (maxDeltaOccupancyPos > Math.abs(maxDeltaOccupancyNeg))	{
-				maxDeltaOccupancy = maxDeltaOccupancyPos;
-				newPlan.setPVehicleType(vehicleTypeNewPos);
-			}
-			else if(maxDeltaOccupancyPos < Math.abs(maxDeltaOccupancyNeg))	{
-				maxDeltaOccupancy = maxDeltaOccupancyNeg;
-				newPlan.setPVehicleType(vehicleTypeNewNeg);
-			}
-			
-			if(doChangeVehicleType(maxDeltaOccupancy))	{
-    			newPlan.setNVehicles(oldPlan.getNVehicles());
-    			
-    			oldPlan.setNVehicles(0);
-    			oldPlan.setScore(0.0);
-    			
-    			newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
-    			return newPlan;
-    		}
-		}
-		
-		else	{
-			
-			newPlan.setNVehicles(0);
-			
-			return newPlan;
-			
-		}
-		
-		newPlan.setNVehicles(0);
-		
-		return newPlan;
-		
 	}
-	
-	public boolean doChangeVehicleType( double deltaOccupancy ) {
-		
-		// probability to change
-		double probToChange = 0.1 * deltaOccupancy;
-			
-		double rndTreshold = MatsimRandom.getRandom().nextDouble();
-		
-		if(probToChange > rndTreshold)	{
-			return true;
-		}
-		
-		return false;
-	}
-		
-		*/
-		
-		
-		/*
-		
-		
-		// get costs of old and new vehicle type
-		double costsOld = 0.0;
-		double costsNew = 0.0;
-		
-		for (PVehicleSettings pVS : this.pConfig.getPVehicleSettings()) {
-            if (pVehicleTypeOld.equals(pVS.getPVehicleName())) {
-            	costsOld = pVS.getCostPerKilometer() + pVS.getCostPerHour();
-            }
-            if (pVehicleTypeNew.equals(pVS.getPVehicleName())) {
-            	costsNew = pVS.getCostPerKilometer() + pVS.getCostPerHour();
-            }
-        }
-		
-		// if the old plan does not have a score, it is not possible to change the vehicle type
-		if(oldPlan.getScore() != 0)	{
-		
-			// if more than one vehicles exist in the plan, one need to balance the capacities via costs
-			if(oldPlan.getNVehicles() > 1)	{
-				
-				// the new vehicles are smaller than the old ones
-				if (costsOld > costsNew)	{
-					// this does not make any sense, because the operator can first sell the big vehicles and try it with less, but still big
-					// vehicles -> good as it is
-					
-					// TODO: check this part
-					newPlan.setNVehicles(0);
-					//newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
-
-				}
-				
-				
-				// if the new vehicles are bigger than the old ones, no vehicle is added, but the operator has sort of
-				// to pay for the capacity upgrade				
-				else	{
-					
-					// TODO: Still not sure if everything works fine in here
-					
-					// the operator upgrades only if the old plan has a positive score and the probability of upgrading increases with 
-					// increasing score
-//					if(oldPlan.getScore() > 0 && doUpgrade(oldPlan.getScore()))	{
-						
-						double totalCostsOld = costsOld * oldPlan.getNVehicles();
-						double totalCostsNew = 0.0;
-						
-						while (totalCostsNew < totalCostsOld)	{
-							oldPlan.setNVehicles(oldPlan.getNVehicles() - 1);
-							totalCostsOld = costsOld * oldPlan.getNVehicles();
-							
-							newPlan.setNVehicles(newPlan.getNVehicles() + 1);
-							totalCostsNew = costsNew * newPlan.getNVehicles();	
-						}
-						
-						//if (newPlan.getNVehicles() > 1)	{
-						//	oldPlan.setNVehicles(oldPlan.getNVehicles() + 1);
-						//	newPlan.setNVehicles(newPlan.getNVehicles() - 1);
-						//}
-						
-						// reset the old plan
-						oldPlan.setNVehicles(0);
-						oldPlan.setScore(0.0);
-						
-						newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
-						
-						//return newPlan;
-//					}
-					
-//					else	{
-						
-//						newPlan.setNVehicles(0);
-						//return newPlan;
-					
-//					}
-				}
-			}
-			
-			// if only one vehicle exist in the plan, only one vehicle of the new type depending on the score
-			else	{
-				
-				if (costsOld > costsNew)	{
-					if (oldPlan.getScore() < 0 && doDowngrade( oldPlan.getScore() ))	{
-						newPlan.setNVehicles(1);
-						newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
-						
-						oldPlan.setNVehicles(0);
-						oldPlan.setScore(0.0);
-		
-					}
-					else	{
-						newPlan.setNVehicles(0);
-					}
-				}
-				
-				// new vehicle is bigger than the old one
-				else	{
-					if (oldPlan.getScore() > 0 && doUpgrade( oldPlan.getScore() ))	{
-						newPlan.setNVehicles(1);
-						newPlan.setLine(operator.getRouteProvider().createTransitLineFromOperatorPlan(operator.getId(), newPlan));
-						
-						oldPlan.setNVehicles(0);
-						oldPlan.setScore(0.0);
-
-					}
-					else	{
-						newPlan.setNVehicles(0);
-					}
-				}
-			}
-		}
-		else	{
-			newPlan.setNVehicles(0);
-		}
-		
-		return newPlan;
-	}
-	
-	public boolean doDowngrade( double score ) {
-		
-		score = Math.abs(score);
-		
-		// if the score is very low, do downgrade anyway
-		if (score > 1000)	{
-			return true;
-		}
-		
-		double scaleparameter = 1;
-			
-		// probability to change
-		double probToChange = scaleparameter / Math.pow(500, 2) * Math.pow(score, 2);
-			
-		double rndTreshold = MatsimRandom.getRandom().nextDouble();
-		
-		if(probToChange > rndTreshold)	{
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public boolean doUpgrade( double score ) {
-		
-		// if the score is very high, do update anyway
-		if (score > 2000)	{
-			return true;
-		}
-		
-		double scaleparameter = 0.8;
-			
-		// probability to change
-		double probToChange = scaleparameter / Math.pow(1000, 2) * Math.pow(score, 2);
-			
-		double rndTreshold = MatsimRandom.getRandom().nextDouble();
-		
-		if(probToChange > rndTreshold)	{
-			return true;
-		}
-		
-		return false;
-	}
-	*/
-		
 		
 	public void setPConfig(PConfigGroup pConfig) {
 		this.pConfig = pConfig;
 	}
 	
+	public void setOutputDir(String outputdir) {
+		this.outputDir = outputdir;
+	}
+	
 	public String getStrategyName() {
 		return ChooseVehicleType.STRATEGY_NAME;
 	}
+
 }

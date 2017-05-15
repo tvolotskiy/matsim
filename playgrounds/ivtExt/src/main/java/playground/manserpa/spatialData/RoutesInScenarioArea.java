@@ -15,19 +15,19 @@ import java.util.*;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-public final class ShapeFile2TransitRoutesCSV {
+public final class RoutesInScenarioArea {
 	private Geometry include;
 	private Geometry exclude;
 	private final GeometryFactory factory;
 	
 	public static void main(String[] args) throws IOException	{
-		ShapeFile2TransitRoutesCSV cs = new ShapeFile2TransitRoutesCSV(args[0]);
+		RoutesInScenarioArea cs = new RoutesInScenarioArea(args[0]);
 		
 		cs.run(args[1], args[2]);
 		
 	}
 	
-	private ShapeFile2TransitRoutesCSV(String shpFile)	{
+	private RoutesInScenarioArea(String shpFile)	{
 		this.factory = new GeometryFactory();
 		
 		readShapeFile(shpFile);
@@ -67,22 +67,12 @@ public final class ShapeFile2TransitRoutesCSV {
 	
 	private void run(String networkFile, String transitScheduleFile) throws IOException	{
 	
-		LinkedHashSet<String> transitSet = new LinkedHashSet<String>();
-	
-		String csvFileNodes = "NodesZH.csv";
-	    FileWriter writerNodes = new FileWriter(csvFileNodes);
+		List<String> transitRoutesInScenario = new ArrayList<>();
 	    
-	    CSVUtils.writeLine(writerNodes, Arrays.asList("id", "x", "y"), ';');
-	    
-	    String csvFileLinks = "LinksZH.csv";
-	    FileWriter writerLinks = new FileWriter(csvFileLinks );
-	    
-	    CSVUtils.writeLine(writerLinks , Arrays.asList("id", "from","to","length","modes","freespeed"), ';');
-	    
-	    String csvFileTransitLinks = "TransitLinksPara.csv";
+	    String csvFileTransitLinks = "VehicleStats.csv";
 	    FileWriter writerTransitLinks = new FileWriter(csvFileTransitLinks );
 	    
-	    CSVUtils.writeLine(writerTransitLinks , Arrays.asList("TransitLine", "TransitMode","LinkId"), ';');
+	    CSVUtils.writeLine(writerTransitLinks , Arrays.asList("VehKm", "VehH"), ';');
 	    
 		try {
 			List<String> nodeList = new ArrayList<>(); 
@@ -99,12 +89,6 @@ public final class ShapeFile2TransitRoutesCSV {
 						
 						if(nodeInServiceArea(Double.parseDouble(attributes.getValue("x")),Double.parseDouble(attributes.getValue("y"))))	{
 							
-							try {
-								CSVUtils.writeLine(writerNodes, Arrays.asList(attributes.getValue("id"), attributes.getValue("x"), attributes.getValue("y")), ';');
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-							
 							nodeList.add(attributes.getValue("id"));
 							
 						}
@@ -113,13 +97,6 @@ public final class ShapeFile2TransitRoutesCSV {
 					if(qName.equalsIgnoreCase("link"))	{
 						
 						if(nodeList.contains(attributes.getValue("from")) && nodeList.contains(attributes.getValue("to")))	{
-							
-							try {
-								CSVUtils.writeLine(writerLinks, Arrays.asList(attributes.getValue("id"), attributes.getValue("from"), attributes.getValue("to"),
-										attributes.getValue("length"), attributes.getValue("modes"), attributes.getValue("freespeed")), ';');
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
 							
 							linkList.add(attributes.getValue("id"));
 						
@@ -132,8 +109,10 @@ public final class ShapeFile2TransitRoutesCSV {
 			DefaultHandler handler2 = new DefaultHandler()	{
 				
 				String transitLine;
+				String transitRoute;
+				boolean isInScenario = true;
+				boolean getMode = false;
 				String transitMode;
-				boolean isTransitRoute = true;
 				
 				public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException	{
 					
@@ -141,18 +120,23 @@ public final class ShapeFile2TransitRoutesCSV {
 						transitLine = attributes.getValue("id");
 					}
 					
+					if(qName.equalsIgnoreCase("transitRoute"))	{
+						transitRoute = attributes.getValue("id");
+						isInScenario = true;
+					}
+					
 					if(qName.equalsIgnoreCase("transportMode"))	{
-						isTransitRoute = true; 
+						getMode = true; 
 					}	
 					
 					if(qName.equalsIgnoreCase("link"))	{
-						if(linkList.contains(attributes.getValue("refId")) && transitLine.contains("para"))	{
-						//if(linkList.contains(attributes.getValue("refId")) && !transitMode.equals("pt"))	{
-							
-							transitSet.add(transitLine + "===" + transitMode + "===" + attributes.getValue("refId"));
-							
+						
+						if(linkList.contains(attributes.getValue("refId")) && isInScenario)	{
+							isInScenario = true;
 						}
-							
+						else	{
+							isInScenario = false;
+						}	
 					}				
 				}
 				
@@ -160,40 +144,29 @@ public final class ShapeFile2TransitRoutesCSV {
 			            throws SAXException {
 					
 			        if(qName.equals("transportMode")) {
-			        	isTransitRoute = false;
+			        	getMode = false;
 			        }
-			        
+					
+			        if(qName.equals("transitRoute")) {
+			        	if(isInScenario && !transitMode.equals("pt"))	{
+			        		// ArrayList containing all the IDs
+			        		transitRoutesInScenario.add(transitRoute);
+			        		//System.out.println("Line: " + transitLine + "; Route: " + transitRoute + "; Mode: " + transitMode);	
+			        	}
+			        }
 			    }
 				
 				 public void characters(char[] ch, int start, int length) throws SAXException {
-				        if (isTransitRoute) {
+				        if (getMode) {
 				            transitMode = new String(ch, start, length);
 				        }
 				 }
-				 
 			};
 			
 			saxParser.parse(networkFile, handler);
-			
 			saxParser.parse(transitScheduleFile, handler2);
 			
-			for(String k: transitSet)	{
-				
-				String[] parts = k.split("===");
-				
-				try {
-					CSVUtils.writeLine(writerTransitLinks, Arrays.asList(parts[0], parts[1], parts[2]), ';');
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			
-			writerNodes.flush();
-	        writerNodes.close();
-	        
-	        writerLinks.flush();
-	        writerLinks.close();
-	        
+
 	        writerTransitLinks.flush();
 	        writerTransitLinks.close();
 			

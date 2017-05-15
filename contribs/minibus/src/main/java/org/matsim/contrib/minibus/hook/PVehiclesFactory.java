@@ -22,6 +22,9 @@ package org.matsim.contrib.minibus.hook;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.contrib.minibus.PConfigGroup;
+import org.matsim.contrib.minibus.PConfigGroup.PStrategySettings;
+import org.matsim.contrib.minibus.PConfigGroup.PVehicleSettings;
+import org.matsim.contrib.minibus.replanning.PStrategy;
 import org.matsim.pt.transitSchedule.api.Departure;
 import org.matsim.pt.transitSchedule.api.TransitLine;
 import org.matsim.pt.transitSchedule.api.TransitRoute;
@@ -53,24 +56,44 @@ class PVehiclesFactory {
 	public Vehicles createVehicles(TransitSchedule pTransitSchedule){		
 		Vehicles vehicles = VehicleUtils.createVehiclesContainer();		
 		VehiclesFactory vehFactory = vehicles.getFactory();
-		VehicleType vehType = vehFactory.createVehicleType(Id.create(this.pConfig.getPIdentifier(), VehicleType.class));
-		VehicleCapacity capacity = new VehicleCapacityImpl();
-		capacity.setSeats(this.pConfig.getPaxPerVehicle() + 1); // july 2011 the driver takes one seat
-		capacity.setStandingRoom(0);
-		vehType.setCapacity(capacity);
-		vehType.setPcuEquivalents(this.pConfig.getPassengerCarEquivalents());
-		vehType.setMaximumVelocity(this.pConfig.getVehicleMaximumVelocity());
-		vehType.setAccessTime(this.pConfig.getDelayPerBoardingPassenger());
-		vehType.setEgressTime(this.pConfig.getDelayPerAlightingPassenger());
-		vehType.setDoorOperationMode(this.pConfig.getDoorOperationMode());
-		vehicles.addVehicleType( vehType);
-	
+		
+		
+		for (PVehicleSettings settings : pConfig.getPVehicleSettings()) {
+			
+			String classname = settings.getPVehicleName();
+
+			VehicleType vehType = vehFactory.createVehicleType(Id.create(classname, VehicleType.class));
+			
+			VehicleCapacity capacity = new VehicleCapacityImpl();
+			capacity.setSeats(settings.getCapacityPerVehicle() + 1); // july 2011 the driver takes one seat
+			capacity.setStandingRoom(0);
+			vehType.setCapacity(capacity);
+			vehType.setPcuEquivalents(this.pConfig.getPassengerCarEquivalents());
+			vehType.setMaximumVelocity(this.pConfig.getVehicleMaximumVelocity());
+			vehType.setAccessTime(this.pConfig.getDelayPerBoardingPassenger());
+			vehType.setEgressTime(this.pConfig.getDelayPerAlightingPassenger());
+			vehType.setDoorOperationMode(this.pConfig.getDoorOperationMode());
+			vehicles.addVehicleType( vehType);
+		}
+		
+
 		for (TransitLine line : pTransitSchedule.getTransitLines().values()) {
 			for (TransitRoute route : line.getRoutes().values()) {
 				for (Departure departure : route.getDepartures().values()) {
 					if (!vehicles.getVehicles().keySet().contains(departure.getVehicleId())) {
-						Vehicle vehicle = vehFactory.createVehicle(departure.getVehicleId(), vehType);
-						vehicles.addVehicle( vehicle);
+						
+						for (PVehicleSettings settings : this.pConfig.getPVehicleSettings()) {
+							
+							String classname = settings.getPVehicleName();
+							
+							if(departure.getVehicleId().toString().contains(classname))	{
+							
+								Vehicle vehicle = vehFactory.createVehicle(departure.getVehicleId(), 
+										vehicles.getVehicleTypes().get(Id.create(classname, VehicleType.class)));
+								vehicles.addVehicle( vehicle);
+							}
+						}
+						
 					}
 				}
 			}

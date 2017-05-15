@@ -5,13 +5,9 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.matsim.contrib.minibus.PConfigGroup;
-import org.matsim.contrib.minibus.hook.PModule;
 
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -24,19 +20,15 @@ import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
-import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.controler.Controler;
-import org.matsim.core.controler.OutputDirectoryHierarchy.OverwriteFileSetting;
-import org.matsim.core.gbl.MatsimRandom;
 import org.matsim.core.router.StageActivityTypesImpl;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.pt.PtConstants;
-import org.matsim.pt.transitSchedule.api.TransitLine;
 
 import playground.ivt.replanning.BlackListedTimeAllocationMutatorConfigGroup;
 import playground.ivt.replanning.BlackListedTimeAllocationMutatorStrategyModule;
@@ -44,10 +36,7 @@ import playground.manserpa.minibus.zurich_replanning.ZurichPlanStrategyProvider;
 
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Collection;
 
 
@@ -57,7 +46,7 @@ import java.util.Collection;
  * 
  * @author aneumann
  */
-public final class RunMinibusZurich {
+public final class RunZurichReference {
 
 	private final static Logger log = Logger.getLogger(RunMinibusTest.class);
 
@@ -74,7 +63,7 @@ public final class RunMinibusZurich {
 		
 		// 1. Configuration
 
-        Config config = ConfigUtils.loadConfig(configFile, new PConfigGroup(), new BlackListedTimeAllocationMutatorConfigGroup());
+        Config config = ConfigUtils.loadConfig(configFile, new BlackListedTimeAllocationMutatorConfigGroup());
         Scenario scenario = ScenarioUtils.loadScenario(config);
         
         // 2. Basic controller setup
@@ -83,7 +72,6 @@ public final class RunMinibusZurich {
         
         controler.getConfig().controler().setCreateGraphs(false);
 
-		controler.addOverridingModule(new PModule()) ;
 
 		// 3. IVT-specifics
 
@@ -101,21 +89,6 @@ public final class RunMinibusZurich {
         
         final Network network = scenario.getNetwork();
         
-        
-        String line = "";
-        String agentsToDeleteFile = "AgentsToDelete.csv";
-        
-        if(agentsToDeleteFile != null)	{
-	        try (BufferedReader br = new BufferedReader(new FileReader(agentsToDeleteFile))) {
-	
-	            while ((line = br.readLine()) != null) {
-	            	scenario.getPopulation().removePerson(Id.create(line, Person.class));
-	            }
-	
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
-        }
 
         FileInputStream stream = new FileInputStream(ConfigGroup.getInputFileURL(config.getContext(), "nodes.list").getPath());
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
@@ -140,19 +113,7 @@ public final class RunMinibusZurich {
             }
         });
         
-        //note a single Random object is reused here
-        Random randomGenerator = new Random();
-        int randomInt = randomGenerator.nextInt(1500) + 1000;
-        
-        long randomSeed = (long) (randomInt);
-        	
-	    config.global().setRandomSeed(randomSeed);
-	    String outputdir = config.controler().getOutputDirectory();
-	    config.controler().setOutputDirectory(outputdir + "Seed" + randomSeed);
-	        
-	    config.controler().setOverwriteFileSetting(OverwriteFileSetting.failIfDirectoryExists);
-	    
-	    controler.run();
+		controler.run();
 		
 	}		
 }

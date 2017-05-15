@@ -35,33 +35,36 @@ final class OperatorFactory {
 	private final PConfigGroup pConfig;
 	private final PFranchise franchise;
 	private final WelfareAnalyzer welfareAnalyzer;
+	private final PRouteOverlap pRouteOverlap;
 	
-	public OperatorFactory(PConfigGroup pConfig, PFranchise franchise){
+	public OperatorFactory(PConfigGroup pConfig, PFranchise franchise, PRouteOverlap pRouteOverlap){
 		this.pConfig = pConfig;
 		this.franchise = franchise;
 		this.welfareAnalyzer = null;
+		this.pRouteOverlap = pRouteOverlap;
 	}
 	
-	public OperatorFactory(PConfigGroup pConfig, PFranchise franchise, WelfareAnalyzer welfareAnalyzer){
+	public OperatorFactory(PConfigGroup pConfig, PFranchise franchise, WelfareAnalyzer welfareAnalyzer, PRouteOverlap pRouteOverlap){
 		this.pConfig = pConfig;
 		this.franchise = franchise;
 		this.welfareAnalyzer = welfareAnalyzer;
+		this.pRouteOverlap = pRouteOverlap;
 	}
 	
 	public Operator createNewOperator(Id<Operator> id){
 		if(this.pConfig.getOperatorType().equalsIgnoreCase(BasicOperator.OPERATOR_NAME)){
-			return new BasicOperator(id, this.pConfig, this.franchise);
+			return new BasicOperator(id, this.pConfig, this.franchise, this.pRouteOverlap);
 		} else if(this.pConfig.getOperatorType().equalsIgnoreCase(MultiPlanOperator.OPERATOR_NAME)){
-			return new MultiPlanOperator(id, this.pConfig, this.franchise);
+			return new MultiPlanOperator(id, this.pConfig, this.franchise, this.pRouteOverlap);
 		} else if(this.pConfig.getOperatorType().equalsIgnoreCase(CarefulMultiPlanOperator.OPERATOR_NAME)){
-			return new CarefulMultiPlanOperator(id, this.pConfig, this.franchise);
+			return new CarefulMultiPlanOperator(id, this.pConfig, this.franchise, this.pRouteOverlap);
 		} else if(this.pConfig.getOperatorType().equalsIgnoreCase(WelfareCarefulMultiPlanOperator.OPERATOR_NAME)){
 			
 			if (this.welfareAnalyzer == null) {
 				throw new RuntimeException("Welfare analyzer is null. Aborting...");
 			}
 			
-			return new WelfareCarefulMultiPlanOperator(id, this.pConfig, this.franchise, this.welfareAnalyzer);
+			return new WelfareCarefulMultiPlanOperator(id, this.pConfig, this.franchise, this.welfareAnalyzer, this.pRouteOverlap);
 			
 		} else {
 			log.error("There is no operator type specified. " + this.pConfig.getOperatorType() + " unknown");

@@ -2,12 +2,14 @@ package org.matsim.contrib.minibus.operator;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.contrib.minibus.PConfigGroup;
+import org.matsim.contrib.minibus.PConfigGroup.PVehicleSettings;
 import org.matsim.core.controler.events.ScoringEvent;
 import org.matsim.core.utils.io.IOUtils;
 
@@ -18,16 +20,17 @@ public class WelfareStatsContainer {
 	private double operatorCosts;
 	
 	private final boolean welfareMaximization;
-	private final double earningsPerBoardingPassenger;
+	//private final double earningsPerBoardingPassenger;
 	
 	private final WelfareAnalyzer welfareAnalyzer;
 	
 	private boolean firstTime = true;
+	private Collection<PVehicleSettings> pVehicleSettings;
 	
 	public WelfareStatsContainer(PConfigGroup pConfig, WelfareAnalyzer welfareAnalyzer){
-		
+		this.pVehicleSettings = pConfig.getPVehicleSettings();
 		this.welfareMaximization = pConfig.getWelfareMaximization();
-		this.earningsPerBoardingPassenger = pConfig.getEarningsPerBoardingPassenger();
+		//this.earningsPerBoardingPassenger = pConfig.getEarningsPerBoardingPassenger();
 		this.welfareAnalyzer = welfareAnalyzer;
 		
 	}
@@ -76,7 +79,14 @@ public class WelfareStatsContainer {
 				
 				for(PPlan pplan : operator.getAllPlans()){
 					
-					earnings += pplan.getTripsServed() * this.earningsPerBoardingPassenger;
+					double earningsPerBoardingPassenger = 0.0;
+					
+					for (PVehicleSettings pVS : this.pVehicleSettings) {
+			            if (pplan.getPVehicleType().equals(pVS.getPVehicleName())) {
+			            	earningsPerBoardingPassenger = pVS.getEarningsPerBoardingPassenger();
+			            }
+			        }
+					earnings += pplan.getTripsServed() * earningsPerBoardingPassenger;
 					score += pplan.getScore();
 					
 				}

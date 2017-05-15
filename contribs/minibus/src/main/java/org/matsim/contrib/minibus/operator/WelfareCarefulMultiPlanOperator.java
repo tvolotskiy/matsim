@@ -47,9 +47,9 @@ public final class WelfareCarefulMultiPlanOperator extends AbstractOperator {
 	private CarefulMultiPlanOperator delegate;
 	private WelfareAnalyzer welfareAnalyzer;
 	
-	WelfareCarefulMultiPlanOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise, WelfareAnalyzer welfareAnalyzer) {
-		super(id, pConfig, franchise);
-		delegate = new CarefulMultiPlanOperator(id, pConfig, franchise);
+	WelfareCarefulMultiPlanOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise, WelfareAnalyzer welfareAnalyzer, PRouteOverlap pRouteOverlap) {
+		super(id, pConfig, franchise, pRouteOverlap);
+		delegate = new CarefulMultiPlanOperator(id, pConfig, franchise, pRouteOverlap);
 		this.welfareAnalyzer = welfareAnalyzer;
 	}
 

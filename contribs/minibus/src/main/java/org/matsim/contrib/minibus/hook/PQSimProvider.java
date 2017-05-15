@@ -45,14 +45,6 @@ import org.matsim.core.mobsim.qsim.qnetsimengine.QNetsimEngineModule;
  *
  */
 
-class PQSimProvider {
-	
-}
-
-
-
-
-/*
 class PQSimProvider implements Provider<Mobsim> {
 
 	@SuppressWarnings("unused")
@@ -98,5 +90,3 @@ class PQSimProvider implements Provider<Mobsim> {
 	}
 
 }
-
-*/

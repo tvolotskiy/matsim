@@ -56,6 +56,7 @@ abstract class AbstractOperator implements Operator{
 	private final double costPerVehicleAndDay;
 	private final double minOperationTime;
 	private final boolean mergeTransitLine;
+	private final PRouteOverlap pRouteOverlap;
 	
 	OperatorState operatorState;
 
@@ -74,7 +75,7 @@ abstract class AbstractOperator implements Operator{
 	int currentIteration;
 
 
-	AbstractOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise){
+	AbstractOperator(Id<Operator> id, PConfigGroup pConfig, PFranchise franchise, PRouteOverlap pRouteOverlap){
 		this.id = id;
 		this.numberOfIterationsForProspecting = pConfig.getNumberOfIterationsForProspecting();
 		this.costPerVehicleBuy = pConfig.getPricePerVehicleBought();
@@ -83,6 +84,7 @@ abstract class AbstractOperator implements Operator{
 		this.minOperationTime = pConfig.getMinOperationTime();
 		this.mergeTransitLine = pConfig.getMergeTransitLine();
 		this.franchise = franchise;
+		this.pRouteOverlap = pRouteOverlap;
 	}
 
 	@Override
@@ -176,6 +178,11 @@ abstract class AbstractOperator implements Operator{
 	public PFranchise getFranchise(){
 		return this.franchise;
 	}
+	
+	@Override
+	public PRouteOverlap getPRouteOverlap(){
+		return this.pRouteOverlap;
+	}
 
 	@Override
 	public double getMinOperationTime() {
@@ -267,14 +274,24 @@ abstract class AbstractOperator implements Operator{
 	protected final void scorePlan(Map<Id<Vehicle>, PScoreContainer> driverId2ScoreMap, PPlan plan) {
 		double totalLineScore = 0.0;
 		int totalTripsServed = 0;
+		double totalMeterDriven = 0.0;
+		double totalTimeDriven = 0.0;
+		double totalPassengerKilometer = 0.0;
 		
 		for (Id<Vehicle> vehId : plan.getVehicleIds()) {
 			totalLineScore += driverId2ScoreMap.get(vehId).getTotalRevenue();
-			totalTripsServed += driverId2ScoreMap.get(vehId).getTripsServed();	
+			totalTripsServed += driverId2ScoreMap.get(vehId).getTripsServed();
+			totalMeterDriven += driverId2ScoreMap.get(vehId).getTotalMeterDriven();
+			totalTimeDriven += driverId2ScoreMap.get(vehId).getTotalTimeDriven();
+			totalPassengerKilometer += driverId2ScoreMap.get(vehId).getTotalPassengerKilometer();
 		}
 		
 		plan.setScore(totalLineScore);
 		plan.setTripsServed(totalTripsServed);
+		plan.setTotalKilometersDrivenPerVehicle(totalMeterDriven / (1000 * plan.getNVehicles()));
+		plan.setTotalHoursDrivenPerVehicle(totalTimeDriven / (3600 * plan.getNVehicles()));
+		plan.setPassengerKilometerPerVehicle(totalPassengerKilometer / plan.getNVehicles());
+		plan.setTotalPassengerKilometer(totalPassengerKilometer);
 	}
 	
 }

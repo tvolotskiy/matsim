@@ -54,11 +54,15 @@ public final class PPlan implements Comparable<PPlan>{
 	private double startTime;
 	private double endTime;
 	private int nVehicles;
+	private String pVehicleType;
+	private double totalHoursDrivenPerVehicle;
+	private double totalKilometersDrivenPerVehicle;
+	private double totalPassengerKilometerPerVehicle;
+	private double totalPassengerKilometer;
 	
 	private ArrayList<TransitStopFacility> stopsToBeServed;
 
 	private Set<Id<Vehicle>> vehicleIds;
-
 	
 	public PPlan(Id<PPlan> planId, String creator, Id<PPlan> parentId) {
 		this.planId = planId;
@@ -146,6 +150,46 @@ public final class PPlan implements Comparable<PPlan>{
 	
 	public void setNVehicles(int nVehicles){
 		this.nVehicles = nVehicles;
+	}
+	
+	public String getPVehicleType()	{
+		return this.pVehicleType;
+	}
+	
+	public void setPVehicleType(String pVehicleType)	{
+		this.pVehicleType = pVehicleType;
+	}
+	
+	public double getTotalHoursDrivenPerVehicle()	{
+		return this.totalHoursDrivenPerVehicle;
+	}
+	
+	public void setTotalHoursDrivenPerVehicle(double totalHoursDrivenPerVehicle)	{
+		this.totalHoursDrivenPerVehicle = totalHoursDrivenPerVehicle;
+	}
+	
+	public double getTotalKilometersDrivenPerVehicle()	{
+		return this.totalKilometersDrivenPerVehicle;
+	}
+	
+	public void setTotalKilometersDrivenPerVehicle(double totalKilometersDrivenPerVehicle)	{
+		this.totalKilometersDrivenPerVehicle = totalKilometersDrivenPerVehicle;
+	}
+	
+	public double getPassengerKilometerPerVehicle()	{
+		return this.totalPassengerKilometerPerVehicle;
+	}
+	
+	public void setPassengerKilometerPerVehicle(double totalPassengerKilometerPerVehicle)	{
+		this.totalPassengerKilometerPerVehicle = totalPassengerKilometerPerVehicle;
+	}
+	
+	public double getTotalPassengerKilometer()	{
+		return this.totalPassengerKilometer;
+	}
+	
+	public void setTotalPassengerKilometer(double totalPassengerKilometer)	{
+		this.totalPassengerKilometer = totalPassengerKilometer;
 	}
 
 	public ArrayList<TransitStopFacility> getStopsToBeServed() {

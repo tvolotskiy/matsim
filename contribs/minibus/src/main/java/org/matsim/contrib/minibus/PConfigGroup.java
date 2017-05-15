@@ -81,6 +81,7 @@ public final class PConfigGroup extends ConfigGroup{
 	private static final String MIN_OPERATION_TIME = "minOperationTime";
 	private static final String MIN_INITIAL_STOP_DISTANCE = "minInitialStopDistance";
 	private static final String USEFRANCHISE = "useFranchise";
+	private static final String USEAVCONTRIB = "useAVContrib";
 	private static final String WRITESTATS_INTERVAL = "writeStatsInterval";
 	private static final String LOG_OPERATORS = "logOperators";
 	private static final String WRITE_METRICS = "writeMetrics";
@@ -149,6 +150,7 @@ public final class PConfigGroup extends ConfigGroup{
 	private double pricePerVehicleBought = 1000.0;
 	private double pricePerVehicleSold = 1000.0;
 	private boolean useFranchise = false;
+	private boolean useAVContrib = false;
 	private int writeStatsInterval = 0;
 	private boolean logOperators = false;
 	private boolean writeMetrics = false;
@@ -256,6 +258,8 @@ public final class PConfigGroup extends ConfigGroup{
 			this.minInitialStopDistance = Double.parseDouble(value);
 		} else if (USEFRANCHISE.equals(key)){
 			this.useFranchise = Boolean.parseBoolean(value);
+		} else if (USEAVCONTRIB.equals(key)){
+			this.useAVContrib = Boolean.parseBoolean(value);
 		} else if (WRITESTATS_INTERVAL.equals(key)){
 			this.writeStatsInterval = Integer.parseInt(value);
 		} else if (LOG_OPERATORS.equals(key)){
@@ -382,6 +386,7 @@ public final class PConfigGroup extends ConfigGroup{
 		map.put(MIN_OPERATION_TIME, Double.toString(this.minOperationTime));
 		map.put(MIN_INITIAL_STOP_DISTANCE, Double.toString(this.minInitialStopDistance));
 		map.put(USEFRANCHISE, Boolean.toString(this.useFranchise));
+		map.put(USEAVCONTRIB, Boolean.toString(this.useAVContrib));
 		map.put(WRITESTATS_INTERVAL, Integer.toString(this.writeStatsInterval));
 		map.put(LOG_OPERATORS, Boolean.toString(this.logOperators));
 		map.put(WRITE_METRICS, Boolean.toString(this.writeMetrics));
@@ -458,6 +463,7 @@ public final class PConfigGroup extends ConfigGroup{
 		map.put(MIN_OPERATION_TIME, "min time of operation of each operator in seconds");
 		map.put(MIN_INITIAL_STOP_DISTANCE, "min distance the two initial stops of a new operator's first route should be apart. Default is 1.0. Set to 0.0 to allow for the same stop being picked as start and end stop.");
 		map.put(USEFRANCHISE, "Will use a franchise system if set to true");
+		map.put(USEAVCONTRIB, "Will use the AV-Taxi Contrib if set to true");
 		map.put(WRITESTATS_INTERVAL, "interval in which statistics will be plotted. Set to zero to turn this feature off. Set to something larger than the total number of iterations to turn off the plots, but write the statistics file anyway");
 		map.put(LOG_OPERATORS, "will log operators individually if set to true");
 		map.put(WRITE_METRICS, "will calculate common performance metrics if set to true, default is false");
@@ -620,6 +626,10 @@ public final class PConfigGroup extends ConfigGroup{
 		return this.useFranchise;
 	}
 	
+	public boolean getUseAVContrib() {
+		return this.useAVContrib;
+	}
+	
 	public int getWriteStatsInterval() {
 		return this.writeStatsInterval;
 	}
@@ -698,6 +708,10 @@ public final class PConfigGroup extends ConfigGroup{
 
 	public String getMode() {
 		return this.operationMode;
+	}
+	
+	public void setUseAVContrib( boolean useAVs )	{
+		this.useAVContrib = useAVs;
 	}
 	
 	public void setWelfareMaximization( boolean val ) {

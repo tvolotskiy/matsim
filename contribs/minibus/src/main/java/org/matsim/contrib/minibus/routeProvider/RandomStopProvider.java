@@ -35,6 +35,8 @@ import org.matsim.pt.transitSchedule.api.TransitStopFacility;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,7 +56,10 @@ final class RandomStopProvider {
 	private LinkedHashMap<TransitStopFacility, Double> stops2Weight;
 	private double totalWeight = 0.0;
 	private int lastIteration;
-
+	private LinkedHashMap<String, Integer> gridNodeId2ActsCountMap;
+	private double thresholdActivitiesInGrid = 0.0;
+	private List<Integer> sortedGridNodeId2ActsCountMap;
+	
 	private final Population population;
 	private final TransitSchedule pStopsOnly;
 
@@ -76,20 +81,33 @@ final class RandomStopProvider {
 		double numberOfActsInPlans = 0;
 		
 		// count acts for all grid nodes
-		LinkedHashMap<String, Integer> gridNodeId2ActsCountMap = new LinkedHashMap<>();
+		this.gridNodeId2ActsCountMap = new LinkedHashMap<>();
 		for (Person person : this.population.getPersons().values()) {
 			for (PlanElement pE : person.getSelectedPlan().getPlanElements()) {
 				if (pE instanceof Activity) {
 					Activity act = (Activity) pE;
 					numberOfActsInPlans++;
 					String gridNodeId = GridNode.getGridNodeIdForCoord(act.getCoord(), this.gridSize);
-					if (gridNodeId2ActsCountMap.get(gridNodeId) == null) {
-						gridNodeId2ActsCountMap.put(gridNodeId, 0);
+					if (this.gridNodeId2ActsCountMap.get(gridNodeId) == null) {
+						this.gridNodeId2ActsCountMap.put(gridNodeId, 0);
 					}
-					gridNodeId2ActsCountMap.put(gridNodeId, gridNodeId2ActsCountMap.get(gridNodeId) + 1);
+					this.gridNodeId2ActsCountMap.put(gridNodeId, this.gridNodeId2ActsCountMap.get(gridNodeId) + 1);
 				}
 			}
 		}
+		
+		this.sortedGridNodeId2ActsCountMap = new ArrayList<>();
+		/*
+		for(String e : this.gridNodeId2ActsCountMap.keySet())	{
+			sortedGridNodeId2ActsCountMap.add(this.gridNodeId2ActsCountMap.get(e));
+		}
+		
+		Collections.sort(sortedGridNodeId2ActsCountMap);
+		
+		int percentile95 = (int) (0.95 * sortedGridNodeId2ActsCountMap.size());
+		
+		this.thresholdActivitiesInGrid = sortedGridNodeId2ActsCountMap.get(percentile95);
+		*/
 		
 		// sort facilities for all grid nodes
 		LinkedHashMap<String, List<TransitStopFacility>> gridNodeId2StopsMap = new LinkedHashMap<>();
@@ -97,15 +115,26 @@ final class RandomStopProvider {
 			String gridNodeId = GridNode.getGridNodeIdForCoord(stop.getCoord(), this.gridSize);
 			if (gridNodeId2StopsMap.get(gridNodeId) == null) {
 				gridNodeId2StopsMap.put(gridNodeId, new LinkedList<TransitStopFacility>());
+				
+				if(this.gridNodeId2ActsCountMap.get(gridNodeId) != null)
+					this.sortedGridNodeId2ActsCountMap.add(this.gridNodeId2ActsCountMap.get(gridNodeId));
 			}
 			gridNodeId2StopsMap.get(gridNodeId).add(stop);
 		}
 		
+		Collections.sort(this.sortedGridNodeId2ActsCountMap);
+		
+		int percentile60 = (int) (0.25 * this.sortedGridNodeId2ActsCountMap.size());
+		
+		this.thresholdActivitiesInGrid = this.sortedGridNodeId2ActsCountMap.get(percentile60);
+		
+		
+		
 		// associate the number of acts per grid node with the corresponding transit stop facilities
 		for (Entry<String, List<TransitStopFacility>> stopsEntry : gridNodeId2StopsMap.entrySet()) {
 			double actsCountForThisGridNodeId = 0; 
-			if (gridNodeId2ActsCountMap.get(stopsEntry.getKey()) != null) {
-				actsCountForThisGridNodeId = gridNodeId2ActsCountMap.get(stopsEntry.getKey()).doubleValue();
+			if (this.gridNodeId2ActsCountMap.get(stopsEntry.getKey()) != null) {
+				actsCountForThisGridNodeId = this.gridNodeId2ActsCountMap.get(stopsEntry.getKey()).doubleValue();
 			}
 			
 			// no acts in this area - ignore the stops in this area as well
@@ -206,6 +235,27 @@ final class RandomStopProvider {
 		return null;
 	}
 	
+	/**
+	 * Returns true if the number of activities around a stop is high
+	 * 
+	 * @param String containing the grid in which the stop is
+	 * @return
+	 */
+	public boolean hasHighNumberOfActivitiesInGrid(String grid) {
+		if (this.stops2Weight == null) {
+			updateWeights();
+		}
+		
+		if(this.gridNodeId2ActsCountMap.get(grid) == null)
+			return false;
+		
+		if(this.gridNodeId2ActsCountMap.get(grid) > this.thresholdActivitiesInGrid)	
+			return true;
+		else
+			return false;
+		
+	}
+	
 	private void writeToFile(int currentIteration) {
 		if (this.outputDir == null) {
 			return;
@@ -217,11 +267,20 @@ final class RandomStopProvider {
 				new File(this.outputDir).mkdir();
 			}
 			
+			/*
 			BufferedWriter writer = IOUtils.getBufferedWriter(outputDir + currentIteration + ".stopId2stopWeight.txt.gz");
 			writer.write("# stop id; x; y; weight"); writer.newLine();
 			for (Entry<TransitStopFacility, Double> stopEntry : this.stops2Weight.entrySet()) {
 				writer.write(stopEntry.getKey().getId().toString() + "; " + stopEntry.getKey().getCoord().getX() + "; " + stopEntry.getKey().getCoord().getY() + "; " + stopEntry.getValue().toString()); writer.newLine();
+			}			
+			*/
+			
+			BufferedWriter writer = IOUtils.getBufferedWriter(outputDir + currentIteration + ".activitiesInGrid.txt.gz");
+			writer.write("activities; 85percentile"); writer.newLine();
+			for (int thisGrid : this.sortedGridNodeId2ActsCountMap) {
+				writer.write(thisGrid + "; " + this.thresholdActivitiesInGrid); writer.newLine();
 			}
+			
 			writer.flush();
 			writer.close();
 		} catch (IOException e) {

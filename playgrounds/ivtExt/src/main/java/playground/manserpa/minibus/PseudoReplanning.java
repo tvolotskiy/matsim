@@ -13,10 +13,10 @@ public class PseudoReplanning  {
 	private MatsimServices controler;
 	
 	
-	public PseudoReplanning(MatsimServices controler)	{
+	public PseudoReplanning(MatsimServices controler, int iteration)	{
 		this.controler = controler;
 		
-		AgentReRouteHandlerImpl agentsToReRoute = new AgentReRouteHandlerImpl(this.controler.getScenario().getPopulation().getPersons());
+		AgentReRouteHandlerImpl agentsToReRoute = new AgentReRouteHandlerImpl(this.controler.getScenario().getPopulation().getPersons(), iteration);
 		
 		AgentReRouteFactoryImpl stuckFactory = new AgentReRouteFactoryImpl();
 		

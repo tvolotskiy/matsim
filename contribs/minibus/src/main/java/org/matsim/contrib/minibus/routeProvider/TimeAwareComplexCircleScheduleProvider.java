@@ -25,6 +25,7 @@ import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.contrib.minibus.PConfigGroup.PVehicleSettings;
+import org.matsim.contrib.minibus.genericUtils.GridNode;
 import org.matsim.contrib.minibus.operator.Operator;
 import org.matsim.contrib.minibus.operator.PPlan;
 import org.matsim.core.api.experimental.events.EventsManager;
@@ -65,6 +66,7 @@ final class TimeAwareComplexCircleScheduleProvider implements PRouteProvider{
 	private final TimeAwareComplexCircleScheduleProviderHandler handler;
 	private final String transportMode;
 	private final Collection<PVehicleSettings> pVehicleSettings;
+	private PPlan pOperatorPlan;
 	
 	public TimeAwareComplexCircleScheduleProvider(TransitSchedule scheduleWithStopsOnly, Network network, RandomStopProvider randomStopProvider, RandomPVehicleProvider randomPVehicleProvider, double vehicleMaximumVelocity, double planningSpeedFactor, double driverRestTime, String pIdentifier, EventsManager eventsManager, final String transportMode, Collection<PVehicleSettings> pVehicleSettings) {
 		
@@ -103,15 +105,16 @@ final class TimeAwareComplexCircleScheduleProvider implements PRouteProvider{
 	
 	@Override
 	public TransitLine createTransitLineFromOperatorPlan(Id<Operator> operatorId, PPlan plan){
-		return this.createTransitLine(Id.create(operatorId, TransitLine.class), plan.getStartTime(), plan.getEndTime(), plan.getNVehicles(), plan.getStopsToBeServed(), plan.getPVehicleType(), Id.create(plan.getId(), TransitRoute.class));
+		this.pOperatorPlan = plan;
+		return this.createTransitLine(Id.create(operatorId, TransitLine.class), plan.getStartTime(), plan.getEndTime(), plan.getNVehicles(), plan.getStopsToBeServed(), plan.getPVehicleType(), Id.create(plan.getId(), TransitRoute.class), plan.getId());
 	}
 	
-	private TransitLine createTransitLine(Id<TransitLine> pLineId, double startTime, double endTime, int numberOfVehicles, ArrayList<TransitStopFacility> stopsToBeServed, String pVehicleType, Id<TransitRoute> routeId){
+	private TransitLine createTransitLine(Id<TransitLine> pLineId, double startTime, double endTime, int numberOfVehicles, ArrayList<TransitStopFacility> stopsToBeServed, String pVehicleType, Id<TransitRoute> routeId, Id<PPlan> planId){
 		
 		// initialize
 		TransitLine line = this.scheduleWithStopsOnly.getFactory().createTransitLine(pLineId);			
 		routeId = Id.create(pLineId + "-" + routeId, TransitRoute.class);
-		TransitRoute transitRoute = createRoute(routeId, stopsToBeServed, pVehicleType);
+		TransitRoute transitRoute = createRoute(routeId, stopsToBeServed, pVehicleType, planId);
 		
 		// register route
 		line.addRoute(transitRoute);
@@ -119,6 +122,7 @@ final class TimeAwareComplexCircleScheduleProvider implements PRouteProvider{
 		
 		// add departures
 		int n = 0;
+		
 		int headway = (int) (this.driverRestTime + transitRoute.getStops().get(transitRoute.getStops().size() - 1).getDepartureOffset()) / numberOfVehicles;
 		for (int i = 0; i < numberOfVehicles; i++) {
 			for (double j = startTime + i * headway; j <= endTime; ) {
@@ -136,11 +140,16 @@ final class TimeAwareComplexCircleScheduleProvider implements PRouteProvider{
 		return line;
 	}
 	
-	private TransitRoute createRoute(Id<TransitRoute> routeID, ArrayList<TransitStopFacility> stopsToBeServed, String pVehicleType){
+	private TransitRoute createRoute(Id<TransitRoute> routeID, ArrayList<TransitStopFacility> stopsToBeServed, String pVehicleType, Id<PPlan> planId){
 		
 		ArrayList<TransitStopFacility> tempStopsToBeServed = new ArrayList<>();
+		HashSet<String> gridStopHashSet = new HashSet<>();
+		
 		for (TransitStopFacility transitStopFacility : stopsToBeServed) {
 			tempStopsToBeServed.add(transitStopFacility);
+			
+			String gridNodeId = GridNode.getGridNodeIdForCoord(transitStopFacility.getCoord(), 300);
+			gridStopHashSet.add(gridNodeId);
 		}
 		tempStopsToBeServed.add(stopsToBeServed.get(0));
 		
@@ -183,7 +192,7 @@ final class TimeAwareComplexCircleScheduleProvider implements PRouteProvider{
 		
 		for (PVehicleSettings pVS : this.pVehicleSettings) {
             if (pVehicleType.equals(pVS.getPVehicleName())) {
-            	capacity = pVS.getCapacityPerVehicle();
+            	capacity = pVS.getCapacityPerVehicle() * 10;
             }
         }
 		
@@ -194,32 +203,103 @@ final class TimeAwareComplexCircleScheduleProvider implements PRouteProvider{
 		routeStop.setAwaitDepartureTime(true);
 		stops.add(routeStop);
 		
+		ArrayList<TransitStopFacility> tempStopsToBeServedNew = new ArrayList<>();
+		tempStopsToBeServedNew.add(tempStopsToBeServed.get(0));
+		
+		int k = 1;
+		
+		// problem: with the new code -> the stop sequence is probably not the same for the same transitroute
+		// thus, the operator can not rely on the times from the last iteration
+		boolean isSameStopSequenceAsLastIteration = true;
+		
 		// additional stops
 		for (Link link : links) {
 			
-			// manserpa: genau diesen Code nehmen und die runningTime erhöhen mit einer fixen Zeit pro Stop
-		
-			runningTime += (3 + link.getLength() / (Math.min(this.vehicleMaximumVelocity, link.getFreespeed()) * this.planningSpeedFactor));
+			// there is no stop on this link
+			runningTime += (link.getLength() / (Math.min(this.vehicleMaximumVelocity, link.getFreespeed()) * this.planningSpeedFactor));
+			
+			// is there any stop facility on that link?
 			if(this.linkId2StopFacilityMap.get(link.getId()) == null){
 				continue;
 			}
 			
-			// different from {@link ComplexCircleScheduleProvider}
-			runningTime = modifyRunningTimeAccordingToTheLastIterationIfPossible(runningTime, this.handler.getOffsetForRouteAndStopNumber(routeID, stops.size()));
-			// end
 			
-			routeStop = this.scheduleWithStopsOnly.getFactory().createTransitRouteStop(this.linkId2StopFacilityMap.get(link.getId()), runningTime, runningTime + getMinStopTime(capacity));
-			routeStop.setAwaitDepartureTime(true);
-			stops.add(routeStop);
+			if (tempStopsToBeServed.get(k).getLinkId().equals(link.getId()))	{
+				
+				// additional time lost due to braking/accelerating
+				runningTime += 3;
+				
+				// different from {@link ComplexCircleScheduleProvider}		
+				if(isSameStopSequenceAsLastIteration)	{
+					if(tempStopsToBeServed.get(k).equals(this.handler.getServedStopsInLastIteration(routeID, stops.size())))	{
+						runningTime = modifyRunningTimeAccordingToTheLastIterationIfPossible(runningTime, 
+								this.handler.getOffsetForRouteAndStopNumber(routeID, stops.size()));
+					}
+					else	{
+						isSameStopSequenceAsLastIteration = false;
+					}
+				}
+				
+				routeStop = this.scheduleWithStopsOnly.getFactory().createTransitRouteStop(tempStopsToBeServed.get(k), 
+						runningTime, runningTime + getMinStopTime(capacity));
+				
+				tempStopsToBeServedNew.add(tempStopsToBeServed.get(k));
+				
+				routeStop.setAwaitDepartureTime(true);
+				stops.add(routeStop);
+				
+				k++;
+				
+			}
+			else	{
+				
+				String gridNode = GridNode.getGridNodeIdForCoord(this.linkId2StopFacilityMap.get(link.getId()).getCoord(), 300);
+				
+				if(gridStopHashSet.contains(gridNode))	{
+					continue;
+				}
+				
+				// hier muss jetzt geprüft werden, ob die Anzahl Aktivitäten überdurchschnittlich hoch sind
+				if(this.randomStopProvider.hasHighNumberOfActivitiesInGrid(gridNode))	{
+				
+					runningTime += 3;
+					
+					// different from {@link ComplexCircleScheduleProvider}
+					if(isSameStopSequenceAsLastIteration)	{
+						if(this.linkId2StopFacilityMap.get(link.getId()).equals(this.handler.getServedStopsInLastIteration(routeID, stops.size())))	{
+							runningTime = modifyRunningTimeAccordingToTheLastIterationIfPossible(runningTime, 
+									this.handler.getOffsetForRouteAndStopNumber(routeID, stops.size()));
+						}
+						else	{
+							isSameStopSequenceAsLastIteration = false;
+						}
+					}
+					
+					routeStop = this.scheduleWithStopsOnly.getFactory().createTransitRouteStop(this.linkId2StopFacilityMap.get(link.getId()), 
+							runningTime, runningTime + getMinStopTime(capacity));
+					
+					tempStopsToBeServedNew.add(this.linkId2StopFacilityMap.get(link.getId()));
+					
+					routeStop.setAwaitDepartureTime(true);
+					stops.add(routeStop);
+					
+					gridStopHashSet.add(gridNode);
+				}
+			}
 		}
 		
+		//TODO: überprüfen
+		//this.pOperatorPlan.setStopsToBeServed(tempStopsToBeServedNew);
 		
 		// last stop
 		runningTime += (3 + this.net.getLinks().get(tempStopsToBeServed.get(0).getLinkId()).getLength() / (Math.min(this.vehicleMaximumVelocity, this.net.getLinks().get(tempStopsToBeServed.get(0).getLinkId()).getFreespeed()) * this.planningSpeedFactor));
 		
 		// different from {@link ComplexCircleScheduleProvider}
-		runningTime = modifyRunningTimeAccordingToTheLastIterationIfPossible(runningTime, this.handler.getOffsetForRouteAndStopNumber(routeID, stops.size()));
-		// end
+		if(isSameStopSequenceAsLastIteration)	{
+			if(tempStopsToBeServed.get(0).equals(this.handler.getServedStopsInLastIteration(routeID, stops.size())))	{
+				runningTime = modifyRunningTimeAccordingToTheLastIterationIfPossible(runningTime, this.handler.getOffsetForRouteAndStopNumber(routeID, stops.size()));
+			}
+		}
 		
 		routeStop = this.scheduleWithStopsOnly.getFactory().createTransitRouteStop(tempStopsToBeServed.get(0), runningTime, runningTime + getMinStopTime(capacity));
 		routeStop.setAwaitDepartureTime(true);

@@ -266,6 +266,7 @@ public final class SidewaysRouteExtension extends AbstractPStrategyModule {
 			union = unionmax.difference(unionmin);
 		}
 		
+		
 		return union;
 	}
 
