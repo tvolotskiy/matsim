@@ -79,13 +79,12 @@ public class MASModule extends AbstractModule {
 
     @Provides @Singleton
     private MASCordonTravelDisutility provideMASCordonTravelDisutility(CordonState cordonState, @Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, PlanCalcScoreConfigGroup scoreConfig, MASConfigGroup masConfig) {
-        double cordonDisutility = scoreConfig.getMarginalUtilityOfMoney() * masConfig.getCordonFee();
-        return new MASCordonTravelDisutility(cordonState, cordonLinkIds, cordonDisutility);
+        return new MASCordonTravelDisutility(cordonState, cordonLinkIds, scoreConfig.getMarginalUtilityOfMoney(), masConfig.getCarCordonFee(), masConfig.getEVCordonFee(), masConfig.getAVCordonFee());
     }
 
     @Provides @Singleton
     private CordonCharger provideCordonCharger(CordonState cordonState, @Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
-        return new CordonCharger(cordonState, cordonLinkIds, config.getCordonFee(), config.getChargedOperatorIds(), evUserIds);
+        return new CordonCharger(cordonState, cordonLinkIds, config.getAVCordonFee(), config.getEVCordonFee(), config.getCarCordonFee(), config.getChargedOperatorIds(), evUserIds);
     }
 
     @Provides @Singleton @Named(CORDON_LINKS)

@@ -16,7 +16,7 @@ public class MASAVTravelDisutility implements TravelDisutility {
 
     @Override
     public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
-        return delegate.getLinkTravelDisutility(link, time, person, vehicle) + cordonDisutility.getCordonDisutility(link, time);
+        return delegate.getLinkTravelDisutility(link, time, person, vehicle) + cordonDisutility.getCordonDisutility(link, time, MASCordonTravelDisutility.Type.AV);
     }
 
     @Override

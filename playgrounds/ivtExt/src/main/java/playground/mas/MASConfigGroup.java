@@ -17,13 +17,19 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     final static public String CORDON_CENTER_NODE_ID = "cordonCenterNodeId";
     final static public String CORDON_RADIUS = "cordonRadius";
 
-    final static public String CORDON_FEE = "cordonFee";
+    final static public String AV_CORDON_FEE = "avCordonFee";
+    final static public String EV_CORDON_FEE = "evCordonFee";
+    final static public String CAR_CORDON_FEE = "carCordonFee";
+
     final static public String CORDON_INTERVALS = "cordonIntervals";
     final static public String CHARGED_OPERATORS = "chargedOperators";
 
     final static public String ADDITIONAL_EV_COSTS_PER_KM = "additionalEVCostsPerKm";
 
-    private double cordonFee = 0.0;
+    private double avCordonFee = 0.0;
+    private double evCordonFee = 0.0;
+    private double carCordonFee = 0.0;
+
     private Set<Id<AVOperator>> chargedOperators = new HashSet<>();
 
     private Id<Node> cordonCenterNodeId = null;
@@ -36,14 +42,34 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
         super(MAS);
     }
 
-    @StringGetter(CORDON_FEE)
-    public double getCordonFee() {
-        return cordonFee;
+    @StringGetter(AV_CORDON_FEE)
+    public double getAVCordonFee() {
+        return avCordonFee;
     }
 
-    @StringSetter(CORDON_FEE)
-    public void setCordonFee(double cordonFee) {
-        this.cordonFee = cordonFee;
+    @StringSetter(AV_CORDON_FEE)
+    public void setAVCordonFee(double avCordonFee) {
+        this.avCordonFee = avCordonFee;
+    }
+
+    @StringGetter(EV_CORDON_FEE)
+    public double getEVCordonFee() {
+        return evCordonFee;
+    }
+
+    @StringSetter(EV_CORDON_FEE)
+    public void setEVCordonFee(double evCordonFee) {
+        this.evCordonFee = evCordonFee;
+    }
+
+    @StringGetter(CAR_CORDON_FEE)
+    public double getCarCordonFee() {
+        return carCordonFee;
+    }
+
+    @StringSetter(CAR_CORDON_FEE)
+    public void setCarCordonFee(double carCordonFee) {
+        this.carCordonFee = carCordonFee;
     }
 
     @StringGetter(CHARGED_OPERATORS)

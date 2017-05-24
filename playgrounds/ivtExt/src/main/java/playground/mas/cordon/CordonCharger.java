@@ -28,12 +28,16 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
     final private Collection<Id<Link>> cordonLinkIds;
     final private Collection<Id<AVOperator>> chargedOperators;
 
-    final private double cordonPrice;
+    final private double avCordonPrice;
+    final private double evCordonPrice;
+    final private double carCordonPrice;
     final private CordonState cordonState;
 
-    public CordonCharger(CordonState cordonState, Collection<Id<Link>> cordonLinkIds, double cordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
+    public CordonCharger(CordonState cordonState, Collection<Id<Link>> cordonLinkIds, double avCordonPrice, double evCordonPrice, double carCordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
         this.cordonLinkIds = cordonLinkIds;
-        this.cordonPrice = cordonPrice;
+        this.avCordonPrice = avCordonPrice;
+        this.evCordonPrice = evCordonPrice;
+        this.carCordonPrice = carCordonPrice;
         this.chargedOperators = chargedOperators;
         this.evUserIds = evUserIds;
         this.cordonState = cordonState;
@@ -66,6 +70,18 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
         passengers.remove(event.getVehicleId());
     }
 
+    private double getCordonPrice(Id<Vehicle> vehicleId, Id<Person> passengerId) {
+        if (MASCordonUtils.isPrivateVehicle(vehicleId)) {
+            if (evUserIds.contains(passengerId)) {
+                return evCordonPrice;
+            } else {
+                return carCordonPrice;
+            }
+        } else {
+            return avCordonPrice;
+        }
+    }
+
     @Override
     public void handleEvent(LinkEnterEvent event) {
         if (cordonLinkIds.contains(event.getLinkId())) {
@@ -73,7 +89,10 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
 
             if (passengerId != null && cordonState.isCordonActive(event.getTime())) {
                 Double charge = charges.get(passengerId);
+
+                double cordonPrice = getCordonPrice(event.getVehicleId(), passengerId);
                 charge = (charge == null) ? cordonPrice : charge + cordonPrice;
+
                 charges.put(passengerId, charge);
             }
         }
