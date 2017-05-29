@@ -26,6 +26,10 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
 
     final static public String ADDITIONAL_EV_COSTS_PER_KM = "additionalEVCostsPerKm";
 
+    final static public String INNER_CORDON_CENTER_NODE_ID = "innerCordonCenterNodeId";
+    final static public String INNER_CORDON_RADIUS = "innerCordonRadius";
+    final static public String INNER_CORDON_FEE_PER_KM = "innerCordonFeePerKm";
+
     private double avCordonFee = 0.0;
     private double evCordonFee = 0.0;
     private double carCordonFee = 0.0;
@@ -37,6 +41,10 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
 
     private double additionalEVCostsPerKm = 0.0;
     private String cordonIntervals = "";
+
+    private Id<Node> innerCordonCenterNodeId = null;
+    private double innerCordonRadius = 0.0;
+    private double innerCordonFeePerKm = 0.0;
 
     public MASConfigGroup() {
         super(MAS);
@@ -128,5 +136,35 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     @StringSetter(CORDON_INTERVALS)
     public void setCordonIntervals(String cordonIntervals) {
         this.cordonIntervals = cordonIntervals;
+    }
+
+    @StringGetter(INNER_CORDON_CENTER_NODE_ID)
+    public Id<Node> getInnerCordonCenterNodeId() {
+        return innerCordonCenterNodeId;
+    }
+
+    @StringSetter(INNER_CORDON_CENTER_NODE_ID)
+    public void setInnerCordonCenterNodeId(Id<Node> innerCordonCenterNodeId) {
+        this.innerCordonCenterNodeId = innerCordonCenterNodeId;
+    }
+
+    @StringGetter(INNER_CORDON_RADIUS)
+    public double getInnerCordonRadius() {
+        return innerCordonRadius;
+    }
+
+    @StringSetter(INNER_CORDON_RADIUS)
+    public void setInnerCordonRadius(double innerCordonRadius) {
+        this.innerCordonRadius = innerCordonRadius;
+    }
+
+    @StringGetter(INNER_CORDON_FEE_PER_KM)
+    public double getInnerCordonFeePerKm() {
+        return innerCordonFeePerKm;
+    }
+
+    @StringSetter(INNER_CORDON_FEE_PER_KM)
+    public void setInnerCordonFeePerKm(double innerCordonFeePerKm) {
+        this.innerCordonFeePerKm = innerCordonFeePerKm;
     }
 }
