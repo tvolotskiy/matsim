@@ -30,6 +30,8 @@ import org.matsim.api.core.v01.population.Plan;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup;
 import org.matsim.core.controler.AbstractModule;
+import org.matsim.core.population.algorithms.PermissibleModesCalculator;
+import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.replanning.selectors.*;
 
 import javax.inject.Inject;
@@ -104,6 +106,7 @@ public class DefaultPlanStrategiesModule extends AbstractModule {
             addPlanStrategyBinding(DefaultStrategy.TimeAllocationMutator_ReRoute.toString()).toProvider(TimeAllocationMutatorReRoute.class);
         }
         if (usedStrategyNames.contains(DefaultStrategy.SubtourModeChoice.toString())) {
+            bind(PermissibleModesCalculator.class).to(PermissibleModesCalculatorImpl.class).asEagerSingleton();
             addPlanStrategyBinding(DefaultStrategy.SubtourModeChoice.toString()).toProvider(SubtourModeChoice.class);
         }
         if (usedStrategyNames.contains(DefaultStrategy.ChangeTripMode.toString())) {

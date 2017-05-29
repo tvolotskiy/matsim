@@ -59,26 +59,23 @@ public class SubtourModeChoice extends AbstractMultithreadedModule {
 	private final String[] chainBasedModes;
 	private final String[] modes;
 	
-	public SubtourModeChoice(Provider<TripRouter> tripRouterProvider, GlobalConfigGroup globalConfigGroup, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup) {
+	public SubtourModeChoice(Provider<TripRouter> tripRouterProvider, GlobalConfigGroup globalConfigGroup, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup, PermissibleModesCalculator permissibleModesCalculator) {
 		this(globalConfigGroup.getNumberOfThreads(),
 				subtourModeChoiceConfigGroup.getModes(),
 				subtourModeChoiceConfigGroup.getChainBasedModes(),
-				subtourModeChoiceConfigGroup.considerCarAvailability(), tripRouterProvider);
+				subtourModeChoiceConfigGroup.considerCarAvailability(), tripRouterProvider, permissibleModesCalculator);
 	}
 
 	public SubtourModeChoice(
 			final int numberOfThreads,
 			final String[] modes,
 			final String[] chainBasedModes,
-			final boolean considerCarAvailability, Provider<TripRouter> tripRouterProvider) {
+			final boolean considerCarAvailability, Provider<TripRouter> tripRouterProvider, PermissibleModesCalculator permissibleModesCalculator) {
 		super(numberOfThreads);
 		this.tripRouterProvider = tripRouterProvider;
 		this.modes = modes.clone();
 		this.chainBasedModes = chainBasedModes.clone();
-		this.permissibleModesCalculator =
-			new PermissibleModesCalculatorImpl(
-					this.modes,
-					considerCarAvailability);
+		this.permissibleModesCalculator = permissibleModesCalculator;
 	}
 	
 	protected String[] getModes() {
@@ -104,8 +101,8 @@ public class SubtourModeChoice extends AbstractMultithreadedModule {
 	 * Decides if a person may use a certain mode of transport. Can be used for car ownership.
 	 * 
 	 */
-	public void setPermissibleModesCalculator(PermissibleModesCalculator permissibleModesCalculator) {
+	/*public void setPermissibleModesCalculator(PermissibleModesCalculator permissibleModesCalculator) {
 		this.permissibleModesCalculator = permissibleModesCalculator;
-	}
+	}*/
 
 }
