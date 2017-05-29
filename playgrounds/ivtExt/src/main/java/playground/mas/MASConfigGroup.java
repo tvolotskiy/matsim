@@ -32,7 +32,9 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     final static public String INNER_CORDON_INTERVALS = "innerCordonIntervals";
 
     final static public String ANALYSIS_CENTER_NODE_ID = "analysisCenterNodeId";
-    final static public String ANALYSIS_RADIUS = "analysisRadisu";
+    final static public String ANALYSIS_RADIUS = "analysisRadius";
+
+    final static public String EBIKE_SPEEDUP_FACTOR = "ebikeSpeedupFactor";
 
     private double avSoloCordonFee = 0.0;
     private double avPoolCordonFee = 0.0;
@@ -52,6 +54,8 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
 
     private Id<Node> analysisCenterNodeId = null;
     private double analysisRadius = 0.0;
+
+    private double ebikeSpeedupFactor = 1.0;
 
     public MASConfigGroup() {
         super(MAS);
@@ -203,5 +207,15 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     @StringSetter(ANALYSIS_RADIUS)
     public void setAnalysisRadius(double analysisRadius) {
         this.analysisRadius = analysisRadius;
+    }
+
+    @StringGetter(EBIKE_SPEEDUP_FACTOR)
+    public double getEbikeSpeedupFactor() {
+        return ebikeSpeedupFactor;
+    }
+
+    @StringSetter(EBIKE_SPEEDUP_FACTOR)
+    public void setEbikeSpeedupFactor(double ebikeSpeedupFactor) {
+        this.ebikeSpeedupFactor = ebikeSpeedupFactor;
     }
 }

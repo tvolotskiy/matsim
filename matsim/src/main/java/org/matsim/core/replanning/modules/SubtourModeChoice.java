@@ -58,6 +58,10 @@ public class SubtourModeChoice extends AbstractMultithreadedModule {
 	
 	private final String[] chainBasedModes;
 	private final String[] modes;
+
+	@Deprecated public SubtourModeChoice(Provider<TripRouter> tripRouterProvider, GlobalConfigGroup globalConfigGroup, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup) {
+		this(tripRouterProvider, globalConfigGroup, subtourModeChoiceConfigGroup, new PermissibleModesCalculatorImpl(subtourModeChoiceConfigGroup.getModes(), subtourModeChoiceConfigGroup.considerCarAvailability()));
+	}
 	
 	public SubtourModeChoice(Provider<TripRouter> tripRouterProvider, GlobalConfigGroup globalConfigGroup, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup, PermissibleModesCalculator permissibleModesCalculator) {
 		this(globalConfigGroup.getNumberOfThreads(),

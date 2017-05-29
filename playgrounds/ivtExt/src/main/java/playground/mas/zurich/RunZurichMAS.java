@@ -61,6 +61,7 @@ public class RunZurichMAS {
         dvrpConfigGroup.setTravelTimeEstimationAlpha(0.05);
 
         Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new BlackListedTimeAllocationMutatorConfigGroup(), new MASConfigGroup(), new ZurichMASConfigGroup(), new AVTravelTimeConfigGroup());
+        MASModule.applyEbikes(config);
 
         Scenario scenario = ScenarioUtils.createScenario(config);
         scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(AVRoute.class, new AVRouteFactory());

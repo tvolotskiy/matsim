@@ -39,6 +39,7 @@ public class RunSiouxFallsMAS {
         dvrpConfigGroup.setTravelTimeEstimationAlpha(0.05);
 
         Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new MASConfigGroup(), new AVTravelTimeConfigGroup());
+        MASModule.applyEbikes(config);
 
         Scenario scenario = ScenarioUtils.createScenario(config);
         scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(AVRoute.class, new AVRouteFactory());

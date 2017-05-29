@@ -15,7 +15,10 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
+import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.controler.AbstractModule;
+import org.matsim.core.population.algorithms.PermissibleModesCalculator;
+import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.router.costcalculators.RandomizingTimeDistanceTravelDisutilityFactory;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.scoring.ScoringFunctionFactory;
@@ -24,6 +27,7 @@ import org.matsim.core.utils.misc.Time;
 import playground.mas.cordon.*;
 import playground.mas.dispatcher.MASPoolDispatcherFactory;
 import playground.mas.dispatcher.MASSoloDispatcherFactory;
+import playground.mas.replanning.MASPermissibleModesCalculator;
 import playground.mas.routing.MASCarTravelDisutilityFactory;
 import playground.mas.routing.MASCordonTravelDisutility;
 import playground.mas.scoring.MASScoringFunctionFactory;
@@ -43,7 +47,40 @@ public class MASModule extends AbstractModule {
     final public static String AV_POOL_OPERATOR = "pool";
     final public static String AV_SOLO_OPERATOR = "solo";
 
+    final public static String EBIKE = "ebike";
+
     final private Logger log = Logger.getLogger(MASModule.class);
+
+    static public void applyEbikes(Config config) {
+        PlansCalcRouteConfigGroup plansCalcRouteConfigGroup = (PlansCalcRouteConfigGroup) config.getModules().get(PlansCalcRouteConfigGroup.GROUP_NAME);
+        PlanCalcScoreConfigGroup planCalcScoreConfigGroup = (PlanCalcScoreConfigGroup) config.getModules().get(PlanCalcScoreConfigGroup.GROUP_NAME);
+
+        MASConfigGroup masConfigGroup = (MASConfigGroup) config.getModules().get(MASConfigGroup.MAS);
+
+        {
+            // Don't ask... crazy stuff
+            for (PlansCalcRouteConfigGroup.ModeRoutingParams params : plansCalcRouteConfigGroup.getModeRoutingParams().values()) {
+                plansCalcRouteConfigGroup.addModeRoutingParams(params);
+            }
+
+            PlansCalcRouteConfigGroup.ModeRoutingParams bikeParams = plansCalcRouteConfigGroup.getModeRoutingParams().get(TransportMode.bike);
+            PlansCalcRouteConfigGroup.ModeRoutingParams ebikeParams = new PlansCalcRouteConfigGroup.ModeRoutingParams(MASModule.EBIKE);
+
+            ebikeParams.setTeleportedModeSpeed(bikeParams.getTeleportedModeSpeed() * masConfigGroup.getEbikeSpeedupFactor());
+            ebikeParams.setBeelineDistanceFactor(bikeParams.getBeelineDistanceFactor());
+
+            plansCalcRouteConfigGroup.addModeRoutingParams(ebikeParams);
+        }
+
+        {
+            PlanCalcScoreConfigGroup.ModeParams bikeParams = planCalcScoreConfigGroup.getModes().get(TransportMode.bike);
+            PlanCalcScoreConfigGroup.ModeParams ebikeParams = new PlanCalcScoreConfigGroup.ModeParams(MASModule.EBIKE);
+
+            ebikeParams.setMarginalUtilityOfTraveling(bikeParams.getMarginalUtilityOfTraveling());
+
+            planCalcScoreConfigGroup.addModeParams(ebikeParams);
+        }
+    }
 
     @Override
     public void install() {
@@ -137,6 +174,22 @@ public class MASModule extends AbstractModule {
             @Override
             public boolean test(Id<Person> personId) {
                 Boolean flag = (Boolean) population.getPersonAttributes().getAttribute(personId.toString(), "ev");
+                return flag != null && flag;
+            }
+        }).collect(Collectors.toSet());
+    }
+
+    @Provides @Singleton
+    public PermissibleModesCalculator providePermissibleModesCalculator(PermissibleModesCalculatorImpl delegate, @Named(EBIKE) Collection<Id<Person>> ebikeUserIds) {
+        return new MASPermissibleModesCalculator(delegate, ebikeUserIds);
+    }
+
+    @Provides @Singleton @Named(EBIKE)
+    public Collection<Id<Person>> provideEbikeUserIds(Population population) {
+        return population.getPersons().keySet().stream().filter(new Predicate<Id<Person>>() {
+            @Override
+            public boolean test(Id<Person> personId) {
+                Boolean flag = (Boolean) population.getPersonAttributes().getAttribute(personId.toString(), "ebike");
                 return flag != null && flag;
             }
         }).collect(Collectors.toSet());
