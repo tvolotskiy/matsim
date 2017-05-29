@@ -25,15 +25,22 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.google.inject.Inject;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.api.core.v01.population.Plan;
+import org.matsim.core.config.groups.SubtourModeChoiceConfigGroup;
 import org.matsim.core.population.PersonUtils;
 
 public class PermissibleModesCalculatorImpl implements PermissibleModesCalculator {
 	private final List<String> availableModes;
 	private final List<String> availableModesWithoutCar;
 	private final boolean considerCarAvailability;
+
+	@Inject
+	public PermissibleModesCalculatorImpl(SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup) {
+		this(subtourModeChoiceConfigGroup.getModes(), subtourModeChoiceConfigGroup.considerCarAvailability());
+	}
 
 	public PermissibleModesCalculatorImpl(
 			final String[] availableModes,
