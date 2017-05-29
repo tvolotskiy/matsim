@@ -12,29 +12,22 @@ import playground.mas.routing.MASCordonTravelDisutility;
 import playground.sebhoerl.plcpc.ParallelLeastCostPathCalculatorFactory;
 
 public class MASRouterFactory implements ParallelLeastCostPathCalculatorFactory {
-    final private boolean isAffectedByCordon;
+    final private boolean isSolo;
 
     final private Network network;
     final private TravelTime travelTime;
     final private MASCordonTravelDisutility cordonDisutility;
 
-    public MASRouterFactory(Network network, TravelTime travelTime, MASCordonTravelDisutility cordonDisutility, boolean isAffectedByCordon) {
+    public MASRouterFactory(Network network, TravelTime travelTime, MASCordonTravelDisutility cordonDisutility, boolean isSolo) {
         this.network = network;
         this.travelTime = travelTime;
         this.cordonDisutility = cordonDisutility;
-        this.isAffectedByCordon = isAffectedByCordon;
+        this.isSolo = isSolo;
     }
 
     @Override
     public LeastCostPathCalculator createRouter() {
-        TravelDisutility travelDisutility = null;
-
-        if (isAffectedByCordon) {
-            travelDisutility = new MASAVTravelDisutility(new OnlyTimeDependentTravelDisutility(travelTime), cordonDisutility);
-        } else {
-            travelDisutility = new OnlyTimeDependentTravelDisutility(travelTime);
-        }
-
+        TravelDisutility travelDisutility = new MASAVTravelDisutility(isSolo, new OnlyTimeDependentTravelDisutility(travelTime), cordonDisutility);
         return new Dijkstra(network, travelDisutility, travelTime);
     }
 }

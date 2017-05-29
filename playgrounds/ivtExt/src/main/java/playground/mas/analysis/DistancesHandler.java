@@ -25,14 +25,18 @@ public class DistancesHandler implements TransitDriverStartsEventHandler, Person
     final private Collection<Id<Person>> evPersonIds;
     final private Set<Id<Vehicle>> transitVehicleIds = new HashSet<>();
 
-    final private Collection<Id<Link>> insideCordonLinkIds;
+    final private Collection<Id<Link>> insideInnerCordonLinkIds;
+    final private Collection<Id<Link>> insideOuterCordonLinkIds;
+    final private Collection<Id<Link>> analysisLinkIds;
 
-    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Collection<Id<Person>> evPersonIds, Collection<Id<Link>> insideCordonLinkIds) {
+    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Collection<Id<Person>> evPersonIds, Collection<Id<Link>> insideInnerCordonLinkIds, Collection<Id<Link>> insideOuterCordonLinkIds, Collection<Id<Link>> analysisLinkIds) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
         this.network = network;
         this.evPersonIds = evPersonIds;
-        this.insideCordonLinkIds = insideCordonLinkIds;
+        this.insideInnerCordonLinkIds = insideInnerCordonLinkIds;
+        this.insideOuterCordonLinkIds = insideOuterCordonLinkIds;
+        this.analysisLinkIds = analysisLinkIds;
     }
 
     private String findModeForVehicle(Id<Vehicle> vehicleId) {
@@ -111,17 +115,26 @@ public class DistancesHandler implements TransitDriverStartsEventHandler, Person
             }
 
             List<Double> occupancySlot = mode.equals("av_pool") ? dataFrame.distanceByPoolOccupancy.get(occupancy) : null;
-            List<Double> insideOccupancySlot = mode.equals("av_pool") ? dataFrame.insideDistanceByPoolOccupancy.get(occupancy) : null;
+            List<Double> insideInnerCordonOccupancySlot = mode.equals("av_pool") ? dataFrame.insideInnerCordonDistanceByPoolOccupancy.get(occupancy) : null;
+            List<Double> insideOuterCordonOccupancySlot = mode.equals("av_pool") ? dataFrame.insideOuterCordonDistanceByPoolOccupancy.get(occupancy) : null;
 
             if (binCalculator.isCoveredValue(enterEvent.getTime())) {
-                DataFrame.increment(dataFrame.vehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
-                DataFrame.increment(dataFrame.passengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
-                if (occupancySlot != null) DataFrame.increment(occupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
+                if (analysisLinkIds.contains(event.getLinkId())) {
+                    DataFrame.increment(dataFrame.vehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
+                    DataFrame.increment(dataFrame.passengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
+                    if (occupancySlot != null) DataFrame.increment(occupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
+                }
 
-                if (insideCordonLinkIds.contains(event.getLinkId())) {
-                    DataFrame.increment(dataFrame.insideVehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
-                    DataFrame.increment(dataFrame.insidePassengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
-                    if (insideOccupancySlot != null) DataFrame.increment(insideOccupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
+                if (insideInnerCordonLinkIds.contains(event.getLinkId())) {
+                    DataFrame.increment(dataFrame.insideInnerCordonVehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
+                    DataFrame.increment(dataFrame.insideInnerCordonPassengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
+                    if (insideInnerCordonOccupancySlot != null) DataFrame.increment(insideInnerCordonOccupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
+                }
+
+                if (insideOuterCordonLinkIds.contains(event.getLinkId())) {
+                    DataFrame.increment(dataFrame.insideOuterCordonVehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
+                    DataFrame.increment(dataFrame.insideOuterCordonPassengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
+                    if (insideOuterCordonOccupancySlot != null) DataFrame.increment(insideOuterCordonOccupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
                 }
             }
         }

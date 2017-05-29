@@ -43,7 +43,7 @@ public class MASSoloDispatcherFactory implements AVDispatcher.AVDispatcherFactor
     public AVDispatcher createDispatcher(AVDispatcherConfig config) {
         ParallelLeastCostPathCalculator router = new ParallelLeastCostPathCalculator(
                 (int) avConfig.getParallelRouters(),
-                new MASRouterFactory(network, travelTime, cordonDisutility, masConfig.getChargedOperatorIds().contains(config.getParent().getId()))
+                new MASRouterFactory(network, travelTime, cordonDisutility, true)
         );
 
         return new SingleHeuristicDispatcher(

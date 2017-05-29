@@ -2,14 +2,8 @@ package playground.mas.cordon;
 
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
-import org.matsim.api.core.v01.events.LinkEnterEvent;
-import org.matsim.api.core.v01.events.PersonDepartureEvent;
-import org.matsim.api.core.v01.events.PersonEntersVehicleEvent;
-import org.matsim.api.core.v01.events.PersonLeavesVehicleEvent;
-import org.matsim.api.core.v01.events.handler.LinkEnterEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonDepartureEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonEntersVehicleEventHandler;
-import org.matsim.api.core.v01.events.handler.PersonLeavesVehicleEventHandler;
+import org.matsim.api.core.v01.events.*;
+import org.matsim.api.core.v01.events.handler.*;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.vehicles.Vehicle;
@@ -18,40 +12,30 @@ import playground.sebhoerl.avtaxi.framework.AVModule;
 
 import java.util.*;
 
-public class CordonCharger implements PersonDepartureEventHandler, PersonEntersVehicleEventHandler, PersonLeavesVehicleEventHandler, LinkEnterEventHandler {
+public class CordonCharger implements PersonDepartureEventHandler, PersonArrivalEventHandler, PersonEntersVehicleEventHandler, PersonLeavesVehicleEventHandler, LinkEnterEventHandler {
     final private Map<Id<Person>, Double> charges = new HashMap<>();
 
     final private Set<Id<Person>> departures = new HashSet<>();
-    final private Map<Id<Vehicle>, Id<Person>> passengers = new HashMap<>();
+    final private Map<Id<Vehicle>, Set<Id<Person>>> passengers = new HashMap<>();
 
-    final private Collection<Id<Person>> evUserIds;
-    final private Collection<Id<Link>> cordonLinkIds;
-    final private Collection<Id<AVOperator>> chargedOperators;
+    final private CordonPricing cordonPricing;
+    final private ChargeTypeFinder chargeTypeFinder;
 
-    final private double avCordonPrice;
-    final private double evCordonPrice;
-    final private double carCordonPrice;
-    final private CordonState cordonState;
-
-    public CordonCharger(CordonState cordonState, Collection<Id<Link>> cordonLinkIds, double avCordonPrice, double evCordonPrice, double carCordonPrice, Collection<Id<AVOperator>> chargedOperators, Collection<Id<Person>> evUserIds) {
-        this.cordonLinkIds = cordonLinkIds;
-        this.avCordonPrice = avCordonPrice;
-        this.evCordonPrice = evCordonPrice;
-        this.carCordonPrice = carCordonPrice;
-        this.chargedOperators = chargedOperators;
-        this.evUserIds = evUserIds;
-        this.cordonState = cordonState;
+    public CordonCharger(CordonPricing cordonPricing, ChargeTypeFinder chargeTypeFinder) {
+        this.chargeTypeFinder = chargeTypeFinder;
+        this.cordonPricing = cordonPricing;
     }
 
     @Override
     public void reset(int iteration) {
+        departures.clear();
         passengers.clear();
         charges.clear();
     }
 
     @Override
     public void handleEvent(PersonDepartureEvent event) {
-        if (MASCordonUtils.isChargeableDeparture(event.getPersonId(), event.getLegMode(), evUserIds)) {
+        if (chargeTypeFinder.mayAffectDeparture(event.getLegMode(), event.getPersonId())) {
             departures.add(event.getPersonId());
         }
     }
@@ -59,47 +43,53 @@ public class CordonCharger implements PersonDepartureEventHandler, PersonEntersV
     @Override
     public void handleEvent(PersonEntersVehicleEvent event) {
         if (departures.remove(event.getPersonId())) {
-            if (MASCordonUtils.isPrivateVehicle(event.getVehicleId()) || MASCordonUtils.isChargeableOperator(event.getVehicleId(), chargedOperators)) {
-                passengers.put(event.getVehicleId(), event.getPersonId());
+            if (!passengers.containsKey(event.getVehicleId())) {
+                passengers.put(event.getVehicleId(), new HashSet<>());
             }
+
+            passengers.get(event.getVehicleId()).add(event.getPersonId());
         }
     }
 
     @Override
     public void handleEvent(PersonLeavesVehicleEvent event) {
-        passengers.remove(event.getVehicleId());
-    }
+        Set<Id<Person>> vehiclePassengers = passengers.get(event.getVehicleId());
 
-    private double getCordonPrice(Id<Vehicle> vehicleId, Id<Person> passengerId) {
-        if (MASCordonUtils.isPrivateVehicle(vehicleId)) {
-            if (evUserIds.contains(passengerId)) {
-                return evCordonPrice;
-            } else {
-                return carCordonPrice;
+        if (vehiclePassengers != null) {
+            vehiclePassengers.remove(event.getPersonId());
+
+            if (vehiclePassengers.size() == 0) {
+                passengers.remove(event.getVehicleId());
             }
-        } else {
-            return avCordonPrice;
         }
     }
 
     @Override
     public void handleEvent(LinkEnterEvent event) {
-        if (cordonLinkIds.contains(event.getLinkId())) {
-            Id<Person> passengerId = passengers.get(event.getVehicleId());
+        if (cordonPricing.isAffectingLink(event.getLinkId())) {
+            Set<Id<Person>> vehiclePassengers = passengers.get(event.getVehicleId());
 
-            if (passengerId != null && cordonState.isCordonActive(event.getTime())) {
-                Double charge = charges.get(passengerId);
-
-                double cordonPrice = getCordonPrice(event.getVehicleId(), passengerId);
-                charge = (charge == null) ? cordonPrice : charge + cordonPrice;
-
-                charges.put(passengerId, charge);
+            if (vehiclePassengers != null) {
+                for (Id<Person> passengerId : vehiclePassengers) {
+                    ChargeType chargeType = chargeTypeFinder.getChargeType(passengerId, event.getVehicleId());
+                    addCharge(passengerId, cordonPricing.getFee(event.getLinkId(), chargeType, event.getTime()));
+                }
             }
         }
+    }
+
+    private void addCharge(Id<Person> passengerId, double charge) {
+        Double previous = charges.get(passengerId);
+        charges.put(passengerId, charge + (previous != null ? previous : 0.0));
     }
 
     public double getCharge(Id<Person> personId) {
         Double charge = charges.get(personId);
         return charge == null ? 0.0 : charge;
+    }
+
+    @Override
+    public void handleEvent(PersonArrivalEvent event) {
+        departures.remove(event.getPersonId());
     }
 }

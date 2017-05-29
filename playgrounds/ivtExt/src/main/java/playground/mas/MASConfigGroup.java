@@ -14,50 +14,67 @@ import java.util.stream.Collectors;
 public class MASConfigGroup extends ReflectiveConfigGroup {
     final static public String MAS = "mas";
 
-    final static public String CORDON_CENTER_NODE_ID = "cordonCenterNodeId";
-    final static public String CORDON_RADIUS = "cordonRadius";
+    final static public String OUTER_CORDON_CENTER_NODE_ID = "cordonCenterNodeId";
+    final static public String OUTER_CORDON_RADIUS = "cordonRadius";
 
-    final static public String AV_CORDON_FEE = "avCordonFee";
+    final static public String AV_POOL_CORDON_FEE = "avPoolCordonFee";
+    final static public String AV_SOLO_CORDON_FEE = "avSoloCordonFee";
     final static public String EV_CORDON_FEE = "evCordonFee";
     final static public String CAR_CORDON_FEE = "carCordonFee";
 
-    final static public String CORDON_INTERVALS = "cordonIntervals";
-    final static public String CHARGED_OPERATORS = "chargedOperators";
+    final static public String OUTER_CORDON_INTERVALS = "cordonIntervals";
 
     final static public String ADDITIONAL_EV_COSTS_PER_KM = "additionalEVCostsPerKm";
 
     final static public String INNER_CORDON_CENTER_NODE_ID = "innerCordonCenterNodeId";
     final static public String INNER_CORDON_RADIUS = "innerCordonRadius";
     final static public String INNER_CORDON_FEE_PER_KM = "innerCordonFeePerKm";
+    final static public String INNER_CORDON_INTERVALS = "innerCordonIntervals";
 
-    private double avCordonFee = 0.0;
+    final static public String ANALYSIS_CENTER_NODE_ID = "analysisCenterNodeId";
+    final static public String ANALYSIS_RADIUS = "analysisRadisu";
+
+    private double avSoloCordonFee = 0.0;
+    private double avPoolCordonFee = 0.0;
     private double evCordonFee = 0.0;
     private double carCordonFee = 0.0;
 
-    private Set<Id<AVOperator>> chargedOperators = new HashSet<>();
-
-    private Id<Node> cordonCenterNodeId = null;
-    private double cordonRadius = 0.0;
+    private Id<Node> outerCordonCenterNodeId = null;
+    private double outerCordonRadius = 0.0;
 
     private double additionalEVCostsPerKm = 0.0;
-    private String cordonIntervals = "";
+    private String outerCordonIntervals = "";
 
     private Id<Node> innerCordonCenterNodeId = null;
     private double innerCordonRadius = 0.0;
     private double innerCordonFeePerKm = 0.0;
+    private String innerCordonIntervals = "";
+
+    private Id<Node> analysisCenterNodeId = null;
+    private double analysisRadius = 0.0;
 
     public MASConfigGroup() {
         super(MAS);
     }
 
-    @StringGetter(AV_CORDON_FEE)
-    public double getAVCordonFee() {
-        return avCordonFee;
+    @StringGetter(AV_POOL_CORDON_FEE)
+    public double getAVPoolCordonFee() {
+        return avPoolCordonFee;
     }
 
-    @StringSetter(AV_CORDON_FEE)
-    public void setAVCordonFee(double avCordonFee) {
-        this.avCordonFee = avCordonFee;
+    @StringSetter(AV_POOL_CORDON_FEE)
+    public void setAVPoolCordonFee(double avPoolCordonFee) {
+        this.avPoolCordonFee = avPoolCordonFee;
+    }
+
+    @StringGetter(AV_SOLO_CORDON_FEE)
+    public double getAVSoloCordonFee() {
+        return avSoloCordonFee;
+    }
+
+    @StringSetter(AV_SOLO_CORDON_FEE)
+    public void setAVSoloCordonFee(double avSoloCordonFee) {
+        this.avSoloCordonFee = avSoloCordonFee;
     }
 
     @StringGetter(EV_CORDON_FEE)
@@ -80,42 +97,28 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
         this.carCordonFee = carCordonFee;
     }
 
-    @StringGetter(CHARGED_OPERATORS)
-    public String getChargedOperators() {
-        return String.join(",", chargedOperators.stream().map(i -> i.toString()).collect(Collectors.toList()));
+    @StringGetter(OUTER_CORDON_CENTER_NODE_ID)
+    public Id<Node> getOuterCordonCenterNodeId() {
+        return outerCordonCenterNodeId;
     }
 
-    @StringSetter(CHARGED_OPERATORS)
-    public void setChargedOperators(String chargedOperators) {
-        this.chargedOperators = Arrays.asList(chargedOperators.split(",")).stream().map(i -> Id.create(i, AVOperator.class)).collect(Collectors.toSet());
+    public void setOuterCordonCenterNodeId(Id<Node> outerCordonCenterNodeId) {
+        this.outerCordonCenterNodeId = outerCordonCenterNodeId;
     }
 
-    public Collection<Id<AVOperator>> getChargedOperatorIds() {
-        return chargedOperators;
+    @StringSetter(OUTER_CORDON_CENTER_NODE_ID)
+    public void setOuterCordonCenterNodeId(String outerCordonCenterNodeId) {
+        this.outerCordonCenterNodeId = Id.createNodeId(outerCordonCenterNodeId);
     }
 
-    @StringGetter(CORDON_CENTER_NODE_ID)
-    public Id<Node> getCordonCenterNodeId() {
-        return cordonCenterNodeId;
+    @StringGetter(OUTER_CORDON_RADIUS)
+    public double getOuterCordonRadius() {
+        return outerCordonRadius;
     }
 
-    public void setCordonCenterNodeId(Id<Node> cordonCenterNodeId) {
-        this.cordonCenterNodeId = cordonCenterNodeId;
-    }
-
-    @StringSetter(CORDON_CENTER_NODE_ID)
-    public void setCordonCenterNodeId(String cordonCenterNodeId) {
-        this.cordonCenterNodeId = Id.createNodeId(cordonCenterNodeId);
-    }
-
-    @StringGetter(CORDON_RADIUS)
-    public double getCordonRadius() {
-        return cordonRadius;
-    }
-
-    @StringSetter(CORDON_RADIUS)
-    public void setCordonRadius(double radius) {
-        this.cordonRadius = radius;
+    @StringSetter(OUTER_CORDON_RADIUS)
+    public void setOuterCordonRadius(double radius) {
+        this.outerCordonRadius = radius;
     }
 
     @StringGetter(ADDITIONAL_EV_COSTS_PER_KM)
@@ -128,14 +131,14 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
         this.additionalEVCostsPerKm = additionalEVCostsPerKm;
     }
 
-    @StringGetter(CORDON_INTERVALS)
-    public String getCordonIntervals() {
-        return cordonIntervals;
+    @StringGetter(OUTER_CORDON_INTERVALS)
+    public String getOuterCordonIntervals() {
+        return outerCordonIntervals;
     }
 
-    @StringSetter(CORDON_INTERVALS)
-    public void setCordonIntervals(String cordonIntervals) {
-        this.cordonIntervals = cordonIntervals;
+    @StringSetter(OUTER_CORDON_INTERVALS)
+    public void setOuterCordonIntervals(String outerCordonIntervals) {
+        this.outerCordonIntervals = outerCordonIntervals;
     }
 
     @StringGetter(INNER_CORDON_CENTER_NODE_ID)
@@ -144,8 +147,8 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     }
 
     @StringSetter(INNER_CORDON_CENTER_NODE_ID)
-    public void setInnerCordonCenterNodeId(Id<Node> innerCordonCenterNodeId) {
-        this.innerCordonCenterNodeId = innerCordonCenterNodeId;
+    public void setInnerCordonCenterNodeId(String innerCordonCenterNodeId) {
+        this.innerCordonCenterNodeId = Id.createNodeId(innerCordonCenterNodeId);
     }
 
     @StringGetter(INNER_CORDON_RADIUS)
@@ -166,5 +169,39 @@ public class MASConfigGroup extends ReflectiveConfigGroup {
     @StringSetter(INNER_CORDON_FEE_PER_KM)
     public void setInnerCordonFeePerKm(double innerCordonFeePerKm) {
         this.innerCordonFeePerKm = innerCordonFeePerKm;
+    }
+
+    @StringGetter(INNER_CORDON_INTERVALS)
+    public String getInnerCordonIntervals() {
+        return innerCordonIntervals;
+    }
+
+    @StringSetter(INNER_CORDON_INTERVALS)
+    public void setInnerCordonIntervals(String innerCordonIntervals) {
+        this.innerCordonIntervals = innerCordonIntervals;
+    }
+
+    @StringGetter(ANALYSIS_CENTER_NODE_ID)
+    public Id<Node> getAnalysisCenterNodeId() {
+        return analysisCenterNodeId;
+    }
+
+    public void setAnalysisCenterNodeId(Id<Node> analysisCenterNodeId) {
+        this.analysisCenterNodeId = analysisCenterNodeId;
+    }
+
+    @StringSetter(ANALYSIS_CENTER_NODE_ID)
+    public void setAnalysisCenterNodeId(String analysisCenterNodeId) {
+        this.analysisCenterNodeId = Id.createNodeId(analysisCenterNodeId);
+    }
+
+    @StringGetter(ANALYSIS_RADIUS)
+    public double getAnalysisRadius() {
+        return analysisRadius;
+    }
+
+    @StringSetter(ANALYSIS_RADIUS)
+    public void setAnalysisRadius(double analysisRadius) {
+        this.analysisRadius = analysisRadius;
     }
 }

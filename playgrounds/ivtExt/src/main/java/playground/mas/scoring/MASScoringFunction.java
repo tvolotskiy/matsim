@@ -1,6 +1,7 @@
 package playground.mas.scoring;
 
 import org.matsim.api.core.v01.Id;
+import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.population.Leg;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.scoring.SumScoringFunction;
@@ -33,7 +34,7 @@ public class MASScoringFunction implements SumScoringFunction.BasicScoring, SumS
 
     @Override
     public void handleLeg(Leg leg) {
-        if (leg.getMode().equals("car") && isEVUser) {
+        if (leg.getMode().equals(TransportMode.car) && isEVUser) {
             score -= additionalEVCostPerKm * marginalUtilityOfMoney * leg.getRoute().getDistance() / 1000.0;
         }
     }

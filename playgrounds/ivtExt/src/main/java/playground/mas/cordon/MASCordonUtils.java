@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class MASCordonUtils {
-    static public boolean isChargeableOperator(Id<Vehicle> vehicleId, Collection<Id<AVOperator>> chargeableOperators) {
+    /*static public boolean isChargeableOperator(Id<Vehicle> vehicleId, Collection<Id<AVOperator>> chargeableOperators) {
         String stringId = vehicleId.toString();
 
         if (stringId.startsWith("av_")) {
@@ -35,7 +35,7 @@ public class MASCordonUtils {
 
     static public boolean isPrivateVehicle(Id<Vehicle> vehicleId) {
         return !vehicleId.toString().startsWith("av_") && !vehicleId.toString().startsWith("bus_") && !vehicleId.toString().startsWith("pt_");
-    }
+    }*/
 
     static public Collection<Link> findInsideCordonLinks(Id<Node> centerId, double radius, Network network) {
         final Node centerNode = network.getNodes().get(centerId);

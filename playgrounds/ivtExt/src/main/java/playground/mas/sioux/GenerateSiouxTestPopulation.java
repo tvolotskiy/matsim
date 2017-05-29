@@ -29,7 +29,7 @@ public class GenerateSiouxTestPopulation {
         Population population = PopulationUtils.createPopulation(ConfigUtils.createConfig());
         PopulationFactory factory = population.getFactory();
 
-        Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfig.getCordonCenterNodeId(), masConfig.getCordonRadius(), network);
+        Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfig.getOuterCordonCenterNodeId(), masConfig.getOuterCordonRadius(), network);
         Collection<Link> outsideLinks = network.getLinks().values().stream().filter(l -> !insideLinks.contains(l)).collect(Collectors.toList());
 
         for (int i = 0; i < 100; i++) {

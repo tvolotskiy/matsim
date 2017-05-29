@@ -21,20 +21,22 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
     final private DataFrame dataFrame;
     final private BinCalculator binCalculator;
 
-    final private Map<Id<Person>, PersonDepartureEvent> depatures = new HashMap<>();
+    final private Map<Id<Person>, PersonDepartureEvent> departures = new HashMap<>();
     final private Map<Id<Person>, PersonArrivalEvent> arrivals = new HashMap<>();
     final private Map<Id<Person>, PersonEntersVehicleEvent> enterVehicleEvents = new HashMap<>();
 
-    final private Collection<Id<Link>> insideLinkIds;
-    final private Collection<Id<Link>> outsideLinkIds;
+    final private Collection<Id<Link>> insideInnerCordonLinkIds;
+    final private Collection<Id<Link>> insideOuterCordonLinkIds;
+    final private Collection<Id<Link>> analysisLinkIds;
 
     final private Collection<Id<Person>> evPersonIds;
 
-    public CountsHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> insideLinkdIds, Collection<Id<Link>> outsideLinkIds, Collection<Id<Person>> evPersonIds) {
+    public CountsHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> insideInnerCordonLinkIds, Collection<Id<Link>> insideOuterCordonLinkIds, Collection<Id<Link>> analysisLinkIds, Collection<Id<Person>> evPersonIds) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
-        this.insideLinkIds = insideLinkdIds;
-        this.outsideLinkIds = outsideLinkIds;
+        this.insideInnerCordonLinkIds = insideInnerCordonLinkIds;
+        this.insideOuterCordonLinkIds = insideOuterCordonLinkIds;
+        this.analysisLinkIds = analysisLinkIds;
         this.evPersonIds = evPersonIds;
     }
 
@@ -44,8 +46,8 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
             return;
         }
 
-        if (!depatures.containsKey(event.getPersonId())) {
-            depatures.put(event.getPersonId(), event);
+        if (!departures.containsKey(event.getPersonId())) {
+            departures.put(event.getPersonId(), event);
         }
     }
 
@@ -57,7 +59,7 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
     @Override
     public void handleEvent(ActivityStartEvent event) {
         if (!event.getActType().contains("interaction")) {
-            PersonDepartureEvent departureEvent = depatures.remove(event.getPersonId());
+            PersonDepartureEvent departureEvent = departures.remove(event.getPersonId());
             PersonArrivalEvent arrivalEvent = arrivals.remove(event.getPersonId());
             PersonEntersVehicleEvent entersVehicleEvent = enterVehicleEvents.remove(event.getPersonId());
 
@@ -78,18 +80,30 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
                 }
 
                 if (binCalculator.isCoveredValue(departureEvent.getTime())) {
-                    if (insideLinkIds.contains(departureEvent.getLinkId())) {
-                        DataFrame.increment(dataFrame.insideDepartures, mode, binCalculator.getIndex(departureEvent.getTime()));
-                    } else if (outsideLinkIds.contains(departureEvent.getLinkId())) {
-                        DataFrame.increment(dataFrame.outsideDepartures, mode, binCalculator.getIndex(departureEvent.getTime()));
+                    if (insideInnerCordonLinkIds.contains(departureEvent.getLinkId())) {
+                        DataFrame.increment(dataFrame.insideInnerCordonDepartures, mode, binCalculator.getIndex(departureEvent.getTime()));
+                    }
+
+                    if (insideOuterCordonLinkIds.contains(departureEvent.getLinkId())) {
+                        DataFrame.increment(dataFrame.insideOuterCordonDepartures, mode, binCalculator.getIndex(departureEvent.getTime()));
+                    }
+
+                    if (analysisLinkIds.contains(departureEvent.getLinkId())) {
+                        DataFrame.increment(dataFrame.departures, mode, binCalculator.getIndex(departureEvent.getTime()));
                     }
                 }
 
                 if (binCalculator.isCoveredValue(arrivalEvent.getTime())) {
-                    if (insideLinkIds.contains(arrivalEvent.getLinkId())) {
-                        DataFrame.increment(dataFrame.insideArrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
-                    } else if (outsideLinkIds.contains(arrivalEvent.getLinkId())) {
-                        DataFrame.increment(dataFrame.outsideArrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
+                    if (insideInnerCordonLinkIds.contains(arrivalEvent.getLinkId())) {
+                        DataFrame.increment(dataFrame.insideInnerCordonArrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
+                    }
+
+                    if (insideOuterCordonLinkIds.contains(arrivalEvent.getLinkId())) {
+                        DataFrame.increment(dataFrame.insideOuterCordonArrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
+                    }
+
+                    if (analysisLinkIds.contains(arrivalEvent.getLinkId())) {
+                        DataFrame.increment(dataFrame.arrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
                     }
                 }
             }
@@ -101,7 +115,7 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
 
     @Override
     public void handleEvent(PersonEntersVehicleEvent event) {
-        if (depatures.containsKey(event.getPersonId())) {
+        if (departures.containsKey(event.getPersonId())) {
             enterVehicleEvents.put(event.getPersonId(), event);
         }
     }

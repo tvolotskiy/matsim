@@ -22,8 +22,8 @@ public class RunNetworkAnalysis {
         Network network = NetworkUtils.createNetwork();
         new MatsimNetworkReader(network).readFile(ConfigGroup.getInputFileURL(config.getContext(), config.network().getInputFile()).getPath());
 
-        Collection<Link> cordonLinks = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), network);
-        Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getCordonCenterNodeId(), masConfigGroup.getCordonRadius(), network);
+        Collection<Link> cordonLinks = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getOuterCordonCenterNodeId(), masConfigGroup.getOuterCordonRadius(), network);
+        Collection<Link> insideLinks = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getOuterCordonCenterNodeId(), masConfigGroup.getOuterCordonRadius(), network);
 
         for (Link link : network.getLinks().values()) {
             link.getAttributes().putAttribute("is_cordon", cordonLinks.contains(link));

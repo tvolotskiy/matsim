@@ -11,12 +11,16 @@ public class SlowModeReader {
     final private DataFrame dataFrame;
     final private BinCalculator binCalculator;
 
-    final private Collection<Id<Link>> insideCordonLinkIds;
+    final private Collection<Id<Link>> insideInnerCordonLinkIds;
+    final private Collection<Id<Link>> insideOuterCordonLinkIds;
+    final private Collection<Id<Link>> analysisLinkIds;
 
-    public SlowModeReader(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> insideCordonLinkIds) {
+    public SlowModeReader(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> insideInnerCordonLinkIds, Collection<Id<Link>> insideOuterCordonLinkIds, Collection<Id<Link>> analysisLinkIds) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
-        this.insideCordonLinkIds = insideCordonLinkIds;
+        this.insideInnerCordonLinkIds = insideInnerCordonLinkIds;
+        this.insideOuterCordonLinkIds = insideOuterCordonLinkIds;
+        this.analysisLinkIds = analysisLinkIds;
     }
 
     public void read(Population population) {
@@ -28,10 +32,16 @@ public class SlowModeReader {
                     Leg leg = (Leg) planElement;
 
                     if ((leg.getMode().equals("walk") || leg.getMode().equals("bike")) && binCalculator.isCoveredValue(leg.getDepartureTime())) {
-                        DataFrame.increment(dataFrame.passengerDistances, leg.getMode(), binCalculator.getIndex(leg.getDepartureTime()), leg.getRoute().getDistance());
+                        if (analysisLinkIds.contains(leg.getRoute().getStartLinkId())) {
+                            DataFrame.increment(dataFrame.passengerDistances, leg.getMode(), binCalculator.getIndex(leg.getDepartureTime()), leg.getRoute().getDistance());
+                        }
 
-                        if (insideCordonLinkIds.contains(leg.getRoute().getStartLinkId())) {
-                            DataFrame.increment(dataFrame.insidePassengerDistances, leg.getMode(), binCalculator.getIndex(leg.getDepartureTime()), leg.getRoute().getDistance());
+                        if (insideInnerCordonLinkIds.contains(leg.getRoute().getStartLinkId())) {
+                            DataFrame.increment(dataFrame.insideInnerCordonPassengerDistances, leg.getMode(), binCalculator.getIndex(leg.getDepartureTime()), leg.getRoute().getDistance());
+                        }
+
+                        if (insideOuterCordonLinkIds.contains(leg.getRoute().getStartLinkId())) {
+                            DataFrame.increment(dataFrame.insideOuterCordonPassengerDistances, leg.getMode(), binCalculator.getIndex(leg.getDepartureTime()), leg.getRoute().getDistance());
                         }
                     }
                 }

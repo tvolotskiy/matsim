@@ -1,8 +1,10 @@
 package playground.mas;
 
+import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -19,10 +21,7 @@ import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
 import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.core.utils.collections.Tuple;
 import org.matsim.core.utils.misc.Time;
-import playground.mas.cordon.CordonCharger;
-import playground.mas.cordon.CordonState;
-import playground.mas.cordon.IntervalCordonState;
-import playground.mas.cordon.MASCordonUtils;
+import playground.mas.cordon.*;
 import playground.mas.dispatcher.MASPoolDispatcherFactory;
 import playground.mas.dispatcher.MASSoloDispatcherFactory;
 import playground.mas.routing.MASCarTravelDisutilityFactory;
@@ -37,8 +36,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MASModule extends AbstractModule {
-    final public static String CORDON_LINKS = "cordon_links";
     final public static String EV_USER_IDS = "ev_user_ids";
+    final public static String OUTER_CORDON = "outer_cordon";
+    final public static String INNER_CORDON = "inner_cordon";
+
+    final public static String AV_POOL_OPERATOR = "pool";
+    final public static String AV_SOLO_OPERATOR = "solo";
 
     final private Logger log = Logger.getLogger(MASModule.class);
 
@@ -54,21 +57,35 @@ public class MASModule extends AbstractModule {
         AVUtils.bindDispatcherFactory(binder(), "MAS_Solo").to(MASSoloDispatcherFactory.class);
         AVUtils.bindDispatcherFactory(binder(), "MAS_Pool").to(MASPoolDispatcherFactory.class);
 
-        bind(CordonState.class).to(IntervalCordonState.class);
+        addControlerListenerBinding().to(MASConsistencyListener.class);
     }
 
     @Provides @Singleton
-    private MASCarTravelDisutilityFactory provideMASCarTravelDisutilityFactory(@Named("ev_user_ids") Collection<Id<Person>> evUserIds, MASCordonTravelDisutility cordonDisutility, PlanCalcScoreConfigGroup scoreConfig) {
+    private MASCarTravelDisutilityFactory provideMASCarTravelDisutilityFactory(@Named(EV_USER_IDS) Collection<Id<Person>> evUserIds, MASCordonTravelDisutility cordonDisutility, PlanCalcScoreConfigGroup scoreConfig) {
         TravelDisutilityFactory randomizingTravelDisutiltiyFactory = new RandomizingTimeDistanceTravelDisutilityFactory(TransportMode.car, scoreConfig);
         return new MASCarTravelDisutilityFactory(randomizingTravelDisutiltiyFactory, evUserIds, cordonDisutility);
     }
 
-    @Provides @Singleton
-    private IntervalCordonState provideIntervalCordonState(MASConfigGroup masConfigGroup) {
+    @Provides @Singleton @Named(OUTER_CORDON)
+    public CordonState provideOuterCordonState(MASConfigGroup masConfigGroup) {
         IntervalCordonState intervalCordonState = new IntervalCordonState();
 
         IntervalCordonState.Reader reader = new IntervalCordonState.Reader(intervalCordonState);
-        reader.read(masConfigGroup.getCordonIntervals());
+        reader.read(masConfigGroup.getOuterCordonIntervals());
+
+        for (Tuple<Double, Double> interval : intervalCordonState.getIntervals()) {
+            log.info("Adding cordon charge interval from " + Time.writeTime(interval.getFirst()) + " to " + Time.writeTime(interval.getSecond()));
+        }
+
+        return intervalCordonState;
+    }
+
+    @Provides @Singleton @Named(INNER_CORDON)
+    public CordonState provideInnerCordonState(MASConfigGroup masConfigGroup) {
+        IntervalCordonState intervalCordonState = new IntervalCordonState();
+
+        IntervalCordonState.Reader reader = new IntervalCordonState.Reader(intervalCordonState);
+        reader.read(masConfigGroup.getInnerCordonIntervals());
 
         for (Tuple<Double, Double> interval : intervalCordonState.getIntervals()) {
             log.info("Adding cordon charge interval from " + Time.writeTime(interval.getFirst()) + " to " + Time.writeTime(interval.getSecond()));
@@ -78,18 +95,34 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    private MASCordonTravelDisutility provideMASCordonTravelDisutility(CordonState cordonState, @Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, PlanCalcScoreConfigGroup scoreConfig, MASConfigGroup masConfig) {
-        return new MASCordonTravelDisutility(cordonState, cordonLinkIds, scoreConfig.getMarginalUtilityOfMoney(), masConfig.getCarCordonFee(), masConfig.getEVCordonFee(), masConfig.getAVCordonFee());
+    private MASCordonTravelDisutility provideMASCordonTravelDisutility(PlanCalcScoreConfigGroup scoreConfig, CordonPricing cordonPricing) {
+        return new MASCordonTravelDisutility(scoreConfig.getMarginalUtilityOfMoney(), cordonPricing);
     }
 
     @Provides @Singleton
-    private CordonCharger provideCordonCharger(CordonState cordonState, @Named(CORDON_LINKS) Collection<Id<Link>> cordonLinkIds, MASConfigGroup config, @Named("ev_user_ids") Collection<Id<Person>> evUserIds) {
-        return new CordonCharger(cordonState, cordonLinkIds, config.getAVCordonFee(), config.getEVCordonFee(), config.getCarCordonFee(), config.getChargedOperatorIds(), evUserIds);
+    private CordonCharger provideCordonCharger(CordonPricing cordonPricing, ChargeTypeFinder chargeTypeFinder) {
+        return new CordonCharger(cordonPricing, chargeTypeFinder);
     }
 
-    @Provides @Singleton @Named(CORDON_LINKS)
-    public Collection<Id<Link>> provideCordonLinkIds(MASConfigGroup masConfig, Network network) {
-        return MASCordonUtils.findChargeableCordonLinks(masConfig.getCordonCenterNodeId(), masConfig.getCordonRadius(), network)
+    @Provides @Singleton
+    private CordonPricing provideCordonPricing(MASConfigGroup masConfigGroup, Network network, @Named(INNER_CORDON) CordonState innerCordonState, @Named(OUTER_CORDON) CordonState outerCordonState, @Named(INNER_CORDON) Collection<Id<Link>> innerCordonLinkIds, @Named(OUTER_CORDON) Collection<Id<Link>> outerCordonLinkIds) {
+        return new CordonPricing(masConfigGroup, network, innerCordonState, outerCordonState, innerCordonLinkIds, outerCordonLinkIds);
+    }
+
+    @Provides @Singleton
+    private ChargeTypeFinder provideChargeTypeFinder(@Named(EV_USER_IDS) Collection<Id<Person>> evUserIds) {
+        return new ChargeTypeFinder(evUserIds);
+    }
+
+    @Provides @Singleton @Named(OUTER_CORDON)
+    public Collection<Id<Link>> provideOuterCordonLinkIds(MASConfigGroup masConfig, Network network) {
+        return MASCordonUtils.findChargeableCordonLinks(masConfig.getOuterCordonCenterNodeId(), masConfig.getOuterCordonRadius(), network)
+                .stream().map(l -> l.getId()).collect(Collectors.toList());
+    }
+
+    @Provides @Singleton @Named(INNER_CORDON)
+    public Collection<Id<Link>> provideInnerCordonLinks(MASConfigGroup masConfig, Network network) {
+        return MASCordonUtils.findInsideCordonLinks(masConfig.getInnerCordonCenterNodeId(), masConfig.getInnerCordonRadius(), network)
                 .stream().map(l -> l.getId()).collect(Collectors.toList());
     }
 

@@ -5,41 +5,23 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.vehicles.Vehicle;
+import playground.mas.cordon.ChargeType;
+import playground.mas.cordon.CordonPricing;
 import playground.mas.cordon.CordonState;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 public class MASCordonTravelDisutility {
-    final private Collection<Id<Link>> cordonLinkIds;
     final private double marginalUtilityOfMoney;
-    final private double carCordonFee;
-    final private double avCordonFee;
-    final private double evCordonFee;
-    final private CordonState cordonState;
+    final private CordonPricing cordonPricing;
 
-    public enum Type {
-        AV, EV, CAR
-    }
-
-    public MASCordonTravelDisutility(CordonState cordonState, Collection<Id<Link>> cordonLinkIds, double marginalUtilityOfMoney, double carCordonFee, double evCordonFee, double avCordonFee) {
+    public MASCordonTravelDisutility(double marginalUtilityOfMoney, CordonPricing cordonPricing) {
         this.marginalUtilityOfMoney = marginalUtilityOfMoney;
-        this.cordonLinkIds = cordonLinkIds;
-        this.cordonState = cordonState;
-        this.carCordonFee = carCordonFee;
-        this.avCordonFee = avCordonFee;
-        this.evCordonFee = evCordonFee;
+        this.cordonPricing = cordonPricing;
     }
 
-    protected double getCordonDisutility(Link link, double time, Type type) {
-        double fee = 0.0;
-
-        switch (type) {
-            case AV: fee = avCordonFee; break;
-            case EV: fee = evCordonFee; break;
-            case CAR: fee = carCordonFee; break;
-        }
-
-        return (cordonLinkIds.contains(link.getId()) && cordonState.isCordonActive(time)) ? marginalUtilityOfMoney * fee : 0.0;
+    protected double getCordonDisutility(Link link, double time, ChargeType type) {
+        return marginalUtilityOfMoney * cordonPricing.getFee(link, type, time);
     }
 }

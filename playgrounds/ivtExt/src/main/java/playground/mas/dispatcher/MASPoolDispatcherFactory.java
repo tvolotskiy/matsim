@@ -28,7 +28,7 @@ public class MASPoolDispatcherFactory implements AVDispatcher.AVDispatcherFactor
 
     @Override
     public AVDispatcher createDispatcher(AVDispatcherConfig config) {
-        MASRouterFactory factory = new MASRouterFactory(network, travelTime, cordonDisutility, masConfig.getChargedOperatorIds().contains(config.getParent().getId()));
+        MASRouterFactory factory = new MASRouterFactory(network, travelTime, cordonDisutility, false);
         LeastCostPathCalculator router = factory.createRouter();
 
         double threshold = Double.parseDouble(config.getParams().getOrDefault("aggregationThreshold", "600.0"));
