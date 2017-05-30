@@ -14,15 +14,15 @@ import java.util.stream.Collectors;
 public class MASConfigGroup extends ReflectiveConfigGroup {
     final static public String MAS = "mas";
 
-    final static public String OUTER_CORDON_CENTER_NODE_ID = "cordonCenterNodeId";
-    final static public String OUTER_CORDON_RADIUS = "cordonRadius";
+    final static public String OUTER_CORDON_CENTER_NODE_ID = "outerCordonCenterNodeId";
+    final static public String OUTER_CORDON_RADIUS = "outerCordonRadius";
 
     final static public String AV_POOL_CORDON_FEE = "avPoolCordonFee";
     final static public String AV_SOLO_CORDON_FEE = "avSoloCordonFee";
     final static public String EV_CORDON_FEE = "evCordonFee";
     final static public String CAR_CORDON_FEE = "carCordonFee";
 
-    final static public String OUTER_CORDON_INTERVALS = "cordonIntervals";
+    final static public String OUTER_CORDON_INTERVALS = "outerCordonIntervals";
 
     final static public String ADDITIONAL_EV_COSTS_PER_KM = "additionalEVCostsPerKm";
 

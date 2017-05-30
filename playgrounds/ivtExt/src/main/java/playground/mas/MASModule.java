@@ -49,7 +49,7 @@ public class MASModule extends AbstractModule {
 
     final public static String EBIKE = "ebike";
 
-    final private Logger log = Logger.getLogger(MASModule.class);
+    final static private Logger log = Logger.getLogger(MASModule.class);
 
     static public void applyEbikes(Config config) {
         PlansCalcRouteConfigGroup plansCalcRouteConfigGroup = (PlansCalcRouteConfigGroup) config.getModules().get(PlansCalcRouteConfigGroup.GROUP_NAME);
@@ -70,6 +70,8 @@ public class MASModule extends AbstractModule {
             ebikeParams.setBeelineDistanceFactor(bikeParams.getBeelineDistanceFactor());
 
             plansCalcRouteConfigGroup.addModeRoutingParams(ebikeParams);
+
+            log.info("Created ebike mode with speed " + ebikeParams.getTeleportedModeSpeed() + " (original bike at " + bikeParams.getTeleportedModeSpeed() + ")");
         }
 
         {
