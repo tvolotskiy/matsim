@@ -1,4 +1,4 @@
-package playground.population;
+package playground.mas.population;
 
 import org.matsim.core.config.ReflectiveConfigGroup;
 

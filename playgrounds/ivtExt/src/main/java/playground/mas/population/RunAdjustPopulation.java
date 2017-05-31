@@ -1,7 +1,6 @@
-package playground.population;
+package playground.mas.population;
 
 import org.apache.log4j.Logger;
-import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.core.config.Config;
@@ -10,7 +9,6 @@ import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.misc.Counter;
 import org.matsim.utils.objectattributes.ObjectAttributes;
 import org.matsim.utils.objectattributes.ObjectAttributesXmlWriter;
-import org.omg.PortableInterceptor.ACTIVE;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -120,6 +118,16 @@ public class RunAdjustPopulation {
 
             if (carOwnershipRate != null && isCarOwner(person) && random.nextDouble() < removeCarOwnershipRate) {
                 person.getAttributes().putAttribute(CAR_OWNERSHIP, "never");
+
+                for (PlanElement element : person.getSelectedPlan().getPlanElements()) {
+                    if (element instanceof  Leg) {
+                        Leg leg = (Leg) element;
+
+                        if (leg.getMode().equals("car")) {
+                            leg.setMode("pt");
+                        }
+                    }
+                }
             }
 
             if (homeOfficeRate != null) {
