@@ -8,6 +8,7 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.core.config.groups.GlobalConfigGroup;
 import org.matsim.core.config.groups.SubtourModeChoiceConfigGroup;
+import org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.replanning.PlanStrategy;
 import org.matsim.core.replanning.PlanStrategyImpl;
 import org.matsim.core.replanning.modules.ReRoute;
@@ -24,11 +25,12 @@ public class ZurichPlanStrategyProvider implements Provider<PlanStrategy> {
     @Inject private ActivityFacilities facilities;
     @Inject private Network network;
     @Inject @Named("zurich") Collection<Id<Link>> permissibleLinkIds;
+    @Inject private PermissibleModesCalculator permissibleModesCalculator;
 
     @Override
     public PlanStrategy get() {
         PlanStrategyImpl.Builder builder = new PlanStrategyImpl.Builder(new RandomPlanSelector());
-        builder.addStrategyModule(new ZurichSubtourModeChoiceReplanningModule(tripRouterProvider, globalConfigGroup, subtourModeChoiceConfigGroup, network, permissibleLinkIds));
+        builder.addStrategyModule(new ZurichSubtourModeChoiceReplanningModule(tripRouterProvider, globalConfigGroup, subtourModeChoiceConfigGroup, network, permissibleLinkIds, permissibleModesCalculator));
         builder.addStrategyModule(new ReRoute(facilities, tripRouterProvider, globalConfigGroup));
         return builder.build();
     }

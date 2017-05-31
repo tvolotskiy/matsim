@@ -34,7 +34,7 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
 
     public ZurichSubtourModeChoiceReplanningModule(
             Provider<TripRouter> tripRouterProvider, GlobalConfigGroup globalConfigGroup, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup,
-            Network network, Collection<Id<Link>> permissibleLinkIds) {
+            Network network, Collection<Id<Link>> permissibleLinkIds, PermissibleModesCalculator permissibleModesCalculator) {
         super(globalConfigGroup.getNumberOfThreads());
 
         this.tripRouterProvider = tripRouterProvider;
@@ -42,7 +42,7 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
         this.modesWithoutAV = this.modes.stream().filter((s) -> !s.equals(AVModule.AV_MODE)).collect(Collectors.toList());
         this.chainBasedModes = Arrays.asList(subtourModeChoiceConfigGroup.getChainBasedModes());
 
-        this.permissibleModesCalculator = new PermissibleModesCalculatorImpl((String[]) this.modes.toArray(), subtourModeChoiceConfigGroup.considerCarAvailability());
+        this.permissibleModesCalculator = permissibleModesCalculator;
 
         this.network = network;
         this.permissibleLinkIds = permissibleLinkIds;

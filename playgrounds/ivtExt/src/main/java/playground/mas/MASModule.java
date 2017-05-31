@@ -16,6 +16,7 @@ import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
+import org.matsim.core.config.groups.SubtourModeChoiceConfigGroup;
 import org.matsim.core.controler.AbstractModule;
 import org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
@@ -58,10 +59,7 @@ public class MASModule extends AbstractModule {
         MASConfigGroup masConfigGroup = (MASConfigGroup) config.getModules().get(MASConfigGroup.MAS);
 
         {
-            // Don't ask... crazy stuff
-            for (PlansCalcRouteConfigGroup.ModeRoutingParams params : plansCalcRouteConfigGroup.getModeRoutingParams().values()) {
-                plansCalcRouteConfigGroup.addModeRoutingParams(params);
-            }
+            // Be careful! Somehow this stuff does not work with the old config format (v1)!
 
             PlansCalcRouteConfigGroup.ModeRoutingParams bikeParams = plansCalcRouteConfigGroup.getModeRoutingParams().get(TransportMode.bike);
             PlansCalcRouteConfigGroup.ModeRoutingParams ebikeParams = new PlansCalcRouteConfigGroup.ModeRoutingParams(MASModule.EBIKE);
@@ -182,8 +180,8 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    public PermissibleModesCalculator providePermissibleModesCalculator(PermissibleModesCalculatorImpl delegate, @Named(EBIKE) Collection<Id<Person>> ebikeUserIds) {
-        return new MASPermissibleModesCalculator(delegate, ebikeUserIds);
+    public PermissibleModesCalculator providePermissibleModesCalculator(@Named(EBIKE) Collection<Id<Person>> ebikeUserIds, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup) {
+        return new MASPermissibleModesCalculator(new PermissibleModesCalculatorImpl(subtourModeChoiceConfigGroup), ebikeUserIds);
     }
 
     @Provides @Singleton @Named(EBIKE)

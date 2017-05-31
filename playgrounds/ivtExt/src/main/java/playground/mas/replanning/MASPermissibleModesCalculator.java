@@ -32,7 +32,7 @@ public class MASPermissibleModesCalculator implements PermissibleModesCalculator
             modes = fixedModes;
         }
 
-        System.out.println(plan.getPerson().getId().toString() + " " + modes);
+        //System.out.println(plan.getPerson().getId().toString() + " " + modes);
 
         return modes;
     }

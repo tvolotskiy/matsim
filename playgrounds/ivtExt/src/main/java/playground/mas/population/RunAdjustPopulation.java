@@ -124,6 +124,7 @@ public class RunAdjustPopulation {
                         Leg leg = (Leg) element;
 
                         if (leg.getMode().equals("car")) {
+                            leg.setRoute(null);
                             leg.setMode("pt");
                         }
                     }
