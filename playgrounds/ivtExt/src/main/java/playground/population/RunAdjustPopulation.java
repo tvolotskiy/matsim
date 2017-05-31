@@ -3,18 +3,22 @@ package playground.population;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
-import org.matsim.api.core.v01.population.Person;
-import org.matsim.api.core.v01.population.Population;
+import org.matsim.api.core.v01.population.*;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.misc.Counter;
 import org.matsim.utils.objectattributes.ObjectAttributes;
+import org.matsim.utils.objectattributes.ObjectAttributesXmlWriter;
+import org.omg.PortableInterceptor.ACTIVE;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 public class RunAdjustPopulation {
-    static public String CAR_OWNERSHIP = "car_ownership";
+    static public String CAR_OWNERSHIP = "carAvail";
     static public Long RANDOM_SEED = 0L;
 
     static private boolean isValidPerson(Person person) {
@@ -22,7 +26,7 @@ public class RunAdjustPopulation {
     }
 
     static private boolean isCarOwner(Person person) {
-        String carAvailability = (String) person.getAttributes().getAttribute("car_avail");
+        String carAvailability = (String) person.getAttributes().getAttribute(CAR_OWNERSHIP);
         return carAvailability != null && (carAvailability.equals("always") || carAvailability.equals("sometimes"));
     }
 
@@ -47,14 +51,12 @@ public class RunAdjustPopulation {
     static public Logger logger = Logger.getLogger(RunAdjustPopulation.class);
 
     static public void main(String[] args) {
-        String populationInputPath = args[0];
-        String populationAttributesInputPath = args[1];
+        String configPath = args[0];
+        String populationOutputPath = args[1];
+        String populationAttributesOutputPath = args[2];
 
         AdjustPopulationConfigGroup adjustmentConfig = new AdjustPopulationConfigGroup();
-        Config config = ConfigUtils.createConfig(adjustmentConfig);
-
-        config.plans().setInputFile(populationInputPath);
-        config.plans().setInputPersonAttributeFile(populationAttributesInputPath.equals("null") ? null : populationAttributesInputPath);
+        Config config = ConfigUtils.loadConfig(configPath, adjustmentConfig);
 
         Scenario scenario = ScenarioUtils.loadScenario(config);
 
@@ -69,11 +71,11 @@ public class RunAdjustPopulation {
         } else {
             double initialCarOwnershipRate = getCarAvailability(population);
 
-            logger.info("Initial car ownership rate: " + initialCarOwnershipRate);
-            logger.info(String.format("Adjusted car ownership rate: %.2f%%", carOwnershipRate));
+            logger.info(String.format("Initial car ownership rate: %.2f%%", initialCarOwnershipRate * 100));
+            logger.info(String.format("Adjusted car ownership rate: %.2f%%", carOwnershipRate * 100));
             removeCarOwnershipRate = 1.0 - carOwnershipRate / initialCarOwnershipRate;
 
-            logger.info(String.format("Removing %.2f%% of current car ownership flags", removeCarOwnershipRate));
+            logger.info(String.format("Removing %.2f%% of current car ownership flags", removeCarOwnershipRate * 100));
         }
 
         Double evOwnershipRate = adjustmentConfig.getEvOwnershipRate();
@@ -81,7 +83,15 @@ public class RunAdjustPopulation {
         if (evOwnershipRate == null) {
             logger.info("Not setting any EV ownership.");
         } else {
-            logger.info(String.format("Setting EV ownership to %.2f%%", evOwnershipRate));
+            logger.info(String.format("Setting EV ownership to %.2f%%", evOwnershipRate * 100));
+        }
+
+        Double ebikeOwnershipRate = adjustmentConfig.getEbikeOwnershipRate();
+
+        if (ebikeOwnershipRate == null) {
+            logger.info("Not setting any ebike ownership.");
+        } else {
+            logger.info(String.format("Setting ebike ownership to %.2f%%", ebikeOwnershipRate * 100));
         }
 
         Double homeOfficeRate = adjustmentConfig.getHomeOfficeRate();
@@ -89,25 +99,97 @@ public class RunAdjustPopulation {
         if (homeOfficeRate == null) {
             logger.info("Not setting any home office.");
         } else {
-            logger.info(String.format("Setting home office to %.2f%%", homeOfficeRate));
+            logger.info(String.format("Setting home office to %.2f%%", homeOfficeRate * 100));
         }
 
         Random random = RANDOM_SEED == null ? new Random() : new Random(RANDOM_SEED);
         for (int i = 0; i < 1000000; i++) random.nextDouble();
 
+        Counter counter = new Counter("Processed ", " persons");
         for (Person person : population.getPersons().values()) {
+            counter.incCounter();
             if (!isValidPerson(person)) continue;
 
             if (evOwnershipRate != null && random.nextDouble() < evOwnershipRate) {
                 attributes.putAttribute(person.getId().toString(), "ev", true);
             }
 
+            if (ebikeOwnershipRate != null && random.nextDouble() < evOwnershipRate) {
+                attributes.putAttribute(person.getId().toString(), "ebike", true);
+            }
+
             if (carOwnershipRate != null && isCarOwner(person) && random.nextDouble() < removeCarOwnershipRate) {
                 person.getAttributes().putAttribute(CAR_OWNERSHIP, "never");
             }
 
-            // TODO: Missing Home Office
+            if (homeOfficeRate != null) {
+                Plan plan = person.getSelectedPlan();
+                Activity homeActivity = null;
+
+                List<PlanElement> elements = plan.getPlanElements();
+
+                for (PlanElement element : elements) {
+                    if (element instanceof Activity) {
+                        Activity activity = (Activity) element;
+
+                        if (activity.getType().equals("home")) {
+                            homeActivity = activity;
+                        } else if (activity.getType().equals("work") && homeActivity != null && random.nextDouble() < homeOfficeRate) {
+                            activity.setType(homeActivity.getType());
+                            activity.setCoord(homeActivity.getCoord());
+                            activity.setLinkId(homeActivity.getLinkId());
+                            activity.setFacilityId(homeActivity.getFacilityId());
+                        }
+                    }
+                }
+
+                if (homeActivity != null) {
+                    Activity previousActivity = null;
+                    Leg previousLeg = null;
+
+                    List<Leg> legsForRemoval = new LinkedList<>();
+
+                    for (PlanElement element : elements) {
+                        if (element instanceof Activity) {
+                            Activity activity = (Activity) element;
+
+                            if (previousActivity != null && previousActivity.getType().equals("home") && activity.getType().equals("home")) {
+                                legsForRemoval.add(previousLeg);
+                            }
+
+                            previousActivity = activity;
+                        } else if (element instanceof Leg) {
+                            previousLeg = (Leg) element;
+                        }
+                    }
+
+                    for (Leg leg : legsForRemoval) {
+                        elements.remove(leg);
+                    }
+
+                    Iterator<PlanElement> iterator = elements.iterator();
+                    Activity activeHomeActivity = null;
+
+                    while (iterator.hasNext()) {
+                        PlanElement element = iterator.next();
+
+                        if (element instanceof Activity) {
+                            Activity activity = (Activity) element;
+
+                            if (activity.getType().equals("home") && activeHomeActivity != null) {
+                                activeHomeActivity.setEndTime(activity.getEndTime());
+                                iterator.remove();
+                            } else {
+                                activeHomeActivity = null;
+                            }
+                        }
+                    }
+                }
+            }
         }
+
+        new PopulationWriter(population).write(populationOutputPath);
+        new ObjectAttributesXmlWriter(attributes).writeFile(populationAttributesOutputPath);
     }
 }
 
