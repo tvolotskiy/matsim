@@ -10,27 +10,32 @@ import org.matsim.core.gbl.MatsimRandom;
 import playground.sebhoerl.avtaxi.config.AVGeneratorConfig;
 import playground.sebhoerl.avtaxi.data.AVOperator;
 import playground.sebhoerl.avtaxi.data.AVVehicle;
+import playground.sebhoerl.avtaxi.framework.AVModule;
 import playground.sebhoerl.avtaxi.generator.AVGenerator;
+import playground.zurich_av.replanning.ZurichAVLinkChecker;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 public class ZurichGenerator implements AVGenerator {
     final private AVOperator operator;
-    final private Collection<Id<Link>> permissibleLinkIds;
     final private Network network;
     final private long numberOfVehicles;
 
-    private ArrayList<Id<Link>> linkCache;
+    private List<Id<Link>> linkCache;
     private long generatedVehicleCount = 0;
 
-    public ZurichGenerator(Network network, Collection<Id<Link>> permissibleLinkIds, long numberOfVehicles, AVOperator operator) {
+    public ZurichGenerator(Network network, ZurichAVLinkChecker linkChecker, long numberOfVehicles, AVOperator operator) {
         this.network = network;
         this.operator = operator;
-        this.permissibleLinkIds = permissibleLinkIds;
         this.numberOfVehicles = numberOfVehicles;
-        this.linkCache = new ArrayList<>(permissibleLinkIds);
+
+        this.linkCache = new LinkedList<>();
+
+        for (Link link : network.getLinks().values()) {
+            if (linkChecker.isAcceptable(link)) {
+                this.linkCache.add(link.getId());
+            }
+        }
     }
 
     @Override
@@ -58,8 +63,8 @@ public class ZurichGenerator implements AVGenerator {
     }
 
     static public class ZurichGeneratorFactory implements AVGeneratorFactory {
-        @Inject @Named("zurich")
-        private Collection<Id<Link>> permissibleLinkIds;
+        @Inject
+        private ZurichAVLinkChecker linkChecker;
 
         @Inject
         Network network;
@@ -70,7 +75,7 @@ public class ZurichGenerator implements AVGenerator {
         @Override
         public AVGenerator createGenerator(AVGeneratorConfig generatorConfig) {
             long numberOfVehicles = generatorConfig.getNumberOfVehicles();
-            return new ZurichGenerator(network, permissibleLinkIds, numberOfVehicles, operators.get(generatorConfig.getParent().getId()));
+            return new ZurichGenerator(network, linkChecker, numberOfVehicles, operators.get(generatorConfig.getParent().getId()));
         }
     }
 }

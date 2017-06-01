@@ -5,10 +5,12 @@ import org.matsim.api.core.v01.population.Person;
 
 public class MASAttributeUtils {
     static public boolean isEVUser(Person person) {
+        if (person == null || person.getAttributes() == null) return false;
         return person.getAttributes().getAttribute(MASModule.EV) != null;
     }
 
     static public boolean isEbikeUser(Person person) {
+        if (person == null || person.getAttributes() == null) return false;
         return person.getAttributes().getAttribute(MASModule.EBIKE) != null;
     }
 

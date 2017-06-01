@@ -30,14 +30,8 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 public class ZurichMASModule extends AbstractModule {
-    final public static String AV_AREA_LINKS = "av_area_links";
-
     @Override
     public void install() {
-        bind(new TypeLiteral<Collection<Id<Link>>>() {})
-                .annotatedWith(Names.named("zurich"))
-                .to(Key.get(new TypeLiteral<Collection<Id<Link>>>() {}, Names.named(AV_AREA_LINKS)));
-
         AVUtils.registerGeneratorFactory(binder(), "ZurichGenerator", ZurichGenerator.ZurichGeneratorFactory.class);
         addPlanStrategyBinding("ZurichModeChoice").toProvider(ZurichPlanStrategyProvider.class);
     }

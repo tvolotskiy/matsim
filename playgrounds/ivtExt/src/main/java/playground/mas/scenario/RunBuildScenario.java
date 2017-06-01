@@ -86,7 +86,7 @@ public class RunBuildScenario {
 
         Id<Node> avAreaCenterNodeId = zurichConfig.getAVAreaCenterNodeId();
         Node avAreaCenterNode = avAreaCenterNodeId == null ? null : network.getNodes().get(avAreaCenterNodeId);
-        double avAreaRadius = masConfig.getInnerCordonRadius();
+        double avAreaRadius = zurichConfig.getAVAreaRadius();
 
         for (Link link : network.getLinks().values()) {
             if (link.getAllowedModes().contains(TransportMode.car) &&

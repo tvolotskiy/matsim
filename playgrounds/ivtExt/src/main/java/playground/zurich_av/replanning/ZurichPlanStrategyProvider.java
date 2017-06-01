@@ -24,7 +24,6 @@ public class ZurichPlanStrategyProvider implements Provider<PlanStrategy> {
     @Inject private SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup;
     @Inject private ActivityFacilities facilities;
     @Inject private Network network;
-    @Inject @Named("zurich") Collection<Id<Link>> permissibleLinkIds;
     @Inject private PermissibleModesCalculator permissibleModesCalculator;
     @Inject private ZurichAVLinkChecker linkChecker;
 
