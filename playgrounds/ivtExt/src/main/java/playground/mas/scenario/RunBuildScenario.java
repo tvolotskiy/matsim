@@ -24,6 +24,7 @@ import java.util.*;
 public class RunBuildScenario {
     static private Long RANDOM_SEED = 1L;
     static public String CAR_OWNERSHIP = "carAvail";
+    static public String HAS_LICENSE = "hasLicense";
 
     static public void main(String[] args) {
         MASConfigGroup masConfigGroup = new MASConfigGroup();
@@ -68,7 +69,8 @@ public class RunBuildScenario {
         applyEbikeOwnership();
         applyEVOwnership();
         adjustCarOwnership();
-        applyHomeOffice();
+        applyHomeActivities("work", populationConfig.getHomeOfficeRate());
+        applyHomeActivities("shop", populationConfig.getShoppingReductionRate());
         applyCordons();
         applyAVLinks();
     }
@@ -135,13 +137,11 @@ public class RunBuildScenario {
         logger.info("Found " + outerCordonLinks + " for outer cordon");
     }
 
-    private void applyHomeOffice() {
-        Double homeOfficeRate = populationConfig.getHomeOfficeRate();
-
-        if (homeOfficeRate == null) {
+    private void applyHomeActivities(String activityType, Double rate) {
+        if (rate == null) {
             logger.info("Not setting any home office.");
         } else {
-            logger.info(String.format("Setting home office to %.2f%%", homeOfficeRate * 100));
+            logger.info(String.format("Setting %.2f%% of %s to home", rate * 100, activityType));
 
             for (Person person : scenario.getPopulation().getPersons().values()) {
                 if (!isValidPerson(person)) continue;
@@ -157,7 +157,7 @@ public class RunBuildScenario {
 
                         if (activity.getType().equals("home")) {
                             homeActivity = activity;
-                        } else if (activity.getType().equals("work") && homeActivity != null && random.nextDouble() < homeOfficeRate) {
+                        } else if (activity.getType().equals(activityType) && homeActivity != null && random.nextDouble() < rate) {
                             activity.setType(homeActivity.getType());
                             activity.setCoord(homeActivity.getCoord());
                             activity.setLinkId(homeActivity.getLinkId());
@@ -257,6 +257,7 @@ public class RunBuildScenario {
 
                 if (isCarOwner(person) && random.nextDouble() < removeCarOwnershipRate) {
                     person.getAttributes().putAttribute(CAR_OWNERSHIP, "never");
+                    person.getAttributes().putAttribute(HAS_LICENSE, "no");
 
                     for (PlanElement element : person.getSelectedPlan().getPlanElements()) {
                         if (element instanceof Leg) {

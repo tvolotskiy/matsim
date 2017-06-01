@@ -10,11 +10,13 @@ public class MASPopulationConfigGroup extends ReflectiveConfigGroup {
     final static public String EBIKE_OWNERSHIP_RATE = "ebikeOwnershipRate";
     final static public String ORIGINAL_POPULATION_INPUT = "originalPopulationInput";
     final static public String ORIGINAL_NETWORK_INPUT = "originalNetworkInput";
+    final static public String SHOPPING_REDUCTION_RATE = "shoppingReductionRate";
 
     private Double evOwnershipRate = null;
     private Double carOwnershipRate = null;
     private Double homeOfficeRate = null;
     private Double ebikeOfficeRate = null;
+    private Double shoppingReductionRate = null;
 
     private String originalPopulationPath = null;
     private String originalNetworkPath = null;
@@ -81,5 +83,15 @@ public class MASPopulationConfigGroup extends ReflectiveConfigGroup {
     @StringSetter(ORIGINAL_NETWORK_INPUT)
     public void setOriginalNetworkPath(String originalNetworkPath) {
         this.originalNetworkPath = originalNetworkPath;
+    }
+
+    @StringGetter(SHOPPING_REDUCTION_RATE)
+    public Double getShoppingReductionRate() {
+        return shoppingReductionRate;
+    }
+
+    @StringSetter(SHOPPING_REDUCTION_RATE)
+    public void setShoppingReductionRate(Double shoppingReductionRate) {
+        this.shoppingReductionRate = shoppingReductionRate;
     }
 }
