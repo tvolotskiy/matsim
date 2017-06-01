@@ -1,20 +1,18 @@
 package playground.mas.cordon;
 
-import com.google.inject.name.Named;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Population;
 import org.matsim.vehicles.Vehicle;
-import playground.mas.MASModule;
+import playground.mas.MASAttributeUtils;
 import playground.sebhoerl.avtaxi.framework.AVModule;
 
-import java.util.Collection;
-
 public class ChargeTypeFinder {
-    final private Collection<Id<Person>> evUserIds;
+    final private Population population;
 
-    public ChargeTypeFinder(@Named(MASModule.EV_USER_IDS) Collection<Id<Person>> evUserIds) {
-        this.evUserIds = evUserIds;
+    public ChargeTypeFinder(Population population) {
+        this.population = population;
     }
 
     public boolean isArtificialAgent(String agentId) {
@@ -25,13 +23,17 @@ public class ChargeTypeFinder {
         return (mode.equals(TransportMode.car) || mode.equals(AVModule.AV_MODE)) && !isArtificialAgent(passengerId.toString());
     }
 
-    public ChargeType getChargeType(Id<Person> passengerId, Id<Vehicle> vehicleId) {
+    public ChargeType getChargeType(Person passenger, Id<Vehicle> vehicleId) {
         String plainVehicleId = vehicleId.toString();
 
         if (plainVehicleId.startsWith("av_")) {
             return plainVehicleId.contains("solo") ? ChargeType.AV_SOLO : ChargeType.AV_POOL;
         }
 
-        return evUserIds.contains(passengerId) ? ChargeType.EV : ChargeType.CAR;
+        return MASAttributeUtils.isEVUser(passenger) ? ChargeType.EV : ChargeType.CAR;
+    }
+
+    public ChargeType getChargeType(Id<Person> passengerId, Id<Vehicle> vehicleId) {
+        return getChargeType(population.getPersons().get(passengerId), vehicleId);
     }
 }

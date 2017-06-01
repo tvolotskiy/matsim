@@ -49,6 +49,7 @@ public class MASModule extends AbstractModule {
     final public static String AV_SOLO_OPERATOR = "solo";
 
     final public static String EBIKE = "ebike";
+    final public static String EV = "ev";
 
     final static private Logger log = Logger.getLogger(MASModule.class);
 
@@ -98,9 +99,9 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    private MASCarTravelDisutilityFactory provideMASCarTravelDisutilityFactory(@Named(EV_USER_IDS) Collection<Id<Person>> evUserIds, MASCordonTravelDisutility cordonDisutility, PlanCalcScoreConfigGroup scoreConfig) {
+    private MASCarTravelDisutilityFactory provideMASCarTravelDisutilityFactory(MASCordonTravelDisutility cordonDisutility, PlanCalcScoreConfigGroup scoreConfig) {
         TravelDisutilityFactory randomizingTravelDisutiltiyFactory = new RandomizingTimeDistanceTravelDisutilityFactory(TransportMode.car, scoreConfig);
-        return new MASCarTravelDisutilityFactory(randomizingTravelDisutiltiyFactory, evUserIds, cordonDisutility);
+        return new MASCarTravelDisutilityFactory(randomizingTravelDisutiltiyFactory, cordonDisutility);
     }
 
     @Provides @Singleton @Named(OUTER_CORDON)
@@ -142,56 +143,22 @@ public class MASModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    private CordonPricing provideCordonPricing(MASConfigGroup masConfigGroup, Network network, @Named(INNER_CORDON) CordonState innerCordonState, @Named(OUTER_CORDON) CordonState outerCordonState, @Named(INNER_CORDON) Collection<Id<Link>> innerCordonLinkIds, @Named(OUTER_CORDON) Collection<Id<Link>> outerCordonLinkIds) {
-        return new CordonPricing(masConfigGroup, network, innerCordonState, outerCordonState, innerCordonLinkIds, outerCordonLinkIds);
+    private CordonPricing provideCordonPricing(MASConfigGroup masConfigGroup, Network network, @Named(INNER_CORDON) CordonState innerCordonState, @Named(OUTER_CORDON) CordonState outerCordonState) {
+        return new CordonPricing(masConfigGroup, network, innerCordonState, outerCordonState);
     }
 
     @Provides @Singleton
-    private ChargeTypeFinder provideChargeTypeFinder(@Named(EV_USER_IDS) Collection<Id<Person>> evUserIds) {
-        return new ChargeTypeFinder(evUserIds);
-    }
-
-    @Provides @Singleton @Named(OUTER_CORDON)
-    public Collection<Id<Link>> provideOuterCordonLinkIds(MASConfigGroup masConfig, Network network) {
-        return MASCordonUtils.findChargeableCordonLinks(masConfig.getOuterCordonCenterNodeId(), masConfig.getOuterCordonRadius(), network)
-                .stream().map(l -> l.getId()).collect(Collectors.toList());
-    }
-
-    @Provides @Singleton @Named(INNER_CORDON)
-    public Collection<Id<Link>> provideInnerCordonLinks(MASConfigGroup masConfig, Network network) {
-        return MASCordonUtils.findInsideCordonLinks(masConfig.getInnerCordonCenterNodeId(), masConfig.getInnerCordonRadius(), network)
-                .stream().map(l -> l.getId()).collect(Collectors.toList());
+    private ChargeTypeFinder provideChargeTypeFinder(Population population) {
+        return new ChargeTypeFinder(population);
     }
 
     @Provides @Singleton
-    public MASScoringFunctionFactory provideScoringFunctionFactory(AVScoringFunctionFactory delegate, Scenario scenario, MASConfigGroup masConfig, CordonCharger charger, @Named(EV_USER_IDS) Collection<Id<Person>> evUserIds) {
-        return new MASScoringFunctionFactory(delegate, scenario, charger, masConfig.getAdditionalEVCostsPerKm(), evUserIds);
-    }
-
-    @Provides @Singleton @Named(EV_USER_IDS)
-    public Collection<Id<Person>> provideEVUserIds(Population population) {
-        return population.getPersons().keySet().stream().filter(new Predicate<Id<Person>>() {
-            @Override
-            public boolean test(Id<Person> personId) {
-                Boolean flag = (Boolean) population.getPersonAttributes().getAttribute(personId.toString(), "ev");
-                return flag != null && flag;
-            }
-        }).collect(Collectors.toSet());
+    public MASScoringFunctionFactory provideScoringFunctionFactory(AVScoringFunctionFactory delegate, Scenario scenario, MASConfigGroup masConfig, CordonCharger charger) {
+        return new MASScoringFunctionFactory(delegate, scenario, charger, masConfig.getAdditionalEVCostsPerKm());
     }
 
     @Provides @Singleton
-    public PermissibleModesCalculator providePermissibleModesCalculator(@Named(EBIKE) Collection<Id<Person>> ebikeUserIds, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup) {
-        return new MASPermissibleModesCalculator(new PermissibleModesCalculatorImpl(subtourModeChoiceConfigGroup), ebikeUserIds);
-    }
-
-    @Provides @Singleton @Named(EBIKE)
-    public Collection<Id<Person>> provideEbikeUserIds(Population population) {
-        return population.getPersons().keySet().stream().filter(new Predicate<Id<Person>>() {
-            @Override
-            public boolean test(Id<Person> personId) {
-                Boolean flag = (Boolean) population.getPersonAttributes().getAttribute(personId.toString(), "ebike");
-                return flag != null && flag;
-            }
-        }).collect(Collectors.toSet());
+    public PermissibleModesCalculator providePermissibleModesCalculator(SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup) {
+        return new MASPermissibleModesCalculator(new PermissibleModesCalculatorImpl(subtourModeChoiceConfigGroup));
     }
 }

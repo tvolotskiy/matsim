@@ -23,6 +23,7 @@ import playground.sebhoerl.avtaxi.config.AVConfig;
 import playground.sebhoerl.avtaxi.framework.AVUtils;
 import playground.sebhoerl.avtaxi.scoring.AVScoringFunctionFactory;
 import playground.zurich_av.ZurichGenerator;
+import playground.zurich_av.replanning.ZurichAVLinkChecker;
 import playground.zurich_av.replanning.ZurichPlanStrategyProvider;
 
 import java.util.Collection;
@@ -48,11 +49,8 @@ public class ZurichMASModule extends AbstractModule {
                 scenario, config);
     }
 
-    @Provides @Singleton @Named(AV_AREA_LINKS)
-    public Collection<Id<Link>> provideAVAreaLinkIds(ZurichMASConfigGroup masConfig, Network network) {
-        return MASCordonUtils.findInsideCordonLinks(masConfig.getAVAreaCenterNodeId(), masConfig.getAVAreaRadius(), network)
-                .stream()
-                .filter(l -> l.getAllowedModes().contains("car"))
-                .map(l -> l.getId()).collect(Collectors.toList());
+    @Provides @Singleton
+    public ZurichAVLinkChecker provideLinkChecker() {
+        return new NetworkBasedLinkChecker();
     }
 }

@@ -21,7 +21,7 @@ public class GenerateSiouxTestPopulation {
     static public void main(String[] args) {
         MASConfigGroup masConfig = new MASConfigGroup();
         Config config = ConfigUtils.loadConfig(args[0], masConfig);
-        config.plans().setInputFile("population.xml.gz");
+        config.plans().setInputFile("scenario.xml.gz");
 
         Network network = NetworkUtils.createNetwork();
         new MatsimNetworkReader(network).readFile(ConfigGroup.getInputFileURL(config.getContext(), config.network().getInputFile()).getPath());

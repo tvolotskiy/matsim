@@ -41,6 +41,7 @@ import playground.sebhoerl.avtaxi.framework.AVModule;
 import playground.sebhoerl.avtaxi.framework.AVQSimProvider;
 import playground.sebhoerl.avtaxi.framework.AVUtils;
 import playground.sebhoerl.avtaxi.scoring.AVScoringFunctionFactory;
+import playground.zurich_av.replanning.ZurichAVLinkChecker;
 import playground.zurich_av.replanning.ZurichPlanStrategyProvider;
 
 import java.io.BufferedReader;
@@ -104,14 +105,20 @@ public class RunZurichWithAV {
         reader.lines().forEach((String nodeId) -> permissibleNodes.add(network.getNodes().get(Id.createNodeId(nodeId))) );
         permissibleNodes.forEach((Node node) -> permissibleLinks.addAll(node.getOutLinks().values()));
         permissibleNodes.forEach((Node node) -> permissibleLinks.addAll(node.getInLinks().values()));
-        final Set<Link> filteredPermissibleLinks = permissibleLinks.stream().filter((l) -> l.getAllowedModes().contains("car")).collect(Collectors.toSet());
+        final Set<Id<Link>> filteredPermissibleLinkIds = permissibleLinks.stream().filter((l) -> l.getAllowedModes().contains("car")).map(l -> l.getId()).collect(Collectors.toSet());
 
-        Logger.getLogger(RunZurichWithAV.class).info("Loaded " + filteredPermissibleLinks.size() + " permissible links (from " + permissibleLinks.size() + " in the area).");
+        Logger.getLogger(RunZurichWithAV.class).info("Loaded " + filteredPermissibleLinkIds.size() + " permissible links (from " + permissibleLinks.size() + " in the area).");
 
         controler.addOverridingModule(new AbstractModule() {
             @Override
             public void install() {
-                bind(new TypeLiteral<Collection<Link>>() {}).annotatedWith(Names.named("zurich")).toInstance(filteredPermissibleLinks);
+                bind(ZurichAVLinkChecker.class).toInstance(new ZurichAVLinkChecker() {
+                    @Override
+                    public boolean isAcceptable(Link link) {
+                        return filteredPermissibleLinkIds.contains(link.getId());
+                    }
+                });
+
                 //AVUtils.registerDispatcherFactory(binder(), "ZurichDispatcher", ZurichDispatcher.ZurichDispatcherFactory.class);
                 AVUtils.registerGeneratorFactory(binder(), "ZurichGenerator", ZurichGenerator.ZurichGeneratorFactory.class);
 

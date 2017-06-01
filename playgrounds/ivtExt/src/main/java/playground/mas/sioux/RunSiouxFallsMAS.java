@@ -15,6 +15,7 @@ import org.matsim.core.scoring.ScoringFunctionFactory;
 import playground.mas.cordon.CordonCharger;
 import playground.mas.MASConfigGroup;
 import playground.mas.MASModule;
+import playground.mas.scenario.MASPopulationConfigGroup;
 import playground.mas.scoring.MASScoringFunctionFactory;
 import playground.sebhoerl.avtaxi.config.AVConfig;
 import playground.sebhoerl.avtaxi.framework.AVConfigGroup;
@@ -38,7 +39,7 @@ public class RunSiouxFallsMAS {
         DvrpConfigGroup dvrpConfigGroup = new DvrpConfigGroup();
         dvrpConfigGroup.setTravelTimeEstimationAlpha(0.05);
 
-        Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new MASConfigGroup(), new AVTravelTimeConfigGroup());
+        Config config = ConfigUtils.loadConfig(configFile, new AVConfigGroup(), dvrpConfigGroup, new MASConfigGroup(), new AVTravelTimeConfigGroup(), new MASPopulationConfigGroup());
         MASModule.applyEbikes(config);
 
         Scenario scenario = ScenarioUtils.createScenario(config);

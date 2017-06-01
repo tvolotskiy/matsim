@@ -1,8 +1,8 @@
-package playground.mas.population;
+package playground.mas.scenario;
 
 import org.matsim.core.config.ReflectiveConfigGroup;
 
-public class AdjustPopulationConfigGroup extends ReflectiveConfigGroup {
+public class MASPopulationConfigGroup extends ReflectiveConfigGroup {
     final static public String EV_OWNERSHIP_RATE = "evOwnershipRate";
     final static public String CAR_OWNERSHIP_RATE = "carOwnershipRate";
     final static public String HOME_OFFICE_RATE = "homeOfficeRate";
@@ -13,7 +13,7 @@ public class AdjustPopulationConfigGroup extends ReflectiveConfigGroup {
     private Double homeOfficeRate = null;
     private Double ebikeOfficeRate = null;
 
-    public AdjustPopulationConfigGroup() {
+    public MASPopulationConfigGroup() {
         super("adjust_mas");
     }
 

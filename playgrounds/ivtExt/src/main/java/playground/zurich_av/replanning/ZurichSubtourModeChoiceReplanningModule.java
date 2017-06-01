@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithreadedModule {
     final private Network network;
-    final private Collection<Id<Link>> permissibleLinkIds;
+    final private ZurichAVLinkChecker linkChecker;
 
     final private Provider<TripRouter> tripRouterProvider;
     final private PermissibleModesCalculator permissibleModesCalculator;
@@ -34,7 +34,7 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
 
     public ZurichSubtourModeChoiceReplanningModule(
             Provider<TripRouter> tripRouterProvider, GlobalConfigGroup globalConfigGroup, SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup,
-            Network network, Collection<Id<Link>> permissibleLinkIds, PermissibleModesCalculator permissibleModesCalculator) {
+            Network network, ZurichAVLinkChecker linkChecker, PermissibleModesCalculator permissibleModesCalculator) {
         super(globalConfigGroup.getNumberOfThreads());
 
         this.tripRouterProvider = tripRouterProvider;
@@ -45,7 +45,7 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
         this.permissibleModesCalculator = permissibleModesCalculator;
 
         this.network = network;
-        this.permissibleLinkIds = permissibleLinkIds;
+        this.linkChecker = linkChecker;
     }
 
     @Override
@@ -76,6 +76,6 @@ public class ZurichSubtourModeChoiceReplanningModule extends AbstractMultithread
                 chainBasedModes,
                 MatsimRandom.getLocalInstance());
 
-        return new ZurichSubtourModeChoiceAlgorithm(network, tripRouter.getStageActivityTypes(), withAVsAlgorithm, withoutAVsAlgorithm, permissibleLinkIds);
+        return new ZurichSubtourModeChoiceAlgorithm(network, tripRouter.getStageActivityTypes(), withAVsAlgorithm, withoutAVsAlgorithm, linkChecker);
     }
 }

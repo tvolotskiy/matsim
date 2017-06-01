@@ -10,17 +10,15 @@ import java.util.Collection;
 
 public class MASCarTravelDisutilityFactory implements TravelDisutilityFactory {
     final private TravelDisutilityFactory carTravelDisutilityFactory;
-    final private Collection<Id<Person>> evUserIds;
     final private MASCordonTravelDisutility cordonDisutility;
 
-    public MASCarTravelDisutilityFactory(TravelDisutilityFactory carTravelDisutilityFactory, Collection<Id<Person>> evUserIds, MASCordonTravelDisutility cordonDisutility) {
+    public MASCarTravelDisutilityFactory(TravelDisutilityFactory carTravelDisutilityFactory, MASCordonTravelDisutility cordonDisutility) {
         this.carTravelDisutilityFactory = carTravelDisutilityFactory;
-        this.evUserIds = evUserIds;
         this.cordonDisutility = cordonDisutility;
     }
 
     @Override
     public TravelDisutility createTravelDisutility(TravelTime timeCalculator) {
-        return new MASCarTravelDisutility(carTravelDisutilityFactory.createTravelDisutility(timeCalculator), evUserIds, cordonDisutility);
+        return new MASCarTravelDisutility(carTravelDisutilityFactory.createTravelDisutility(timeCalculator), cordonDisutility);
     }
 }

@@ -17,19 +17,19 @@ import java.util.Collection;
 public class ZurichSubtourModeChoiceAlgorithm implements PlanAlgorithm {
     final private Network network;
     final private StageActivityTypes stageActivityTypes;
-    final private Collection<Id<Link>> permissibleLinkIds;
+    final private ZurichAVLinkChecker linkChecker;
 
     final private PlanAlgorithm choiceAlgorithmWithoutAV;
     final private PlanAlgorithm choiceAlgorithmWithAV;
 
     private Counter rejectionCounter = new Counter("Rejected AV Plans ");
 
-    public ZurichSubtourModeChoiceAlgorithm(Network network, StageActivityTypes stageActivityTypes, PlanAlgorithm choiceAlgorithmWithAV, PlanAlgorithm choiceAlgorithmWithoutAV, Collection<Id<Link>> permissibleLinkIds) {
+    public ZurichSubtourModeChoiceAlgorithm(Network network, StageActivityTypes stageActivityTypes, PlanAlgorithm choiceAlgorithmWithAV, PlanAlgorithm choiceAlgorithmWithoutAV, ZurichAVLinkChecker linkChecker) {
         this.network = network;
         this.stageActivityTypes = stageActivityTypes;
         this.choiceAlgorithmWithAV = choiceAlgorithmWithAV;
         this.choiceAlgorithmWithoutAV = choiceAlgorithmWithoutAV;
-        this.permissibleLinkIds = permissibleLinkIds;
+        this.linkChecker = linkChecker;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ZurichSubtourModeChoiceAlgorithm implements PlanAlgorithm {
                 Link origin = network.getLinks().get(trip.getOriginActivity().getLinkId());
                 Link destination = network.getLinks().get(trip.getDestinationActivity().getLinkId());
 
-                if (!permissibleLinkIds.contains(origin.getId()) || !permissibleLinkIds.contains(destination.getId())) {
+                if (!linkChecker.isAcceptable(origin) || !linkChecker.isAcceptable(destination)) {
                     return false;
                 }
             }

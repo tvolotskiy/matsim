@@ -26,11 +26,12 @@ public class ZurichPlanStrategyProvider implements Provider<PlanStrategy> {
     @Inject private Network network;
     @Inject @Named("zurich") Collection<Id<Link>> permissibleLinkIds;
     @Inject private PermissibleModesCalculator permissibleModesCalculator;
+    @Inject private ZurichAVLinkChecker linkChecker;
 
     @Override
     public PlanStrategy get() {
         PlanStrategyImpl.Builder builder = new PlanStrategyImpl.Builder(new RandomPlanSelector());
-        builder.addStrategyModule(new ZurichSubtourModeChoiceReplanningModule(tripRouterProvider, globalConfigGroup, subtourModeChoiceConfigGroup, network, permissibleLinkIds, permissibleModesCalculator));
+        builder.addStrategyModule(new ZurichSubtourModeChoiceReplanningModule(tripRouterProvider, globalConfigGroup, subtourModeChoiceConfigGroup, network, linkChecker, permissibleModesCalculator));
         builder.addStrategyModule(new ReRoute(facilities, tripRouterProvider, globalConfigGroup));
         return builder.build();
     }
