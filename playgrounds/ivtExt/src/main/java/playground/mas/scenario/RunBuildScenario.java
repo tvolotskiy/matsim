@@ -9,6 +9,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.*;
 import org.matsim.core.config.Config;
+import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.network.io.NetworkWriter;
 import org.matsim.core.scenario.ScenarioUtils;
@@ -30,12 +31,19 @@ public class RunBuildScenario {
         ZurichMASConfigGroup zurichMASConfigGroup = new ZurichMASConfigGroup();
 
         Config config = ConfigUtils.loadConfig(args[0], masConfigGroup, masPopulationConfigGroup, zurichMASConfigGroup);
+
+        String scenarioPopulationPath = ConfigGroup.getInputFileURL(config.getContext(), config.plans().getInputFile()).getPath();
+        String networkPopulationPath = ConfigGroup.getInputFileURL(config.getContext(), config.network().getInputFile()).getPath();
+
+        config.plans().setInputFile(ConfigGroup.getInputFileURL(config.getContext(), masPopulationConfigGroup.getOriginalPopulationPath()).getPath());
+        config.network().setInputFile(ConfigGroup.getInputFileURL(config.getContext(), masPopulationConfigGroup.getOriginalNetworkPath()).getPath());
+
         Scenario scenario = ScenarioUtils.loadScenario(config);
 
         RunBuildScenario builder = new RunBuildScenario(scenario, masConfigGroup, masPopulationConfigGroup, zurichMASConfigGroup);
         builder.run();
 
-        builder.write(args[1], args[2]);
+        builder.write(scenarioPopulationPath, networkPopulationPath);
     }
 
     static private Logger logger = Logger.getLogger(RunBuildScenario.class);
