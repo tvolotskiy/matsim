@@ -5,11 +5,14 @@ import org.matsim.api.core.v01.network.Node;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.controler.events.IterationEndsEvent;
 import org.matsim.core.controler.events.ShutdownEvent;
+import org.matsim.core.controler.events.StartupEvent;
 import org.matsim.core.controler.listener.IterationEndsListener;
 import org.matsim.core.controler.listener.ShutdownListener;
+import org.matsim.core.controler.listener.StartupListener;
 import org.matsim.core.mobsim.framework.events.MobsimAfterSimStepEvent;
 import org.matsim.core.mobsim.framework.listeners.MobsimAfterSimStepListener;
 import org.matsim.vehicles.Vehicle;
+import playground.polettif.publicTransitMapping.workbench.Run;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,6 +25,9 @@ public class ParallelLeastCostPathCalculator implements MobsimAfterSimStepListen
     private SequentialLeastCostPathCalculatorWorker sequentialWorker = null;
 
     private long count = 0;
+    private boolean started = false;
+
+    private static boolean exists = false;
 
     public ParallelLeastCostPathCalculator(int numberOfThreads, ParallelLeastCostPathCalculatorFactory factory) {
         workers = new ArrayList<>(numberOfThreads);
@@ -67,13 +73,14 @@ public class ParallelLeastCostPathCalculator implements MobsimAfterSimStepListen
         for (ParallelLeastCostPathCalculatorWorker worker : workers) {
             worker.terminate();
         }
+
+        waitForWorkers();
     }
 
-    @Override
-    public void notifyMobsimAfterSimStep(MobsimAfterSimStepEvent e) {
+    private void waitForWorkers() {
         long nextNotice = System.currentTimeMillis() + 10000;
 
-        while (workers.stream().filter(w -> !w.isDone()).count() > 0) {
+        while (workers.stream().filter(w -> !w.isDone() && w.isAlive()).count() > 0) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e1) {}
@@ -83,6 +90,15 @@ public class ParallelLeastCostPathCalculator implements MobsimAfterSimStepListen
                 log.info("Waiting for parallel routers ...");
             }
         }
+    }
+
+    @Override
+    public void notifyMobsimAfterSimStep(MobsimAfterSimStepEvent e) {
+        for (LeastCostPathCalculatorWorker worker : workers) {
+            worker.finishIteration();
+        }
+
+        waitForWorkers();
 
         //for (ParallelLeastCostPathCalculatorWorker worker : workers) {
         //    worker.waitForTasksToFinish();

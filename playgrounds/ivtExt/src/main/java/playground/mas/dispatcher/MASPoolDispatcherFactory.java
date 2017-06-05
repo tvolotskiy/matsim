@@ -15,6 +15,7 @@ import playground.sebhoerl.avtaxi.dispatcher.multi_od_heuristic.MultiODHeuristic
 import playground.sebhoerl.avtaxi.dispatcher.multi_od_heuristic.FactorTravelTimeEstimator;
 import playground.sebhoerl.avtaxi.dispatcher.multi_od_heuristic.SerialAggregateRideAppender;
 import playground.sebhoerl.avtaxi.framework.AVModule;
+import playground.sebhoerl.plcpc.ParallelLeastCostPathCalculator;
 
 public class MASPoolDispatcherFactory implements AVDispatcher.AVDispatcherFactory {
     @Inject private Network network;
@@ -26,10 +27,12 @@ public class MASPoolDispatcherFactory implements AVDispatcher.AVDispatcherFactor
     @Inject private MASConfigGroup masConfig;
     @Inject private MASCordonTravelDisutility cordonDisutility;
 
+    @Inject @Named("av_pool") ParallelLeastCostPathCalculator router;
+
     @Override
     public AVDispatcher createDispatcher(AVDispatcherConfig config) {
         MASRouterFactory factory = new MASRouterFactory(network, travelTime, cordonDisutility, false);
-        LeastCostPathCalculator router = factory.createRouter();
+        //LeastCostPathCalculator router = factory.createRouter();
 
         double threshold = Double.parseDouble(config.getParams().getOrDefault("aggregationThreshold", "600.0"));
         FactorTravelTimeEstimator estimator = new FactorTravelTimeEstimator(threshold);
@@ -38,7 +41,7 @@ public class MASPoolDispatcherFactory implements AVDispatcher.AVDispatcherFactor
                 config.getParent().getId(),
                 eventsManager,
                 network,
-                new SerialAggregateRideAppender(config, router, travelTime, estimator),
+                new ParallelAggregateRideAppender(config, router, travelTime, estimator),
                 estimator
         );
     }

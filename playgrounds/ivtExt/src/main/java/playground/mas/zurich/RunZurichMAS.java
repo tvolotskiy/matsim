@@ -76,9 +76,11 @@ public class RunZurichMAS {
         controler.addOverridingModule(new AVModule());
         controler.addOverridingModule(new MASModule());
 
+        controler.addOverridingModule(new AVTravelTimeModule());
+
         controler.addOverridingModule(new BlackListedTimeAllocationMutatorStrategyModule());
         controler.addOverridingModule(new ZurichMASModule());
-        controler.addOverridingModule(new AVTravelTimeModule());
+
 
         // 3. Run
 

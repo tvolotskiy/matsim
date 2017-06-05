@@ -40,23 +40,15 @@ public class RunAnalysis {
         Scenario scenario = ScenarioUtils.loadScenario(config);
         Network network = scenario.getNetwork();
 
-        Collection<Id<Link>> insideInnerCordonLinkIds = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getInnerCordonCenterNodeId(), masConfigGroup.getInnerCordonRadius(), network)
-                .stream().map(l -> l.getId()).collect(Collectors.toList());
-        Collection<Id<Link>> insideOuterCordonLinkIds = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getOuterCordonCenterNodeId(), masConfigGroup.getOuterCordonRadius(), network)
-                .stream().map(l -> l.getId()).collect(Collectors.toList());
+        for (Link link : MASCordonUtils.findInsideCordonLinks(masConfigGroup.getAnalysisCenterNodeId(), masConfigGroup.getAnalysisRadius(), network)) {
+            link.getAttributes().putAttribute("analyse", true);
+        }
 
-        Collection<Id<Link>> outerCordonLinkIds = MASCordonUtils.findChargeableCordonLinks(masConfigGroup.getOuterCordonCenterNodeId(), masConfigGroup.getOuterCordonRadius(), network)
-                .stream().map(l -> l.getId()).collect(Collectors.toList());
-
-        Collection<Id<Link>> analysisLinkIds = MASCordonUtils.findInsideCordonLinks(masConfigGroup.getAnalysisCenterNodeId(), masConfigGroup.getAnalysisRadius(), network)
-                .stream().map(l -> l.getId()).collect(Collectors.toList());
+        for (Link link : MASCordonUtils.findInsideCordonLinks(masConfigGroup.getOuterCordonCenterNodeId(), masConfigGroup.getOuterCordonRadius(), network)) {
+            link.getAttributes().putAttribute("inside_outer", true);
+        }
 
         MASModule masModule = new MASModule();
-
-        Collection<Id<Person>> evPersonIds = scenario.getPopulation().getPersons().values().stream()
-                .filter(p -> MASAttributeUtils.isEVUser(p))
-                .map(p -> p.getId())
-                .collect(Collectors.toSet());
 
         CordonState innerCordonState = masModule.provideInnerCordonState(masConfigGroup);
         CordonState outerCordonState = masModule.provideOuterCordonState(masConfigGroup);
@@ -68,15 +60,25 @@ public class RunAnalysis {
         DataFrame dataFrame = new DataFrame(binCalculator);
 
         EventsManager eventsManager = EventsUtils.createEventsManager(config);
-        eventsManager.addHandler(new CountsHandler(dataFrame, binCalculator, insideInnerCordonLinkIds, insideOuterCordonLinkIds, analysisLinkIds, evPersonIds));
-        eventsManager.addHandler(new CordonHandler(dataFrame, binCalculator, outerCordonLinkIds, insideInnerCordonLinkIds, cordonPricing, chargeTypeFinder, network));
-        eventsManager.addHandler(new DistancesHandler(dataFrame, binCalculator, scenario.getNetwork(), evPersonIds, insideInnerCordonLinkIds, insideOuterCordonLinkIds, analysisLinkIds));
+        eventsManager.addHandler(new CountsHandler(dataFrame, binCalculator, scenario.getNetwork(), scenario.getPopulation()));
+        eventsManager.addHandler(new CordonHandler(dataFrame, binCalculator, cordonPricing, chargeTypeFinder, network));
+        eventsManager.addHandler(new DistancesHandler(dataFrame, binCalculator, scenario.getNetwork(), scenario.getPopulation()));
         eventsManager.addHandler(new AVHandler(dataFrame, binCalculator));
 
         new MatsimEventsReader(eventsManager).readFile(eventsPath);
         new ScoresReader(dataFrame).read(scenario.getPopulation());
-        new SlowModeReader(dataFrame, binCalculator, insideInnerCordonLinkIds, insideOuterCordonLinkIds, analysisLinkIds).read(scenario.getPopulation());
+        new SlowModeReader(dataFrame, binCalculator, scenario.getNetwork()).read(scenario.getPopulation());
 
         (new ObjectMapper()).writeValue(new File(outputPath), dataFrame);
+    }
+
+    static boolean isAnalysisLink(Link link) {
+        if (link == null) return false;
+        return link.getAttributes().getAttribute("analyse") != null;
+    }
+
+    static boolean isInsideOuterCordon(Link link) {
+        if (link == null) return false;
+        return link.getAttributes().getAttribute("inside_outer") != null;
     }
 }

@@ -18,6 +18,8 @@ import playground.mas.MASConfigGroup;
 import playground.mas.MASModule;
 import playground.mas.zurich.ZurichMASConfigGroup;
 import playground.sebhoerl.avtaxi.framework.AVModule;
+import playground.sebhoerl.avtaxi.routing.AVRoute;
+import playground.sebhoerl.avtaxi.routing.AVRouteFactory;
 
 import java.util.*;
 
@@ -39,7 +41,9 @@ public class RunBuildScenario {
         config.plans().setInputFile(ConfigGroup.getInputFileURL(config.getContext(), masPopulationConfigGroup.getOriginalPopulationPath()).getPath());
         config.network().setInputFile(ConfigGroup.getInputFileURL(config.getContext(), masPopulationConfigGroup.getOriginalNetworkPath()).getPath());
 
-        Scenario scenario = ScenarioUtils.loadScenario(config);
+        Scenario scenario = ScenarioUtils.createScenario(config);
+        scenario.getPopulation().getFactory().getRouteFactories().setRouteFactory(AVRoute.class, new AVRouteFactory());
+        ScenarioUtils.loadScenario(scenario);
 
         RunBuildScenario builder = new RunBuildScenario(scenario, masConfigGroup, masPopulationConfigGroup, zurichMASConfigGroup);
         builder.run();
@@ -139,7 +143,7 @@ public class RunBuildScenario {
 
     private void applyHomeActivities(String activityType, Double rate) {
         if (rate == null) {
-            logger.info("Not setting any home office.");
+            logger.info(String.format("Not reducing any %s acitivites to home", activityType));
         } else {
             logger.info(String.format("Setting %.2f%% of %s to home", rate * 100, activityType));
 
@@ -150,6 +154,7 @@ public class RunBuildScenario {
                 Activity homeActivity = null;
 
                 List<PlanElement> elements = plan.getPlanElements();
+                boolean activityChainChanged = false;
 
                 for (PlanElement element : elements) {
                     if (element instanceof Activity) {
@@ -162,11 +167,12 @@ public class RunBuildScenario {
                             activity.setCoord(homeActivity.getCoord());
                             activity.setLinkId(homeActivity.getLinkId());
                             activity.setFacilityId(homeActivity.getFacilityId());
+                            activityChainChanged = true;
                         }
                     }
                 }
 
-                if (homeActivity != null) {
+                if (homeActivity != null && activityChainChanged) {
                     Activity previousActivity = null;
                     Leg previousLeg = null;
 
@@ -199,11 +205,23 @@ public class RunBuildScenario {
                         if (element instanceof Activity) {
                             Activity activity = (Activity) element;
 
-                            if (activity.getType().equals("home") && activeHomeActivity != null) {
-                                activeHomeActivity.setEndTime(activity.getEndTime());
-                                iterator.remove();
+                            if (activity.getType().equals("home")) {
+                                if (activeHomeActivity == null) {
+                                    activeHomeActivity = activity;
+                                } else {
+                                    activeHomeActivity.setEndTime(activity.getEndTime());
+                                    iterator.remove();
+                                }
                             } else {
                                 activeHomeActivity = null;
+                            }
+                        } else if (element instanceof Leg) {
+                            activeHomeActivity = null;
+
+                            Leg leg = (Leg) element;
+
+                            if (!leg.getMode().equals("av")) {
+                                leg.setRoute(null);
                             }
                         }
                     }

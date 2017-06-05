@@ -41,6 +41,7 @@ import playground.sebhoerl.avtaxi.scoring.AVScoringFunction;
 import playground.sebhoerl.avtaxi.scoring.AVScoringFunctionFactory;
 import playground.sebhoerl.plcpc.ParallelLeastCostPathCalculator;
 import playground.sebhoerl.plcpc.ParallelLeastCostPathCalculatorFactory;
+import playground.sebhoerl.plcpc.ParallelLeastCostPathCalculatorListener;
 
 import javax.inject.Named;
 import java.io.File;
@@ -75,8 +76,8 @@ public class AVModule extends AbstractModule {
         configureGeneratorStrategies();
 
         bind(AVParallelRouterFactory.class);
-        addControlerListenerBinding().to(Key.get(ParallelLeastCostPathCalculator.class, Names.named(AVModule.AV_MODE)));
-        addMobsimListenerBinding().to(Key.get(ParallelLeastCostPathCalculator.class, Names.named(AVModule.AV_MODE)));
+        addControlerListenerBinding().to(Key.get(ParallelLeastCostPathCalculatorListener.class, Names.named(AVModule.AV_MODE)));
+        addMobsimListenerBinding().to(Key.get(ParallelLeastCostPathCalculatorListener.class, Names.named(AVModule.AV_MODE)));
 	}
 
 	@Provides @Singleton @Named(AVModule.AV_MODE)
@@ -114,6 +115,11 @@ public class AVModule extends AbstractModule {
 	@Provides @Named(AVModule.AV_MODE)
     LeastCostPathCalculator provideLeastCostPathCalculator(Network network, @Named(VrpTravelTimeModules.DVRP_ESTIMATED) TravelTime travelTime) {
         return new Dijkstra(network, new OnlyTimeDependentTravelDisutility(travelTime), travelTime);
+    }
+
+    @Provides @Named(AVModule.AV_MODE)
+    ParallelLeastCostPathCalculatorListener provideLeastCostPathCalculatorListener(@Named(AVModule.AV_MODE) ParallelLeastCostPathCalculator calculator) {
+        return new ParallelLeastCostPathCalculatorListener(calculator);
     }
 
 	@Provides @Singleton

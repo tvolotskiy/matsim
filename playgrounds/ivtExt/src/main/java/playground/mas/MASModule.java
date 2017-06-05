@@ -22,19 +22,24 @@ import org.matsim.core.population.algorithms.PermissibleModesCalculator;
 import org.matsim.core.population.algorithms.PermissibleModesCalculatorImpl;
 import org.matsim.core.router.costcalculators.RandomizingTimeDistanceTravelDisutilityFactory;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
+import org.matsim.core.router.util.TravelTime;
 import org.matsim.core.scoring.ScoringFunctionFactory;
 import org.matsim.core.utils.collections.Tuple;
 import org.matsim.core.utils.misc.Time;
 import playground.mas.cordon.*;
 import playground.mas.dispatcher.MASPoolDispatcherFactory;
+import playground.mas.dispatcher.MASRouterFactory;
 import playground.mas.dispatcher.MASSoloDispatcherFactory;
 import playground.mas.replanning.MASPermissibleModesCalculator;
 import playground.mas.routing.MASCarTravelDisutilityFactory;
 import playground.mas.routing.MASCordonTravelDisutility;
 import playground.mas.scoring.MASScoringFunctionFactory;
 import playground.sebhoerl.avtaxi.config.AVConfig;
+import playground.sebhoerl.avtaxi.framework.AVConfigGroup;
+import playground.sebhoerl.avtaxi.framework.AVModule;
 import playground.sebhoerl.avtaxi.framework.AVUtils;
 import playground.sebhoerl.avtaxi.scoring.AVScoringFunctionFactory;
+import playground.sebhoerl.plcpc.ParallelLeastCostPathCalculator;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -96,6 +101,9 @@ public class MASModule extends AbstractModule {
         AVUtils.bindDispatcherFactory(binder(), "MAS_Pool").to(MASPoolDispatcherFactory.class);
 
         addControlerListenerBinding().to(MASConsistencyListener.class);
+
+        addControlerListenerBinding().to(Key.get(ParallelLeastCostPathCalculator.class, Names.named("av_solo")));
+        addControlerListenerBinding().to(Key.get(ParallelLeastCostPathCalculator.class, Names.named("av_pool")));
     }
 
     @Provides @Singleton
@@ -160,5 +168,21 @@ public class MASModule extends AbstractModule {
     @Provides @Singleton
     public PermissibleModesCalculator providePermissibleModesCalculator(SubtourModeChoiceConfigGroup subtourModeChoiceConfigGroup) {
         return new MASPermissibleModesCalculator(new PermissibleModesCalculatorImpl(subtourModeChoiceConfigGroup));
+    }
+
+    @Provides @Singleton @Named("av_solo")
+    ParallelLeastCostPathCalculator provideParallelLeastCostPathCalculatorForSolo(AVConfigGroup avConfig, Network network, @Named(AVModule.AV_MODE) TravelTime travelTime, MASCordonTravelDisutility cordonDisutility) {
+        return new ParallelLeastCostPathCalculator(
+                (int) avConfig.getParallelRouters(),
+                new MASRouterFactory(network, travelTime, cordonDisutility, true)
+        );
+    }
+
+    @Provides @Singleton @Named("av_pool")
+    ParallelLeastCostPathCalculator provideParallelLeastCostPathCalculatorForPool(AVConfigGroup avConfig, Network network, @Named(AVModule.AV_MODE) TravelTime travelTime, MASCordonTravelDisutility cordonDisutility) {
+        return new ParallelLeastCostPathCalculator(
+                (int) avConfig.getParallelRouters(),
+                new MASRouterFactory(network, travelTime, cordonDisutility, false)
+        );
     }
 }

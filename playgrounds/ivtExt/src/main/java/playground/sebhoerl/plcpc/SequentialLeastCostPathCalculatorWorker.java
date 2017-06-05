@@ -24,6 +24,9 @@ public class SequentialLeastCostPathCalculatorWorker implements LeastCostPathCal
     }
 
     @Override
+    public void finishIteration() {}
+
+    @Override
     public void run() {
         while (!pending.isEmpty()) {
             ParallelLeastCostPathCalculatorTask task = pending.poll();

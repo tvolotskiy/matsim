@@ -6,7 +6,9 @@ import org.matsim.api.core.v01.events.handler.*;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Population;
 import org.matsim.vehicles.Vehicle;
+import playground.mas.MASAttributeUtils;
 import playground.sebhoerl.av_paper.BinCalculator;
 import playground.sebhoerl.avtaxi.data.AVOperator;
 
@@ -22,21 +24,14 @@ public class DistancesHandler implements TransitDriverStartsEventHandler, Person
     final private Map<Id<Vehicle>, Set<Id<Person>>> passengers = new HashMap<>();
     final private Map<Id<Vehicle>, LinkEnterEvent> enterEvents = new HashMap<>();
 
-    final private Collection<Id<Person>> evPersonIds;
+    final private Population population;
     final private Set<Id<Vehicle>> transitVehicleIds = new HashSet<>();
 
-    final private Collection<Id<Link>> insideInnerCordonLinkIds;
-    final private Collection<Id<Link>> insideOuterCordonLinkIds;
-    final private Collection<Id<Link>> analysisLinkIds;
-
-    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Collection<Id<Person>> evPersonIds, Collection<Id<Link>> insideInnerCordonLinkIds, Collection<Id<Link>> insideOuterCordonLinkIds, Collection<Id<Link>> analysisLinkIds) {
+    DistancesHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Population population) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
         this.network = network;
-        this.evPersonIds = evPersonIds;
-        this.insideInnerCordonLinkIds = insideInnerCordonLinkIds;
-        this.insideOuterCordonLinkIds = insideOuterCordonLinkIds;
-        this.analysisLinkIds = analysisLinkIds;
+        this.population = population;
     }
 
     private String findModeForVehicle(Id<Vehicle> vehicleId) {
@@ -108,7 +103,7 @@ public class DistancesHandler implements TransitDriverStartsEventHandler, Person
                 if (mode.equals("car") && occupancy == 1) {
                     Id<Person> driverId = passengers.get(event.getVehicleId()).stream().findAny().get();
 
-                    if (evPersonIds.contains(driverId)) {
+                    if (MASAttributeUtils.isEVUser(population.getPersons().get(driverId))) {
                         mode = "ev";
                     }
                 }
@@ -119,19 +114,21 @@ public class DistancesHandler implements TransitDriverStartsEventHandler, Person
             List<Double> insideOuterCordonOccupancySlot = mode.equals("av_pool") ? dataFrame.insideOuterCordonDistanceByPoolOccupancy.get(occupancy) : null;
 
             if (binCalculator.isCoveredValue(enterEvent.getTime())) {
-                if (analysisLinkIds.contains(event.getLinkId())) {
+                Link link = network.getLinks().get(event.getLinkId());
+
+                if (RunAnalysis.isAnalysisLink(link)) {
                     DataFrame.increment(dataFrame.vehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
                     DataFrame.increment(dataFrame.passengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
                     if (occupancySlot != null) DataFrame.increment(occupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
                 }
 
-                if (insideInnerCordonLinkIds.contains(event.getLinkId())) {
+                if (MASAttributeUtils.isInnerCordon(link)) {
                     DataFrame.increment(dataFrame.insideInnerCordonVehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
                     DataFrame.increment(dataFrame.insideInnerCordonPassengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
                     if (insideInnerCordonOccupancySlot != null) DataFrame.increment(insideInnerCordonOccupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);
                 }
 
-                if (insideOuterCordonLinkIds.contains(event.getLinkId())) {
+                if (RunAnalysis.isInsideOuterCordon(link)) {
                     DataFrame.increment(dataFrame.insideOuterCordonVehicleDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length);
                     DataFrame.increment(dataFrame.insideOuterCordonPassengerDistances, mode, binCalculator.getIndex(enterEvent.getTime()), length * occupancy);
                     if (insideOuterCordonOccupancySlot != null) DataFrame.increment(insideOuterCordonOccupancySlot, binCalculator.getIndex(enterEvent.getTime()), length);

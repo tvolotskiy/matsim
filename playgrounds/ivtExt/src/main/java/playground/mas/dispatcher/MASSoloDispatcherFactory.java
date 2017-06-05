@@ -35,17 +35,10 @@ public class MASSoloDispatcherFactory implements AVDispatcher.AVDispatcherFactor
     @Inject @Named(AVModule.AV_MODE)
     private TravelTime travelTime;
 
-    @Inject private AVConfigGroup avConfig;
-    @Inject private MASConfigGroup masConfig;
-    @Inject private MASCordonTravelDisutility cordonDisutility;
+    @Inject @Named("av_solo") ParallelLeastCostPathCalculator router;
 
     @Override
     public AVDispatcher createDispatcher(AVDispatcherConfig config) {
-        ParallelLeastCostPathCalculator router = new ParallelLeastCostPathCalculator(
-                (int) avConfig.getParallelRouters(),
-                new MASRouterFactory(network, travelTime, cordonDisutility, true)
-        );
-
         return new SingleHeuristicDispatcher(
                 config.getParent().getId(),
                 eventsManager,

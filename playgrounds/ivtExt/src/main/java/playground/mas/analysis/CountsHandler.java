@@ -10,7 +10,10 @@ import org.matsim.api.core.v01.events.handler.PersonArrivalEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonDepartureEventHandler;
 import org.matsim.api.core.v01.events.handler.PersonEntersVehicleEventHandler;
 import org.matsim.api.core.v01.network.Link;
+import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Population;
+import playground.mas.MASAttributeUtils;
 import playground.sebhoerl.av_paper.BinCalculator;
 
 import java.util.Collection;
@@ -25,19 +28,15 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
     final private Map<Id<Person>, PersonArrivalEvent> arrivals = new HashMap<>();
     final private Map<Id<Person>, PersonEntersVehicleEvent> enterVehicleEvents = new HashMap<>();
 
-    final private Collection<Id<Link>> insideInnerCordonLinkIds;
-    final private Collection<Id<Link>> insideOuterCordonLinkIds;
-    final private Collection<Id<Link>> analysisLinkIds;
+    final private Network network;
 
-    final private Collection<Id<Person>> evPersonIds;
+    final private Population population;
 
-    public CountsHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> insideInnerCordonLinkIds, Collection<Id<Link>> insideOuterCordonLinkIds, Collection<Id<Link>> analysisLinkIds, Collection<Id<Person>> evPersonIds) {
+    public CountsHandler(DataFrame dataFrame, BinCalculator binCalculator, Network network, Population population) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
-        this.insideInnerCordonLinkIds = insideInnerCordonLinkIds;
-        this.insideOuterCordonLinkIds = insideOuterCordonLinkIds;
-        this.analysisLinkIds = analysisLinkIds;
-        this.evPersonIds = evPersonIds;
+        this.network = network;
+        this.population = population;
     }
 
     @Override
@@ -75,34 +74,38 @@ public class CountsHandler implements PersonDepartureEventHandler, PersonEntersV
                     }
                 }
 
-                if (mode.equals("car") && evPersonIds.contains(event.getPersonId())) {
+                if (mode.equals("car") && MASAttributeUtils.isEVUser(population.getPersons().get(event.getPersonId()))) {
                     mode = "ev";
                 }
 
                 if (binCalculator.isCoveredValue(departureEvent.getTime())) {
-                    if (insideInnerCordonLinkIds.contains(departureEvent.getLinkId())) {
+                    Link link = network.getLinks().get(departureEvent.getLinkId());
+
+                    if (MASAttributeUtils.isInnerCordon(link)) {
                         DataFrame.increment(dataFrame.insideInnerCordonDepartures, mode, binCalculator.getIndex(departureEvent.getTime()));
                     }
 
-                    if (insideOuterCordonLinkIds.contains(departureEvent.getLinkId())) {
+                    if (RunAnalysis.isInsideOuterCordon(link)) {
                         DataFrame.increment(dataFrame.insideOuterCordonDepartures, mode, binCalculator.getIndex(departureEvent.getTime()));
                     }
 
-                    if (analysisLinkIds.contains(departureEvent.getLinkId())) {
+                    if (RunAnalysis.isAnalysisLink(link)) {
                         DataFrame.increment(dataFrame.departures, mode, binCalculator.getIndex(departureEvent.getTime()));
                     }
                 }
 
                 if (binCalculator.isCoveredValue(arrivalEvent.getTime())) {
-                    if (insideInnerCordonLinkIds.contains(arrivalEvent.getLinkId())) {
+                    Link link = network.getLinks().get(arrivalEvent.getLinkId());
+
+                    if (MASAttributeUtils.isInnerCordon(link)) {
                         DataFrame.increment(dataFrame.insideInnerCordonArrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
                     }
 
-                    if (insideOuterCordonLinkIds.contains(arrivalEvent.getLinkId())) {
+                    if (RunAnalysis.isInsideOuterCordon(link)) {
                         DataFrame.increment(dataFrame.insideOuterCordonArrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
                     }
 
-                    if (analysisLinkIds.contains(arrivalEvent.getLinkId())) {
+                    if (RunAnalysis.isAnalysisLink(link)) {
                         DataFrame.increment(dataFrame.arrivals, mode, binCalculator.getIndex(arrivalEvent.getTime()));
                     }
                 }

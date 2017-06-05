@@ -8,6 +8,7 @@ import org.matsim.api.core.v01.network.Network;
 import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.events.handler.EventHandler;
 import org.matsim.vehicles.Vehicle;
+import playground.mas.MASAttributeUtils;
 import playground.mas.cordon.*;
 import playground.sebhoerl.av_paper.BinCalculator;
 import playground.sebhoerl.avtaxi.data.AVOperator;
@@ -16,9 +17,6 @@ import javax.xml.crypto.Data;
 import java.util.*;
 
 public class CordonHandler implements PersonDepartureEventHandler, PersonArrivalEventHandler, PersonEntersVehicleEventHandler, PersonLeavesVehicleEventHandler, LinkEnterEventHandler {
-    final private Collection<Id<Link>> outerCordonLinkIds;
-    final private Collection<Id<Link>> innerCordonLinkIds;
-
     final private CordonPricing cordonPricing;
     final private ChargeTypeFinder chargeTypeFinder;
 
@@ -30,16 +28,13 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonArrival
     final private Set<Id<Person>> departures = new HashSet<>();
     final private Map<Id<Vehicle>, Set<Id<Person>>> passengers = new HashMap<>();
 
-    public CordonHandler(DataFrame dataFrame, BinCalculator binCalculator, Collection<Id<Link>> outerCordonLinkIds, Collection<Id<Link>> innerCordonLinkIds, CordonPricing cordonPricing, ChargeTypeFinder chargeTypeFinder, Network network) {
+    public CordonHandler(DataFrame dataFrame, BinCalculator binCalculator, CordonPricing cordonPricing, ChargeTypeFinder chargeTypeFinder, Network network) {
         this.dataFrame = dataFrame;
         this.binCalculator = binCalculator;
 
         this.cordonPricing = cordonPricing;
         this.chargeTypeFinder = chargeTypeFinder;
         this.network = network;
-
-        this.outerCordonLinkIds = outerCordonLinkIds;
-        this.innerCordonLinkIds = innerCordonLinkIds;
     }
 
     @Override
@@ -79,13 +74,13 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonArrival
             Set<Id<Person>> vehiclePassengers = passengers.get(event.getVehicleId());
             Link link = network.getLinks().get(event.getLinkId());
 
-            if (outerCordonLinkIds.contains(event.getLinkId())) {
+            if (MASAttributeUtils.isOuterCordon(link)) {
                 if (binCalculator.isCoveredValue(event.getTime())) {
                     DataFrame.increment(dataFrame.outerCordonCrossings, binCalculator.getIndex(event.getTime()));
                 }
             }
 
-            if (innerCordonLinkIds.contains(event.getLinkId())) {
+            if (MASAttributeUtils.isInnerCordon(link)) {
                 if (binCalculator.isCoveredValue(event.getTime())) {
                     DataFrame.increment(dataFrame.innerCordonDistance, binCalculator.getIndex(event.getTime()), link.getLength());
                 }
@@ -96,11 +91,11 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonArrival
                     ChargeType chargeType = chargeTypeFinder.getChargeType(passengerId, event.getVehicleId());
 
                     if (cordonPricing.getFee(event.getLinkId(), chargeType, event.getTime()) > 0.0) {
-                        if (outerCordonLinkIds.contains(event.getLinkId())) {
+                        if (MASAttributeUtils.isOuterCordon(link)) {
                             DataFrame.increment(dataFrame.chargeableOuterCordonCrossings, binCalculator.getIndex(event.getTime()));
                         }
 
-                        if (innerCordonLinkIds.contains(event.getLinkId())) {
+                        if (MASAttributeUtils.isInnerCordon(link)) {
                             DataFrame.increment(dataFrame.chargeableInnerCordonDistance, binCalculator.getIndex(event.getTime()), link.getLength());
                         }
                     }
