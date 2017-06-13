@@ -25,6 +25,7 @@ import java.util.Set;
  * @author boescpa
  */
 public class IVTConfigCreator {
+	static public final String DIFF_FIRST_LAST_TAG = "diff_first_last";
 
 	// Scenario
     protected final static int NUMBER_OF_THREADS = 8;
@@ -166,17 +167,21 @@ public class IVTConfigCreator {
 	protected List<StrategyConfigGroup.StrategySettings> getStrategyDescr() {
 		List<StrategyConfigGroup.StrategySettings> strategySettings = new ArrayList<>();
 		// main pop
-		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.2));
-		strategySettings.add(getStrategySetting("ReRoute", 0.2));
+		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.6));
+		strategySettings.add(getStrategySetting("ReRoute", 0.1));
 		strategySettings.add(getStrategySetting("BlackListedTimeAllocationMutator", 0.1));
 		strategySettings.add(getStrategySetting("SubtourModeChoice", 0.1));
-		strategySettings.add(getStrategySetting("org.matsim.contrib.locationchoice.BestReplyLocationChoicePlanStrategy", 0.1));
+		//strategySettings.add(getStrategySetting("org.matsim.contrib.locationchoice.BestReplyLocationChoicePlanStrategy", 0.1));
 		// cb pop
-		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.2, CreateCBPop.CB_TAG));
-		strategySettings.add(getStrategySetting("ReRoute", 0.2, CreateCBPop.CB_TAG));
+		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.6, CreateCBPop.CB_TAG));
+		strategySettings.add(getStrategySetting("ReRoute", 0.1, CreateCBPop.CB_TAG));
 		// freight pop
-		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.2, CreateFreightTraffic.FREIGHT_TAG));
-		strategySettings.add(getStrategySetting("ReRoute", 0.2, CreateCBPop.CB_TAG));
+		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.6, CreateFreightTraffic.FREIGHT_TAG));
+		strategySettings.add(getStrategySetting("ReRoute", 0.1, CreateFreightTraffic.FREIGHT_TAG));
+		// diff_first_last pop
+		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.6, DIFF_FIRST_LAST_TAG));
+		strategySettings.add(getStrategySetting("ReRoute", 0.1, DIFF_FIRST_LAST_TAG));
+		strategySettings.add(getStrategySetting("SubtourModeChoice", 0.1, DIFF_FIRST_LAST_TAG));
         return strategySettings;
     }
 
