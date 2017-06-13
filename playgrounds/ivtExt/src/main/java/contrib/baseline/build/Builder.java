@@ -10,6 +10,7 @@ import java.util.List;
 
 import contrib.baseline.modification.EndTimeDiluter;
 import contrib.baseline.modification.FreespeedAdjustment;
+import contrib.baseline.modification.ModeChainConsistency;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.matsim.api.core.v01.network.Network;
@@ -365,6 +366,24 @@ public class Builder {
 		return valid;
 	}
 
+	private void makeModesConsistent() throws IOException {
+		System.out.println("Making mode chains consistent ...");
+
+		FileUtils.moveFile(
+				new File(scenarioDirectory, "population.xml.gz"),
+				new File(scenarioDirectory, "population_original.xml.gz")
+		);
+
+		new ModeChainConsistency().adjustInvalidModeChains(
+				new File(scenarioDirectory, "population_original.xml.gz").getAbsolutePath(),
+				new File(scenarioDirectory, "population.xml.gz").getAbsolutePath()
+		);
+
+		System.gc();
+
+		FileUtils.deleteQuietly(new File(scenarioDirectory, "population_original.xml.gz"));
+	}
+
 	private void applyModifications() throws IOException {
         System.out.println("Diluting population end times ...");
 
@@ -382,7 +401,9 @@ public class Builder {
 
         FileUtils.deleteQuietly(new File(scenarioDirectory, "population_original.xml.gz"));
 
-        System.out.println("Adjusting freespeeds ...");
+		// TODO: Really adjust freespeeds?
+
+        /*System.out.println("Adjusting freespeeds ...");
 
         FileUtils.moveFile(
                 new File(scenarioDirectory, "mmNetwork.xml.gz"),
@@ -394,7 +415,7 @@ public class Builder {
                 new File(scenarioDirectory, "mmNetwork.xml.gz").getAbsolutePath()
         );
 
-        FileUtils.deleteQuietly(new File(scenarioDirectory, "mmNetwork_original.xml.gz"));
+        FileUtils.deleteQuietly(new File(scenarioDirectory, "mmNetwork_original.xml.gz"));*/
     }
 	
 	private void createFinalScenario() throws IOException {
@@ -422,6 +443,7 @@ public class Builder {
 		System.gc();
 
         applyModifications();
+		makeModesConsistent();
 
 		System.out.println("Done creating final scenario.");
 	}
