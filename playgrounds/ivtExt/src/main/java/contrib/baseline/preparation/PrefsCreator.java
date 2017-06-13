@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.population.Activity;
 import org.matsim.api.core.v01.population.Person;
+import org.matsim.api.core.v01.population.Plan;
 import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.config.ConfigUtils;
@@ -15,6 +16,8 @@ import org.matsim.utils.objectattributes.ObjectAttributesXmlReader;
 import org.matsim.utils.objectattributes.ObjectAttributesXmlWriter;
 import contrib.baseline.lib.ActivityAnalyzer;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import static contrib.baseline.preparation.IVTConfigCreator.*;
@@ -24,7 +27,7 @@ import static contrib.baseline.preparation.IVTConfigCreator.*;
  *
  * This class is based on the class playground.stahela.matsim2030.CreatePrefs.java
  *
- * @author boescpa
+ * @author boescpa,balac
  */
 public class PrefsCreator {
 
@@ -89,64 +92,92 @@ public class PrefsCreator {
     }
 
     public static void createPrefsBasedOnPlans(final Population population, final ObjectAttributes prefs) {
-        Counter counter = new Counter(" person # ");
-        ActivityAnalyzer activityAnalyzer = new ActivityAnalyzer();
-        String actChain;
-        double actStartTime, actEndTime, actDuration;
-        double h, rh, w, rw, e, l, s, k, o;
-        int numH, numRH, numW, numRW, numE, numL, numS, numK, numO;
 
-        for (Person p : population.getPersons().values()) {
-            counter.incCounter();
-            String personID = p.getId().toString();
+        for(Person p : population.getPersons().values()) {
+			Plan plan = p.getSelectedPlan();
+			String personId = p.getId().toString();
+			Map<String, Integer> count = new HashMap<>();
+			Activity firstActivity = null;
+			int size = plan.getPlanElements().size();
+			if (size == 1) {
+				
+				String type = ((Activity) plan.getPlanElements().get(0)).getType();
+				
+				setDurations(prefs, type + "_" + 1, 24.0 * 3600.0, personId);
+				
+				((Activity) plan.getPlanElements().get(0)).setType(type + "_1");
+				continue;
+			}
+			
+			for (PlanElement pe : plan.getPlanElements()) {			
+				
+				if (pe instanceof Activity && !((Activity) pe).getType().equals("pt interaction")) {
+					Activity act = (Activity) pe;
+					String type = act.getType();
+					
+					if (count.containsKey(type))
+						count.put(type, count.get(type) + 1);
+					else
+						count.put(type, 1);
+							
+					if (plan.getPlanElements().get(0) == pe) {
+						//==== handling first activity in the plan =====//
 
-            if (p.getSelectedPlan() != null) {
-                // reset person
-                actChain = "";
-                h = -1; rh = -1; w = -1; rw = -1; e = -1; l = -1; s = -1; k = -1; o = -1;
-				numH = 0; numRH = 0; numW = 0; numRW = 0; numE = 0; numL = 0; numS = 0; numK = 0; numO = 0;
-                // get number of activities and actChain
-                for (PlanElement pe : p.getSelectedPlan().getPlanElements()) {
-                    if (pe instanceof Activity) {
-                        Activity act = (Activity) pe;
-                        actChain = actChain.concat(actCharacteristics.valueOf(act.getType().toUpperCase()).getAbbr());
-                        actStartTime = (act.getStartTime() > 0) ? act.getStartTime() : 0;
-                        actEndTime = (act.getEndTime() > 0) ? act.getEndTime() : 24*3600;
-                        actDuration = actEndTime - actStartTime;
-                        switch (act.getType()) {
-                            case HOME:
-								h = (h < 0) ? actDuration : h + actDuration; numH++; break;
-                            case REMOTE_HOME: rh = (rh < 0) ? actDuration : rh + actDuration; numRH++; break;
-                            case WORK: w = (w < 0) ? actDuration : w + actDuration; numW++; break;
-                            case REMOTE_WORK: rw = (rw < 0) ? actDuration : rw + actDuration; numRW++; break;
-                            case EDUCATION: e = (e < 0) ? actDuration : e + actDuration; numE++; break;
-                            case LEISURE: l = (l < 0) ? actDuration : l + actDuration; numL++; break;
-                            case SHOP: s = (s < 0) ? actDuration : s + actDuration; numS++; break;
-                            case ESCORT_KIDS: k = (k < 0) ? actDuration : k + actDuration; numK++; break;
-                            case ESCORT_OTHER: o = (o < 0) ? actDuration : o + actDuration; numO++; break;
-                            default: log.error(
-									"For act type " + act.getType() + " of person " + personID + " no information available.");
-                        }
-                    }
-                    activityAnalyzer.addActChain(actChain);
-                }
-                // assign durations
-                if (h > -1) setDurations(prefs, HOME, h/numH, personID);
-                if (rh > -1) setDurations(prefs, REMOTE_HOME, rh/numRH, personID);
-                if (w > -1) setDurations(prefs, WORK, w/numW, personID);
-                if (rw > -1) setDurations(prefs, REMOTE_WORK, rw/numRW, personID);
-                if (e > -1) setDurations(prefs, EDUCATION, e/numE, personID);
-                if (l > -1) setDurations(prefs, LEISURE, l/numL, personID);
-                if (s > -1) setDurations(prefs, SHOP, s/numS, personID);
-                if (k > -1) setDurations(prefs, ESCORT_KIDS, k/numK, personID);
-                if (o > -1) setDurations(prefs, ESCORT_OTHER, o/numO, personID);
-            } else {
-                log.warn("Person " + personID + " has no plan defined.");
-            }
+						act.setType(type + "_" + 1);
+
+						if (act.getType().equals(((Activity)plan.getPlanElements().get(size - 1)).getType())) {
+						
+							firstActivity = (Activity) pe;
+						}
+						else {
+							double duration = act.getEndTime();
+							setDurations(prefs, type + "_" + 1, duration, personId);							
+						}
+					}
+					else if (plan.getPlanElements().get(size - 1) == pe) {
+						//==== handling last activity in the plan =====//
+						if (act.getType().equals(((Activity)plan.getPlanElements().get(0)).getType())) {
+							//===== agents who do have first and last activity of the same type =====//
+
+							double duration = firstActivity.getEndTime() + 24 * 3600.0 - act.getStartTime();
+							if (duration <= 0.0) {
+								log.error(
+										"For act type " + act.getType() + " of person " + p.getId() + " duration is either zero or negative.");
+								throw new RuntimeException();
+							}
+							
+							setDurations(prefs, type + "_" + 1, duration, personId);							
+							act.setType(type + "_" + 1);
+						}
+						else {
+							//===== agents who do not have first and last activity of the same type =====//
+							double duration = 24 * 3600.0 - ((Activity) pe).getStartTime();
+							if (duration <= 0.0) {
+								log.error(
+										"For act type " + act.getType() + " of person " + p.getId() + " duration is either zero or negative.");	
+								throw new RuntimeException();
+							}
+							
+							setDurations(prefs, type + "_" + count.get(type), duration, personId);
+							act.setType(type + "_" + count.get(type));							
+						}
+					}
+					else {
+						double duration = act.getEndTime() - act.getStartTime();
+						
+						if (duration <= 0.0) {
+							log.error("For act type " + act.getType() + 
+									" of person " + p.getId() + " duration is either zero or negative.");	
+							throw new RuntimeException();
+						}
+						setDurations(prefs, type + "_" + count.get(type), duration, personId);
+					
+						act.setType(type + "_" + count.get(type));							
+
+					}
+				}
+			}
         }
-
-        counter.printCounter();
-        //activityAnalyzer.printActChainAnalysis();
     }
 
     /**
@@ -155,11 +186,9 @@ public class PrefsCreator {
      *  TypicalDuration to the provided value or, if provided value < minDuration, to minDuration.
      */
     private static void setDurations(ObjectAttributes prefs, String activity, double typicalDuration, String personId) {
-        double minDuration = actCharacteristics.valueOf(activity.toUpperCase()).getMinDur();
-        double typicalDurationCorrected = (typicalDuration > minDuration) ? typicalDuration : minDuration;
 
-        prefs.putAttribute(personId, "typicalDuration_" + activity, typicalDurationCorrected);
-        prefs.putAttribute(personId, "minimalDuration_" + activity, minDuration);
+        prefs.putAttribute(personId, "typicalDuration_" + activity, typicalDuration);
+        prefs.putAttribute(personId, "minimalDuration_" + activity, 0.0);
         prefs.putAttribute(personId, "earliestEndTime_" + activity, 0.0 * 3600.0);
         prefs.putAttribute(personId, "latestStartTime_" + activity, 24.0 * 3600.0);
     }
