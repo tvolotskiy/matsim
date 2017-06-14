@@ -8,10 +8,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.LinkedList;
 import java.util.List;
 
-import contrib.baseline.modification.DifferentFirstLastActivityTypes;
-import contrib.baseline.modification.EndTimeDiluter;
-import contrib.baseline.modification.FreespeedAdjustment;
-import contrib.baseline.modification.ModeChainConsistency;
+import contrib.baseline.modification.*;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.matsim.api.core.v01.network.Network;
@@ -375,11 +372,9 @@ public class Builder {
 				new File(scenarioDirectory, "population_original.xml.gz")
 		);
 
-		new DifferentFirstLastActivityTypes().adjustPlans(
+		new ZeroDurationActivities().adjustZeroDurationActivities(
 				new File(scenarioDirectory, "population_original.xml.gz").getAbsolutePath(),
-				new File(scenarioDirectory, "population_attributes_original.xml.gz").getAbsolutePath(),
-				new File(scenarioDirectory, "population.xml.gz").getAbsolutePath(),
-				new File(scenarioDirectory, "population_attributes.xml.gz").getAbsolutePath()
+				new File(scenarioDirectory, "population.xml.gz").getAbsolutePath()
 		);
 
 		System.gc();
