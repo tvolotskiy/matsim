@@ -106,25 +106,24 @@ public class PreparationScript {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-				Files.delete(Paths.get(pathFreightFacilities));
-				Files.delete(Paths.get(pathFreightPopulation));
-				Files.delete(Paths.get(pathFreightPopulationAttributes));
-				Files.delete(Paths.get(pathCBFacilities));
-				Files.delete(Paths.get(pathCBPopulation));
-				Files.delete(Paths.get(pathCBPopulationAttributes));
-                Files.delete(Paths.get(pathFacilities));
-                Files.delete(Paths.get(pathPopulation));
-                Files.delete(Paths.get(pathPopulationAttributes));
-                Files.delete(Paths.get(pathHouseholds));
-                Files.delete(Paths.get(pathHouseholdAttributes));
-                Files.delete(Paths.get(tempFolder));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
 
+        try {
+            Files.delete(Paths.get(pathFreightFacilities));
+            Files.delete(Paths.get(pathFreightPopulation));
+            Files.delete(Paths.get(pathFreightPopulationAttributes));
+            Files.delete(Paths.get(pathCBFacilities));
+            Files.delete(Paths.get(pathCBPopulation));
+            Files.delete(Paths.get(pathCBPopulationAttributes));
+            Files.delete(Paths.get(pathFacilities));
+            Files.delete(Paths.get(pathPopulation));
+            Files.delete(Paths.get(pathPopulationAttributes));
+            Files.delete(Paths.get(pathHouseholds));
+            Files.delete(Paths.get(pathHouseholdAttributes));
+            Files.delete(Paths.get(tempFolder));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 	private static void createNewScenario() throws IOException {
