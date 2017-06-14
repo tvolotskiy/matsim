@@ -86,6 +86,7 @@ public class ZeroDurationActivities {
                         if (duration <= 0.0) {
                             firstActivity.setEndTime(wrappedStartTime + ADJUSTMENT_OFFSET);
                             isPlanAdjusted = true;
+                            numberOfAdjustedActivities++;
                             numberOfAdjustedWrappedFirstActivities++;
                             registerAdjustedActivity(numberOfAdjustedActivitiesByType, firstActivity);
                         }
@@ -96,6 +97,7 @@ public class ZeroDurationActivities {
                         if (firstDuration <= 0.0) {
                             firstActivity.setEndTime(firstActivity.getStartTime() + ADJUSTMENT_OFFSET);
                             isPlanAdjusted = true;
+                            numberOfAdjustedActivities++;
                             numberOfAdjustedSingleFirstActivities++;
                             registerAdjustedActivity(numberOfAdjustedActivitiesByType, firstActivity);
                         }
@@ -103,6 +105,7 @@ public class ZeroDurationActivities {
                         if (lastDuration <= 0.0) {
                             lastActivity.setEndTime(lastActivity.getStartTime() + ADJUSTMENT_OFFSET);
                             isPlanAdjusted = true;
+                            numberOfAdjustedActivities++;
                             numberOfAdjustedSingleLastActivities++;
                             registerAdjustedActivity(numberOfAdjustedActivitiesByType, lastActivity);
                         }
