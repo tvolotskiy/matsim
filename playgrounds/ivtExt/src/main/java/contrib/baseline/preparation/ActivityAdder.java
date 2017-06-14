@@ -63,8 +63,7 @@ public class ActivityAdder {
 			actsToMultiply.addAll(facility.getActivityOptions().keySet());
 			for (String activityOptionId : actsToMultiply) {
 				ActivityOption activityOption = facility.getActivityOptions().get(activityOptionId);
-				for (int i = 0; i < numberOfActivityCopies; i++) {
-					// todo: check if we start with zero or with one...
+				for (int i = 1; i <= numberOfActivityCopies; i++) {
 					ActivityOption newActivity = factory.createActivityOption(activityOption.getType() + "_" + i);
 					newActivity.setCapacity(activityOption.getCapacity());
 					for (OpeningTime openingTime : activityOption.getOpeningTimes()) {
