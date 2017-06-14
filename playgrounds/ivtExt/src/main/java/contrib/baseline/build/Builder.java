@@ -508,10 +508,11 @@ public class Builder {
 		FileUtils.copyFile(
 				new File(config.getSVNDirectory(), "baseline2010/supply/base_pt_counts/ptLinkCountsIdentified.csv"), 
 				new File(scenarioDirectory, "ptLinkCountsIdentified.csv"));
-		
-		FileUtils.copyFile(
-				new File(config.getSVNDirectory(), "baseline2010/supply/base_pt_counts/ptStationCounts.csv"), 
-				new File(scenarioDirectory, "ptStationCounts.csv"));
+
+		File ptStationCounts = new File(config.getSVNDirectory(), "baseline2010/supply/base_pt_counts/ptStationCounts.csv");
+		File updatedPtStationCounts = new File(config.getSVNDirectory(), "baseline2010/supply/base_pt_counts/ptStationCounts_2015.csv");
+		if (!ptStationCounts.exists()) ptStationCounts = updatedPtStationCounts;
+		FileUtils.copyFile(ptStationCounts, new File(scenarioDirectory, "ptStationCounts.csv"));
 		
 		String vehicles;		
 		switch (config.getScaling()) {
