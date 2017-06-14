@@ -1,5 +1,6 @@
 package contrib.baseline.preparation;
 
+import contrib.baseline.modification.ZeroDurationActivities;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.api.core.v01.population.*;
@@ -93,6 +94,7 @@ public class PreparationScript {
                 addRemainingLocationChoiceActivities();
                 connectF2L();
                 repairActivityChains();
+                adjustZeroDurationActivities();
                 createPrefsForPopulation();
                 setInitialFacilitiesForAllActivities();
 				mergeInSubpopulations();
@@ -186,6 +188,13 @@ public class PreparationScript {
 		ObjectAttributesXmlWriter attributesWriter = new ObjectAttributesXmlWriter(scenarioPopulation.getPersonAttributes());
 		attributesWriter.writeFile(pathPopulationAttributes);
 	}
+
+	private static void adjustZeroDurationActivities() {
+        log.info(" ------- Adjust zero duration activities ------- ");
+        new ZeroDurationActivities().adjustZeroDurationActivities(
+                pathPopulation, pathPopulation
+        );
+    }
 
     private static void createPrefsForPopulation() {
         log.info(" ------- Create Prefs for Population ------- ");
