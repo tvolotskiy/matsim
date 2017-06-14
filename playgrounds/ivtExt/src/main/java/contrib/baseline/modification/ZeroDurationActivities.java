@@ -80,14 +80,11 @@ public class ZeroDurationActivities {
 
                 if (firstActivity != lastActivity) {
                     if (firstActivity.getType().equals(lastActivity.getType())) {
-                        double wrappedStartTime = lastActivity.getStartTime();
-                        while (wrappedStartTime >= firstActivity.getEndTime()) wrappedStartTime -= 24.0 * 3600.0;
+                        double wrappedStartTime = lastActivity.getStartTime() - 24.0 * 3600.0;
                         double duration = firstActivity.getEndTime() - wrappedStartTime;
 
                         if (duration <= 0.0) {
-                            firstActivity.setStartTime(wrappedStartTime);
-                            firstActivity.setEndTime(firstActivity.getStartTime() + ADJUSTMENT_OFFSET);
-
+                            firstActivity.setEndTime(wrappedStartTime + ADJUSTMENT_OFFSET);
                             isPlanAdjusted = true;
                             numberOfAdjustedWrappedFirstActivities++;
                             registerAdjustedActivity(numberOfAdjustedActivitiesByType, firstActivity);
