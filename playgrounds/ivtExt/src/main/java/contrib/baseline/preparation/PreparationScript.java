@@ -93,8 +93,8 @@ public class PreparationScript {
                 addRemainingLocationChoiceActivities();
                 connectF2L();
                 repairActivityChains();
-                setInitialFacilitiesForAllActivities();
                 createPrefsForPopulation();
+                setInitialFacilitiesForAllActivities();
 				mergeInSubpopulations();
                 createDefaultIVTConfig(prctScenario);
 				//createIVTLCConfig(prctScenario);
@@ -112,6 +112,11 @@ public class PreparationScript {
 				Files.delete(Paths.get(pathCBFacilities));
 				Files.delete(Paths.get(pathCBPopulation));
 				Files.delete(Paths.get(pathCBPopulationAttributes));
+                Files.delete(Paths.get(pathFacilities));
+                Files.delete(Paths.get(pathPopulation));
+                Files.delete(Paths.get(pathPopulationAttributes));
+                Files.delete(Paths.get(pathHouseholds));
+                Files.delete(Paths.get(pathHouseholdAttributes));
 				Files.deleteIfExists(Paths.get(tempFolder));
             } catch (IOException e) {
                 e.printStackTrace();
