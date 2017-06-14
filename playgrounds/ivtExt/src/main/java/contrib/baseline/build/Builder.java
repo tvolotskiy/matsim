@@ -367,6 +367,26 @@ public class Builder {
 		return valid;
 	}
 
+	private void adjustZeroDurationActivities() throws IOException {
+		System.out.println("Fixing zero activity durations ...");
+
+		FileUtils.moveFile(
+				new File(scenarioDirectory, "population.xml.gz"),
+				new File(scenarioDirectory, "population_original.xml.gz")
+		);
+
+		new DifferentFirstLastActivityTypes().adjustPlans(
+				new File(scenarioDirectory, "population_original.xml.gz").getAbsolutePath(),
+				new File(scenarioDirectory, "population_attributes_original.xml.gz").getAbsolutePath(),
+				new File(scenarioDirectory, "population.xml.gz").getAbsolutePath(),
+				new File(scenarioDirectory, "population_attributes.xml.gz").getAbsolutePath()
+		);
+
+		System.gc();
+
+		FileUtils.deleteQuietly(new File(scenarioDirectory, "population_original.xml.gz"));
+	}
+
 	private void adjustDifferentFirstLastActivityTypeAgents() throws IOException  {
 		System.out.println("Making mode chains consistent ...");
 
@@ -464,6 +484,8 @@ public class Builder {
 			default:
 				throw new IllegalStateException();
 		}
+
+		adjustZeroDurationActivities();
 		
 		String[] arguments = new String[command.size()];
 		PreparationScript.main(command.toArray(arguments));

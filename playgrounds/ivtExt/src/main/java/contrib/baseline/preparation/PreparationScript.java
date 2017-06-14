@@ -117,7 +117,7 @@ public class PreparationScript {
                 Files.delete(Paths.get(pathPopulationAttributes));
                 Files.delete(Paths.get(pathHouseholds));
                 Files.delete(Paths.get(pathHouseholdAttributes));
-				Files.deleteIfExists(Paths.get(tempFolder));
+                Files.delete(Paths.get(tempFolder));
             } catch (IOException e) {
                 e.printStackTrace();
             }
