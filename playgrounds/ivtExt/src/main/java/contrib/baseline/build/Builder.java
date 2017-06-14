@@ -8,6 +8,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.LinkedList;
 import java.util.List;
 
+import contrib.baseline.modification.DifferentFirstLastActivityTypes;
 import contrib.baseline.modification.EndTimeDiluter;
 import contrib.baseline.modification.FreespeedAdjustment;
 import contrib.baseline.modification.ModeChainConsistency;
@@ -366,6 +367,32 @@ public class Builder {
 		return valid;
 	}
 
+	private void adjustDifferentFirstLastActivityTypeAgents() throws IOException  {
+		System.out.println("Making mode chains consistent ...");
+
+		FileUtils.moveFile(
+				new File(scenarioDirectory, "population.xml.gz"),
+				new File(scenarioDirectory, "population_original.xml.gz")
+		);
+
+		FileUtils.moveFile(
+				new File(scenarioDirectory, "population_attributes.xml.gz"),
+				new File(scenarioDirectory, "population_attributes_original.xml.gz")
+		);
+
+		new DifferentFirstLastActivityTypes().adjustPlans(
+				new File(scenarioDirectory, "population_original.xml.gz").getAbsolutePath(),
+				new File(scenarioDirectory, "population_attributes_original.xml.gz").getAbsolutePath(),
+				new File(scenarioDirectory, "population.xml.gz").getAbsolutePath(),
+				new File(scenarioDirectory, "population_attributes.xml.gz").getAbsolutePath()
+		);
+
+		System.gc();
+
+		FileUtils.deleteQuietly(new File(scenarioDirectory, "population_original.xml.gz"));
+		FileUtils.deleteQuietly(new File(scenarioDirectory, "population_attributes_original.xml.gz"));
+	}
+
 	private void makeModesConsistent() throws IOException {
 		System.out.println("Making mode chains consistent ...");
 
@@ -444,6 +471,7 @@ public class Builder {
 
         applyModifications();
 		makeModesConsistent();
+		adjustDifferentFirstLastActivityTypeAgents();
 
 		System.out.println("Done creating final scenario.");
 	}
