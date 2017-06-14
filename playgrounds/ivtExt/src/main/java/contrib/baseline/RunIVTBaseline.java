@@ -19,6 +19,7 @@ import playground.ivt.replanning.BlackListedTimeAllocationMutatorStrategyModule;
  *
  * @author boescpa
  */
+@Deprecated
 public class RunIVTBaseline {
 
     public static void main(String[] args) {

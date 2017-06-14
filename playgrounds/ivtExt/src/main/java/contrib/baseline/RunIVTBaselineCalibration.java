@@ -46,6 +46,7 @@ import java.io.File;
  *
  * @author boescpa
  */
+@Deprecated
 public class RunIVTBaselineCalibration {
 
 	public static void main(String[] args) {
