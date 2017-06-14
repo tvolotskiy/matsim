@@ -108,7 +108,8 @@ public class PrefsCreator {
 				((Activity) plan.getPlanElements().get(0)).setType(type + "_1");
 				continue;
 			}
-			
+			//boolean firstlastsame = ((Activity)plan.getPlanElements().get(0)).getType().
+			//		equals(((Activity)plan.getPlanElements().get(size - 1)).getType());
 			for (PlanElement pe : plan.getPlanElements()) {			
 				
 				if (pe instanceof Activity && !((Activity) pe).getType().equals("pt interaction")) {
@@ -123,9 +124,7 @@ public class PrefsCreator {
 					if (plan.getPlanElements().get(0) == pe) {
 						//==== handling first activity in the plan =====//
 
-						act.setType(type + "_" + 1);
-
-						if (act.getType().equals(((Activity)plan.getPlanElements().get(size - 1)).getType())) {
+						if (type.equals(((Activity)plan.getPlanElements().get(size - 1)).getType())) {
 						
 							firstActivity = (Activity) pe;
 						}
@@ -133,10 +132,13 @@ public class PrefsCreator {
 							double duration = act.getEndTime();
 							setDurations(prefs, type + "_" + 1, duration, personId);							
 						}
+						
+						act.setType(type + "_" + 1);
+
 					}
 					else if (plan.getPlanElements().get(size - 1) == pe) {
 						//==== handling last activity in the plan =====//
-						if (act.getType().equals(((Activity)plan.getPlanElements().get(0)).getType())) {
+						if (firstActivity != null) {
 							//===== agents who do have first and last activity of the same type =====//
 
 							double duration = firstActivity.getEndTime() + 24 * 3600.0 - act.getStartTime();
