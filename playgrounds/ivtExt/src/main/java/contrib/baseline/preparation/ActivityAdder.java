@@ -1,9 +1,15 @@
 package contrib.baseline.preparation;
 
+import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.facilities.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static contrib.baseline.preparation.IVTConfigCreator.*;
 import static contrib.baseline.preparation.secondaryFacilityCreation.FacilitiesFromBZ12.testFacilities;
@@ -25,6 +31,7 @@ public class ActivityAdder {
     public static void main(final String[] args) {
         final String pathToFacilities = args[0];
         final String pathToOutputFacilities = args[1];
+        final int numberOfActivityCopies = Integer.parseInt(args[2]);
 
         // Read facilities and create Adder
         Scenario scenario = ScenarioUtils.createScenario(ConfigUtils.createConfig());
@@ -41,13 +48,36 @@ public class ActivityAdder {
         adder.addActivityToFacilities(ESCORT_OTHER, SHOP, 5, 5*60*60, 24*60*60);
         adder.addActivityToFacilities(REMOTE_HOME, HOME, 1, 0, 24*60*60);
 
+        // Multiply activities
+		adder.multiplyActivities(numberOfActivityCopies);
+
         // Write facilities
         FacilitiesWriter facilitiesWriter = new FacilitiesWriter(scenario.getActivityFacilities());
         facilitiesWriter.write(pathToOutputFacilities);
         testFacilities(pathToOutputFacilities);
     }
 
-    protected void addActivityToFacilities(String actTypeToAdd, String existingActToAddTo, double defaultCapacity,
+	private void multiplyActivities(int numberOfActivityCopies) {
+		for (ActivityFacility facility : facilities.getFacilities().values()) {
+			List<String> actsToMultiply = new ArrayList<>(facility.getActivityOptions().size());
+			actsToMultiply.addAll(facility.getActivityOptions().keySet());
+			for (String activityOptionId : actsToMultiply) {
+				ActivityOption activityOption = facility.getActivityOptions().get(activityOptionId);
+				for (int i = 0; i < numberOfActivityCopies; i++) {
+					// todo: check if we start with zero or with one...
+					ActivityOption newActivity = factory.createActivityOption(activityOption.getType() + "_" + i);
+					newActivity.setCapacity(activityOption.getCapacity());
+					for (OpeningTime openingTime : activityOption.getOpeningTimes()) {
+						newActivity.addOpeningTime(openingTime);
+					}
+					facility.addActivityOption(newActivity);
+				}
+				facility.getActivityOptions().remove(activityOptionId);
+			}
+		}
+	}
+
+	protected void addActivityToFacilities(String actTypeToAdd, String existingActToAddTo, double defaultCapacity,
                                            double defaultOpenFrom, double defaultOpenTill) {
         for (ActivityFacility facility : facilities.getFacilities().values()) {
             if (!facility.getActivityOptions().containsKey(actTypeToAdd) &&

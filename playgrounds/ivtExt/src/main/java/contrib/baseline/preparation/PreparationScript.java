@@ -259,7 +259,8 @@ public class PreparationScript {
         log.info(" ------- Add Location Choice Activities to Facilities ------- ");
         final String[] args = {
                 pathFacilities,
-                pathFacilities
+                pathFacilities,
+				String.valueOf(15) // todo: We probably don't want this hardcoded here...
         };
         ActivityAdder.main(args);
     }
