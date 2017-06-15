@@ -95,8 +95,8 @@ public class PreparationScript {
                 connectF2L();
                 repairActivityChains();
                 adjustZeroDurationActivities();
-                createPrefsForPopulation();
                 setInitialFacilitiesForAllActivities();
+                createPrefsForPopulation();
 				mergeInSubpopulations();
                 createDefaultIVTConfig(prctScenario);
 				//createIVTLCConfig(prctScenario);

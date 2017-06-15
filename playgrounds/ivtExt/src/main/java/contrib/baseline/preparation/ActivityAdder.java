@@ -71,7 +71,7 @@ public class ActivityAdder {
 					}
 					facility.addActivityOption(newActivity);
 				}
-				facility.getActivityOptions().remove(activityOptionId);
+				//facility.getActivityOptions().remove(activityOptionId);
 			}
 		}
 	}

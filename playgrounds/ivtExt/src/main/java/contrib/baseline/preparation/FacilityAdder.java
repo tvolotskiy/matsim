@@ -13,6 +13,7 @@ import org.matsim.core.utils.misc.Counter;
 import org.matsim.facilities.ActivityFacilities;
 import org.matsim.facilities.ActivityFacility;
 import org.matsim.facilities.FacilitiesReaderMatsimV1;
+import org.matsim.facilities.MatsimFacilitiesReader;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class FacilityAdder {
         PopulationReader plansReader = new PopulationReader(scenario);
         plansReader.readFile(pathToInputPopulation);
         Population population = scenario.getPopulation();
-        FacilitiesReaderMatsimV1 facilitiesReader = new FacilitiesReaderMatsimV1(scenario);
+        MatsimFacilitiesReader facilitiesReader = new MatsimFacilitiesReader(scenario);
         facilitiesReader.readFile(pathToInputFacilities);
         ActivityFacilities facilities = scenario.getActivityFacilities();
 
@@ -143,6 +144,13 @@ public class FacilityAdder {
 				}
             }
         }
+
+        if (selectedFacility == null) {
+			log.error("No facility found for activity type " + actType);
+			log.error("Number of faciltiies with activity type: " + facilities.getFacilitiesForActivityType(actType).size());
+			throw new RuntimeException();
+		}
+
 		cache.get(actType).put(selectedFacility.getCoord(), selectedFacility);
         return selectedFacility;
     }
