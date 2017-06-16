@@ -200,6 +200,7 @@ public class PreparationScript {
         final String[] args = {
                 pathPopulation,
                 pathPopulationAttributes,
+                pathPopulation,
                 pathPopulationAttributes
         };
         PrefsCreator.main(args);

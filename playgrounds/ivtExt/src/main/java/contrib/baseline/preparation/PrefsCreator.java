@@ -9,6 +9,7 @@ import org.matsim.api.core.v01.population.PlanElement;
 import org.matsim.api.core.v01.population.Population;
 import org.matsim.core.config.ConfigUtils;
 import org.matsim.core.population.io.PopulationReader;
+import org.matsim.core.population.io.PopulationWriter;
 import org.matsim.core.scenario.ScenarioUtils;
 import org.matsim.core.utils.misc.Counter;
 import org.matsim.utils.objectattributes.ObjectAttributes;
@@ -74,7 +75,8 @@ public class PrefsCreator {
     public static void main(final String[] args) {
         final String pathToInputPopulation = args[0];
         final String pathToInputPrefs = args[1];
-        final String pathToOutputPrefs = args[2];
+        final String pathToOutputPopulation = args[2];
+        final String pathToOutputPrefs = args[3];
 
         ObjectAttributes prefs = getObjectAttributes(pathToInputPrefs);
 
@@ -83,6 +85,8 @@ public class PrefsCreator {
 
         ObjectAttributesXmlWriter attributesXmlWriterWriter = new ObjectAttributesXmlWriter(prefs);
         attributesXmlWriterWriter.writeFile(pathToOutputPrefs);
+
+        new PopulationWriter(population).write(pathToOutputPopulation);
     }
 
     public static ObjectAttributes createPrefsBasedOnPlans(final Population population) {
