@@ -9,6 +9,7 @@ import org.matsim.core.config.groups.ControlerConfigGroup;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.config.groups.StrategyConfigGroup;
+import org.matsim.core.controler.OutputDirectoryHierarchy;
 import org.matsim.facilities.algorithms.WorldConnectLocations;
 import contrib.baseline.preparation.crossborderCreation.CreateCBPop;
 import contrib.baseline.preparation.freightCreation.CreateFreightTraffic;
@@ -65,6 +66,8 @@ public class IVTConfigCreator {
     }
 
     public void makeConfigIVT(Config config, final int prctScenario) {
+		config.controler().setOverwriteFileSetting(OutputDirectoryHierarchy.OverwriteFileSetting.deleteDirectoryIfExists);
+		config.controler().setOutputDirectory("output");
         // Set the number of iterations
 		config.controler().setLastIteration(NUMBER_OF_ITERATIONS);
 		// Correct routing algorithm
