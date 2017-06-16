@@ -99,12 +99,12 @@ public class IVTConfigCreator {
 		blTAM.setBlackList(timeMutationBlackList);
 		config.addModule(blTAM);
 		// Add location choice
-		DestinationChoiceConfigGroup destChoiConfigGroup = new DestinationChoiceConfigGroup();
+		/*DestinationChoiceConfigGroup destChoiConfigGroup = new DestinationChoiceConfigGroup();
 		destChoiConfigGroup.setFlexibleTypes("remote_work, leisure, shop, escort_kids, escort_other");
 		destChoiConfigGroup.setEpsilonScaleFactors("0.3, 0.1, 0.1, 0.1, 0.2");
 		destChoiConfigGroup.setTravelTimeApproximationLevel(DestinationChoiceConfigGroup.ApproximationLevel.localRouting);
 		destChoiConfigGroup.setPrefsFile(INBASE_FILES + POPULATION_ATTRIBUTES);
-		config.addModule(destChoiConfigGroup);
+		config.addModule(destChoiConfigGroup);*/
         // Activate transit and correct it to ivt-experience
 		config.transit().setUseTransit(true);
 		config.planCalcScore().setUtilityOfLineSwitch(-2.0);
@@ -121,7 +121,8 @@ public class IVTConfigCreator {
 		scoringParams.getOrCreateActivityParams("freight").setScoringThisActivityAtAll(false);
         // Set threads to NUMBER_OF_THREADS
 		config.global().setNumberOfThreads(NUMBER_OF_THREADS);
-		config.parallelEventHandling().setNumberOfThreads(NUMBER_OF_THREADS);
+		config.parallelEventHandling().setNumberOfThreads(NUMBER_OF_THREADS); // overridden by next line
+		config.parallelEventHandling().setOneThreadPerHandler(true);
 		config.qsim().setNumberOfThreads(NUMBER_OF_THREADS);
         // Account for prct-scenario
 		config.counts().setCountsScaleFactor(100d / prctScenario);
