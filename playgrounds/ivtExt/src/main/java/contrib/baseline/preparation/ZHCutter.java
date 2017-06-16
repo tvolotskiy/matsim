@@ -138,10 +138,10 @@ public class ZHCutter {
 		Config config = ConfigUtils.createConfig();
 		new IVTConfigCreator().makeConfigIVT(config, (int)(100*scenario.getConfig().qsim().getFlowCapFactor()));
 		List<StrategyConfigGroup.StrategySettings> strategySettings = new ArrayList<>();
-		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.5));
-		strategySettings.add(getStrategySetting("ReRoute", 0.2));
+		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.6));
+		strategySettings.add(getStrategySetting("ReRoute", 0.1));
 		strategySettings.add(getStrategySetting("BlackListedTimeAllocationMutator", 0.1));
-		strategySettings.add(getStrategySetting("org.matsim.contrib.locationchoice.BestReplyLocationChoicePlanStrategy", 0.1));
+		//strategySettings.add(getStrategySetting("org.matsim.contrib.locationchoice.BestReplyLocationChoicePlanStrategy", 0.1));
 		for (StrategyConfigGroup.StrategySettings strategy : strategySettings) {
 			strategy.setSubpopulation(cutterConfig.commuterTag);
 			config.getModule(StrategyConfigGroup.GROUP_NAME).addParameterSet(strategy);
