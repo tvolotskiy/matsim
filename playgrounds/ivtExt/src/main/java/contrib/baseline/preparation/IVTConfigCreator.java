@@ -1,5 +1,6 @@
 package contrib.baseline.preparation;
 
+import contrib.baseline.modification.LiteratureScoring;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.contrib.locationchoice.DestinationChoiceConfigGroup;
 import org.matsim.core.config.Config;
@@ -62,6 +63,7 @@ public class IVTConfigCreator {
         // Create config and add kti-scoring and destination choice
         Config config = ConfigUtils.createConfig();
         new IVTConfigCreator().makeConfigIVT(config, prctScenario);
+		new LiteratureScoring().adjustScoring(config.planCalcScore());
         new ConfigWriter(config).write(args[0]);
     }
 
