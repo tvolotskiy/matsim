@@ -12,11 +12,13 @@ public class LiteratureScoring {
     final double carConstant = -2.0 - 2.21; // 2 CHF Parking + 2 * 2min Walking
     final double ptConstant = 0.0;
     final double walkConstant = 0.0;
+    final double transitWalkConstant = 0.0;
     final double bikeConstant = 0.0;
 
     final double carPerH = -23.29; // Source: SN 641 822a
     final double ptPerH = -14.43; // Source: SN 641 822a
     final double walkPerH = -33.20; // TODO: source somwhere H. Becker... it's not in the paper where it was supposed to be ;)
+    final double transitWalkPerH = walkPerH;
     final double bikePerH = -26.0; // TODO: Crazy assumption with basis on vtpi.org
 
     final double ptWaitingPerH = -24.13; // Source: SN 641 822a
@@ -25,6 +27,7 @@ public class LiteratureScoring {
     final double carPerKm = -0.176; // Source: Cost calculator & TCS (variable costs)
     final double ptPerKm = -0.53 * 0.5; // Source: Cost calculator (with 50% subsidies)
     final double walkPerKm = 0.0;
+    final double transitwalkPerKm = 0.0;
     final double bikePerKm = 0.0;
 
     public void adjustScoring(PlanCalcScoreConfigGroup config) {
@@ -55,6 +58,11 @@ public class LiteratureScoring {
         modeParams.setConstant(bikeConstant);
         modeParams.setMarginalUtilityOfTraveling(bikePerH - carPerH);
         modeParams.setMonetaryDistanceRate(bikePerKm / 1000.0);
+
+        modeParams = config.getOrCreateModeParams(TransportMode.transit_walk);
+        modeParams.setConstant(transitWalkConstant);
+        modeParams.setMarginalUtilityOfTraveling(transitWalkPerH - carPerH);
+        modeParams.setMonetaryDistanceRate(transitwalkPerKm / 1000.0);
     }
 
     public static void main(String[] args) {
