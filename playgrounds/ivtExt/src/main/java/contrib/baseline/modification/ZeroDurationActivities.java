@@ -92,7 +92,7 @@ public class ZeroDurationActivities {
                         }
                     } else {
                         double firstDuration = firstActivity.getEndTime();
-                        double lastDuration = lastActivity.getEndTime();
+                        double lastDuration = 24.0 * 3600.0 - lastActivity.getEndTime();
 
                         if (firstDuration <= 0.0) {
                             firstActivity.setEndTime(firstActivity.getStartTime() + ADJUSTMENT_OFFSET);
@@ -103,7 +103,7 @@ public class ZeroDurationActivities {
                         }
 
                         if (lastDuration <= 0.0) {
-                            lastActivity.setEndTime(lastActivity.getStartTime() + ADJUSTMENT_OFFSET);
+                            lastActivity.setStartTime(24.0 * 3600.0 - ADJUSTMENT_OFFSET);
                             isPlanAdjusted = true;
                             numberOfAdjustedActivities++;
                             numberOfAdjustedSingleLastActivities++;
