@@ -1,5 +1,6 @@
 package playground.mas.analysis;
 
+import playground.mas.cordon.ChargeType;
 import playground.sebhoerl.av_paper.BinCalculator;
 
 import java.util.*;
@@ -21,9 +22,11 @@ public class DataFrame {
 
     final public List<Double> outerCordonCrossings;
     final public List<Double> chargeableOuterCordonCrossings;
+    final public Map<ChargeType, List<Double>> chargeableOuterCordonCrossingsByMode;
 
     final public List<Double> innerCordonDistance;
     final public List<Double> chargeableInnerCordonDistance;
+    final public Map<ChargeType, List<Double>> chargeableInnerCordonDistanceByMode;
 
     final public Map<String, List<Double>> vehicleDistances;
     final public Map<String, List<Double>> passengerDistances;
@@ -62,10 +65,17 @@ public class DataFrame {
 
         outerCordonCrossings = new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0));
         chargeableOuterCordonCrossings = new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0));
+        chargeableOuterCordonCrossingsByMode = new HashMap<>();
 
         innerCordonDistance = new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0));
         chargeableInnerCordonDistance = new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0));
+        chargeableInnerCordonDistanceByMode = new HashMap<>();
 
+        for (Map<ChargeType, List<Double>> item : Arrays.asList(chargeableOuterCordonCrossingsByMode, chargeableInnerCordonDistanceByMode)) {
+            for (ChargeType type : ChargeType.values()) {
+                item.put(type, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
+            }
+        }
 
         vehicleDistances = new HashMap<>();
         passengerDistances = new HashMap<>();
@@ -99,6 +109,16 @@ public class DataFrame {
         inactiveAVs = new HashMap<>();
         for (String mode : avModes) {
             inactiveAVs.put(mode, new ArrayList<>(Collections.nCopies(binCalculator.getBins(), 0.0)));
+        }
+    }
+
+    public static void increment(Map<ChargeType, List<Double>> map, ChargeType typeIndex, int index) {
+        increment(map, typeIndex, index, 1.0);
+    }
+
+    public static void increment(Map<ChargeType, List<Double>> map, ChargeType typeIndex, int index, double amount) {
+        if (map.containsKey(typeIndex)) {
+            increment(map.get(typeIndex), index, amount);
         }
     }
 

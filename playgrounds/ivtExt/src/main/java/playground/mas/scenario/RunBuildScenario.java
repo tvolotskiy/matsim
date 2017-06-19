@@ -70,6 +70,7 @@ public class RunBuildScenario {
     }
 
     private void run() {
+        removeUnselectedPlans();
         applyEbikeOwnership();
         applyEVOwnership();
         adjustCarOwnership();
@@ -82,6 +83,14 @@ public class RunBuildScenario {
     private void write(String populationOutputPath, String networkOutputPath) {
         new PopulationWriter(scenario.getPopulation()).write(populationOutputPath);
         new NetworkWriter(scenario.getNetwork()).write(networkOutputPath);
+    }
+
+    private void removeUnselectedPlans() {
+        for (Person person : scenario.getPopulation().getPersons().values()) {
+            Plan selectedPlan = person.getSelectedPlan();
+            person.getPlans().clear();
+            person.addPlan(selectedPlan);
+        }
     }
 
     private void applyAVLinks() {

@@ -93,10 +93,12 @@ public class CordonHandler implements PersonDepartureEventHandler, PersonArrival
                     if (cordonPricing.getFee(event.getLinkId(), chargeType, event.getTime()) > 0.0) {
                         if (MASAttributeUtils.isOuterCordon(link)) {
                             DataFrame.increment(dataFrame.chargeableOuterCordonCrossings, binCalculator.getIndex(event.getTime()));
+                            DataFrame.increment(dataFrame.chargeableOuterCordonCrossingsByMode, chargeType, binCalculator.getIndex(event.getTime()));
                         }
 
                         if (MASAttributeUtils.isInnerCordon(link)) {
                             DataFrame.increment(dataFrame.chargeableInnerCordonDistance, binCalculator.getIndex(event.getTime()), link.getLength());
+                            DataFrame.increment(dataFrame.chargeableInnerCordonDistanceByMode, chargeType, binCalculator.getIndex(event.getTime()), link.getLength());
                         }
                     }
                 }
