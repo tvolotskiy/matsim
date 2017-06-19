@@ -21,6 +21,7 @@
 
 package contrib.baseline.preparation;
 
+import contrib.baseline.modification.LiteratureScoring;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
 import org.matsim.api.core.v01.Scenario;
@@ -137,6 +138,7 @@ public class ZHCutter {
 	private Config createConfig(ZHCutterConfigGroup cutterConfig) {
 		Config config = ConfigUtils.createConfig();
 		new IVTConfigCreator().makeConfigIVT(config, (int)(100*scenario.getConfig().qsim().getFlowCapFactor()));
+
 		List<StrategyConfigGroup.StrategySettings> strategySettings = new ArrayList<>();
 		strategySettings.add(getStrategySetting("ChangeExpBeta", 0.6));
 		strategySettings.add(getStrategySetting("ReRoute", 0.1));
@@ -146,6 +148,9 @@ public class ZHCutter {
 			strategy.setSubpopulation(cutterConfig.commuterTag);
 			config.getModule(StrategyConfigGroup.GROUP_NAME).addParameterSet(strategy);
 		}
+
+		new LiteratureScoring().adjustScoring(config.planCalcScore());
+
 		return config;
 	}
 
