@@ -35,7 +35,7 @@ public class LiteratureScoring {
     public void adjustScoring(PlanCalcScoreConfigGroup config) {
         config.setMarginalUtilityOfMoney(1.0);
         config.setMarginalUtlOfWaiting_utils_hr(0.0);
-        config.setMarginalUtlOfWaitingPt_utils_hr(ptWaitingPerH - carPerH);
+        config.setMarginalUtlOfWaitingPt_utils_hr(ptWaitingPerH);
         config.setUtilityOfLineSwitch(ptPerLineSwitch);
         config.setPerforming_utils_hr(performingPerH);
 
