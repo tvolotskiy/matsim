@@ -132,7 +132,13 @@ public class IVTConfigCreator {
         // Account for prct-scenario
 		config.counts().setCountsScaleFactor(100d / prctScenario);
 		config.ptCounts().setCountsScaleFactor(100d / prctScenario);
-		config.qsim().setFlowCapFactor(prctScenario / 100d);
+
+		if (prctScenario == 1) {
+			config.qsim().setFlowCapFactor(0.03);
+		} else {
+			config.qsim().setFlowCapFactor(prctScenario / 100d);
+		}
+
         // Add files
 		config.facilities().setInputFile(INBASE_FILES + FACILITIES);
 		config.households().setInputFile(INBASE_FILES + HOUSEHOLDS);
@@ -159,6 +165,8 @@ public class IVTConfigCreator {
 		PlansCalcRouteConfigGroup.ModeRoutingParams bikeRoutingParams = config.plansCalcRoute().getModeRoutingParams().get(TransportMode.bike);
 		bikeRoutingParams.setBeelineDistanceFactor(1.663);
 		bikeRoutingParams.setTeleportedModeSpeed(14.01 * (1000.0 / 3600.0));
+
+		config.subtourModeChoice().setConsiderCarAvailability(true);
     }
 
 	private PlanCalcScoreConfigGroup.ModeParams getModeParamsTransitWalk(Config config) {
