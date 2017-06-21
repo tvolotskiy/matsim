@@ -35,6 +35,7 @@ public class DifferentFirstLastActivityTypes {
 
         long numberOfPlans = 0;
         long numberOfAdjustedPlans = 0;
+        long numberOfNonDefaultHits = 0;
 
         for (Person person : scenario.getPopulation().getPersons().values()) {
             for (Plan plan : person.getPlans()) { // TODO: check hopefully only one !?
@@ -44,8 +45,12 @@ public class DifferentFirstLastActivityTypes {
                 numberOfPlans++;
 
                 if (!firstActivityType.equals(lastActivityType)) {
-                    numberOfAdjustedPlans++;
-                    scenario.getPopulation().getPersonAttributes().putAttribute(person.getId().toString(), "subpopulation", IVTConfigCreator.DIFF_FIRST_LAST_TAG);
+                    if (scenario.getPopulation().getPersonAttributes().getAttribute(person.getId().toString(), "subpopulation") != null) {
+                        numberOfNonDefaultHits++;
+                    } else {
+                        numberOfAdjustedPlans++;
+                        scenario.getPopulation().getPersonAttributes().putAttribute(person.getId().toString(), "subpopulation", IVTConfigCreator.DIFF_FIRST_LAST_TAG);
+                    }
                 }
             }
 
@@ -53,7 +58,8 @@ public class DifferentFirstLastActivityTypes {
         }
 
         logger.info(String.format("Number of plans: %d", numberOfPlans));
-        logger.info(String.format("Number of invalid plans: %d (%.2f%%)", numberOfAdjustedPlans, 100.0 * (double)numberOfAdjustedPlans / (double)numberOfPlans));
+        logger.info(String.format("Number of adjusted plans: %d (%.2f%%)", numberOfAdjustedPlans, 100.0 * (double)numberOfAdjustedPlans / (double)numberOfPlans));
+        logger.info(String.format("Number of non-adjusted plans (because already in special subpopulation): %d (%.2f%%)", numberOfNonDefaultHits, 100.0 * (double)numberOfNonDefaultHits / (double)numberOfPlans));
 
         new PopulationWriter(scenario.getPopulation()).write(populationTargetPath);
         new ObjectAttributesXmlWriter(scenario.getPopulation().getPersonAttributes()).writeFile(populationAttributesTargetPath);
