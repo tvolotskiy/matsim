@@ -59,7 +59,7 @@ public class CalibrationListener implements IterationEndsListener, ShutdownListe
     }
 
     private int getDistanceCategory(double distance) {
-        return (int) Math.min(Math.floor(distance / maximumDistance), numberOfDistanceBins);
+        return (int) Math.min(Math.floor(distance / maximumDistance), numberOfDistanceBins - 1);
     }
 
     private void applyStatistics(List<String> row) {
