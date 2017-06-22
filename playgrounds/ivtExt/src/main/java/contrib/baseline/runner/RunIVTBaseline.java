@@ -1,5 +1,6 @@
 package contrib.baseline.runner;
 
+import contrib.baseline.calibration.scoring.IVTCalibrationConfigGroup;
 import org.matsim.api.core.v01.Scenario;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -14,7 +15,7 @@ public class RunIVTBaseline {
 
         // Configuration
 
-        Config config = ConfigUtils.loadConfig(configFile, new BlackListedTimeAllocationMutatorConfigGroup());
+        Config config = ConfigUtils.loadConfig(configFile, new BlackListedTimeAllocationMutatorConfigGroup(), new IVTCalibrationConfigGroup());
         Scenario scenario = ScenarioUtils.loadScenario(config);
 
         // Controller setup
@@ -22,6 +23,7 @@ public class RunIVTBaseline {
         Controler controler = new Controler(scenario);
         controler.addOverridingModule(new BlackListedTimeAllocationMutatorStrategyModule());
         controler.addOverridingModule(new IVTBaselineScoringModule());
+        controler.addOverridingModule(new IVTBaselineCalibrationModule());
 
         // Run
 
