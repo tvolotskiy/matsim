@@ -11,10 +11,7 @@ import org.matsim.pt.PtConstants;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ModeParams;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup.ActivityParams;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This is the actual config group, but we need some decoration to take care of backward
@@ -42,7 +39,6 @@ class PlanCalcScoreDelegate extends ReflectiveConfigGroup {
 
 	private static final String UTL_OF_LINE_SWITCH = "utilityOfLineSwitch" ;
 	private static final String USING_OLD_SCORING_BELOW_ZERO_UTILITY_DURATION = "usingOldScoringBelowZeroUtilityDuration" ;
-	public static final String EXPERIENCED_PLAN_KEY = "experiencedPlan";
 	private static final String FRACTION_OF_ITERATIONS_TO_START_SCORE_MSA = "fractionOfIterationsToStartScoreMSA" ;
 
 	/**
@@ -138,6 +134,18 @@ class PlanCalcScoreDelegate extends ReflectiveConfigGroup {
 		map.put(WRITE_EXPERIENCED_PLANS, "write a plans file in each iteration directory which contains what each agent actually did, and the score it received.");
 
 		return map;
+	}
+
+	@Override
+	protected void checkConsistency(Config config) {
+		super.checkConsistency(config);
+
+		final Set<String> subpopulations = getScoringParametersPerSubpopulation().keySet();
+		if ( subpopulations.size() > 1 && subpopulations.contains( null ) ) {
+			log.error( "One cannot define a default subpopulation when using specific subpopulations.");
+			log.error( "Subpopulations defined for scoring are "+subpopulations );
+			throw new RuntimeException( "Config group "+GROUP_NAME+" has default and specific subpopulations" );
+		}
 	}
 
 	public PlanCalcScoreConfigGroup.ModeParams getOrCreateModeParams(String modeName) {

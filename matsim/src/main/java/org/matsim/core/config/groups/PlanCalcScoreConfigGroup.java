@@ -23,6 +23,7 @@ package org.matsim.core.config.groups;
 import org.apache.log4j.Logger;
 import org.matsim.api.core.v01.TransportMode;
 import org.matsim.core.api.internal.MatsimParameters;
+import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigGroup;
 import org.matsim.core.config.ReflectiveConfigGroup;
 import org.matsim.core.gbl.Gbl;
@@ -246,6 +247,12 @@ public final class PlanCalcScoreConfigGroup extends ConfigGroup {
 	@Override
 	public Map<String, String> getComments() {
 		return delegate.getComments();
+	}
+
+	@Override
+	protected void checkConsistency(Config config) {
+		super.checkConsistency(config);
+		delegate.checkConsistency( config );
 	}
 
 	public double getLearningRate() {
