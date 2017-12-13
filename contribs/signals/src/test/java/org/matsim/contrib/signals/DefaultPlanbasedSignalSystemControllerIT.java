@@ -473,6 +473,8 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 		private Double plan2EndTime;
 		private int noSimHours = 2;
 		private int simStart_h= 0;
+		private int offsetPlan1;
+		private int offsetPlan2;
 		
 		private Scenario scenario;
 		
@@ -493,6 +495,14 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 		
 		/* package */ void setSimStart_h(int simStart_h) {
 			this.simStart_h = simStart_h;
+		}
+		
+		/* package */ void setOffsetPlan1(int offset) {
+			this.offsetPlan1 = offset;
+		}
+		
+		/* package */ void setOffsetPlan2(int offset) {
+			this.offsetPlan2 = offset;
 		}
 		
 		/* package */ SignalEventAnalyzer run() {
@@ -617,7 +627,7 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 			signalControl.addSignalSystemControllerData(signalSystemControl);
 			
 			// create a first plan for the signal system (with cycle time 120)
-			SignalPlanData signalPlan1 = SignalUtils.createSignalPlan(conFac, 120, 0, Id.create("SignalPlan1", SignalPlan.class));
+			SignalPlanData signalPlan1 = SignalUtils.createSignalPlan(conFac, 120, offsetPlan1, Id.create("SignalPlan1", SignalPlan.class));
 			if (plan1StartTime != null) signalPlan1.setStartTime(plan1StartTime);
 			if (plan1EndTime != null) signalPlan1.setEndTime(plan1EndTime);
 			signalSystemControl.addSignalPlanData(signalPlan1);
@@ -626,7 +636,7 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 			
 			if (plan2StartTime != null && plan2EndTime != null) {
 				// create a second plan for the signal system (with cycle time 60) if start and end times are not null
-				SignalPlanData signalPlan2 = SignalUtils.createSignalPlan(conFac, 60, 0, Id.create("SignalPlan2", SignalPlan.class));
+				SignalPlanData signalPlan2 = SignalUtils.createSignalPlan(conFac, 60, offsetPlan2, Id.create("SignalPlan2", SignalPlan.class));
 				signalPlan2.setStartTime(plan2StartTime);
 				signalPlan2.setEndTime(plan2EndTime);
 				signalSystemControl.addSignalPlanData(signalPlan2);
