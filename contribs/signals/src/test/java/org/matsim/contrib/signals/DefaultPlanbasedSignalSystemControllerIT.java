@@ -463,6 +463,13 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 		}
 	}
 	
+	@Test
+	public void testnegativeOffset() {
+		ScenarioRunner sr = new ScenarioRunner(0., 10., 10., 20.);
+		sr.setOffsetPlan1(-5);
+		sr.setOffsetPlan2(-10);
+		
+	}
 	// TODO Test plan with negative offset
 	
 	private class ScenarioRunner{
@@ -473,8 +480,8 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 		private Double plan2EndTime;
 		private int noSimHours = 2;
 		private int simStart_h= 0;
-		private int offsetPlan1;
-		private int offsetPlan2;
+		private int offsetPlan1 = 0;
+		private int offsetPlan2 = 0;
 		
 		private Scenario scenario;
 		
