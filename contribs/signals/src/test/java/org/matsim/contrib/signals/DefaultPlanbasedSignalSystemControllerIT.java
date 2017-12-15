@@ -462,15 +462,63 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 			Assert.assertEquals("Wrong exception message.", exceptionMessageOverlapping12, e.getMessage());
 		}
 	}
+
+	//TODO Are Soehnkes Test doing what they should?
 	
 	@Test
-	public void testnegativeOffset() {
-		ScenarioRunner sr = new ScenarioRunner(0., 10., 10., 20.);
-		sr.setOffsetPlan1(-5);
-		sr.setOffsetPlan2(-10);
+	public void testNegativeOffset() {
+		//plan1 is valid all day
+		ScenarioRunner sr = new ScenarioRunner(0.0, 0.0, null, null);
+		//Random negative Offset in Range 1-100
+		int randNoffset1 = new Integer((int)(-Math.random()*100+1));
 		
+		sr.setOffsetPlan1(randNoffset1);
+		
+		SignalEventAnalyzer signalAnalyzer = sr.run();
+		
+		//calculation of expected value
+		int cycleplan1Half = (int) (signalAnalyzer.getCycleTimeOfFirstCycleInHour(0)/2);
+		int offset1ModuloHalfCycle = randNoffset1 % cycleplan1Half;
+		int expectedvalue;
+		
+		if(randNoffset1 % cycleplan1Half != 0) {
+			expectedvalue = cycleplan1Half + offset1ModuloHalfCycle;
+		} else expectedvalue = offset1ModuloHalfCycle;
+		
+		
+		log.info("First Plan starts with random negative offset: " + randNoffset1);
+		log.info("This leads to a plan-start at: " + signalAnalyzer.getFirstSignalEventTime());
+		
+		Assert.assertEquals("First Plan start with random negative offset",expectedvalue , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
 	}
-	// TODO Test plan with negative offset
+	
+	@Test
+	public void test2PlansWithDifferentNegativeOffsets(){
+		ScenarioRunner sr = new ScenarioRunner(0.0*3600, 1.0*3600, 1.0*3600, 2.*3600 );
+		
+		//Random negative Offset in Range 1-100
+		int randNoffset2 = new Integer((int)(-Math.random()*100 + 1));
+		
+		sr.setOffsetPlan1(-6);
+		sr.setOffsetPlan2(randNoffset2);
+		sr.setSimStart_h(1);
+		
+		SignalEventAnalyzer signalAnalyzer = sr.run();
+		
+		//calculation of expected value
+		int cycleplan2Half = (int) (signalAnalyzer.getCycleTimeOfFirstCycleInHour(1)/2);
+		int offset2ModuloHalfCycle = randNoffset2 % cycleplan2Half;
+		int expectedvalue;
+		
+		if(randNoffset2 % cycleplan2Half != 0) {
+			expectedvalue = 3600 +cycleplan2Half + offset2ModuloHalfCycle;
+		} else expectedvalue = 3600 + offset2ModuloHalfCycle;
+
+		log.info("Second Plan starts with random negative offset: " + randNoffset2);
+		log.info("This leads to a plan-start at: " + signalAnalyzer.getFirstSignalEventTime());
+
+		Assert.assertEquals("Second Plan start with random negative offset", expectedvalue , signalAnalyzer.getFirstSignalEventTime() , MatsimTestUtils.EPSILON);		
+	}
 	
 	private class ScenarioRunner{
 		
@@ -639,7 +687,7 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 			if (plan1EndTime != null) signalPlan1.setEndTime(plan1EndTime);
 			signalSystemControl.addSignalPlanData(signalPlan1);
 			signalPlan1.addSignalGroupSettings(SignalUtils.createSetting4SignalGroup(conFac, signalGroupId1, 0, 60));
-			signalPlan1.setOffset(0);
+			signalPlan1.setOffset(offsetPlan1);
 			
 			if (plan2StartTime != null && plan2EndTime != null) {
 				// create a second plan for the signal system (with cycle time 60) if start and end times are not null
@@ -648,7 +696,7 @@ public class DefaultPlanbasedSignalSystemControllerIT {
 				signalPlan2.setEndTime(plan2EndTime);
 				signalSystemControl.addSignalPlanData(signalPlan2);
 				signalPlan2.addSignalGroupSettings(SignalUtils.createSetting4SignalGroup(conFac, signalGroupId1, 0, 30));
-				signalPlan2.setOffset(0);
+				signalPlan2.setOffset(offsetPlan2);
 			}
 		}
 
