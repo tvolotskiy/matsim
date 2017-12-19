@@ -20,6 +20,7 @@
 
 package org.matsim.facilities;
 
+import java.util.Map;
 import java.util.Stack;
 
 import org.apache.log4j.Logger;
@@ -30,8 +31,9 @@ import org.matsim.api.core.v01.network.Link;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.IdentityTransformation;
 import org.matsim.core.utils.io.MatsimXmlParser;
-import org.matsim.core.utils.io.UncheckedIOException;
 import org.matsim.core.utils.misc.Time;
+import org.matsim.utils.objectattributes.AttributeConverter;
+import org.matsim.utils.objectattributes.attributable.AttributesXmlReaderDelegate;
 import org.xml.sax.Attributes;
 
 /**
@@ -47,13 +49,18 @@ public class FacilitiesReaderMatsimV1 extends MatsimXmlParser {
 	private final static String ACTIVITY = "activity";
 	private final static String CAPACITY = "capacity";
 	private final static String OPENTIME = "opentime";
+	private static final String ATTRIBUTES = "attributes";
+	private static final String ATTRIBUTE = "attribute";
 
 	private final ActivityFacilities facilities;
 	private final ActivityFacilitiesFactory factory;
+	private final AttributesXmlReaderDelegate attributesReader;
 	private ActivityFacility currfacility = null;
 	private ActivityOption curractivity = null;
+	private org.matsim.utils.objectattributes.attributable.Attributes currAttributes;
 
 	private final CoordinateTransformation coordinateTransformation;
+
 
 	public FacilitiesReaderMatsimV1(final Scenario scenario) {
 		this( new IdentityTransformation() , scenario );
@@ -65,10 +72,20 @@ public class FacilitiesReaderMatsimV1 extends MatsimXmlParser {
 		this.coordinateTransformation = coordinateTransformation;
 		this.facilities = scenario.getActivityFacilities();
 		this.factory = this.facilities.getFactory();
+		this.attributesReader = new AttributesXmlReaderDelegate();
+		this.currAttributes = null;
+	}
+
+	public void putAttributeConverter(Class<?> clazz, AttributeConverter<?> converter) {
+		this.attributesReader.putAttributeConverter(clazz, converter);
+	}
+
+	public void putAttributeConverters(Map<Class<?>, AttributeConverter<?>> converters) {
+		this.attributesReader.putAttributeConverters(converters);
 	}
 
 	@Override
-	public void startTag(final String name, final Attributes atts, final Stack<String> context) {
+	public void startTag(final String name, final org.xml.sax.Attributes atts, final Stack<String> context) {
 		if (FACILITIES.equals(name)) {
 			startFacilities(atts);
 		} else if (FACILITY.equals(name)) {
@@ -79,6 +96,11 @@ public class FacilitiesReaderMatsimV1 extends MatsimXmlParser {
 			startCapacity(atts);
 		} else if (OPENTIME.equals(name)) {
 			startOpentime(atts);
+		} else if (ATTRIBUTE.equals(name)){
+			this.attributesReader.startTag(name, atts, context, this.currAttributes);
+		} else if (ATTRIBUTES.equals(name)) {
+			currAttributes = this.currfacility.getAttributes();
+			attributesReader.startTag( name , atts , context, currAttributes );
 		}
 	}
 
@@ -88,6 +110,10 @@ public class FacilitiesReaderMatsimV1 extends MatsimXmlParser {
 			this.currfacility = null;
 		} else if (ACTIVITY.equals(name)) {
 			this.curractivity = null;
+		} else if (ATTRIBUTES.equalsIgnoreCase(name)) {
+			this.currAttributes = null;
+		} else if (ATTRIBUTE.equalsIgnoreCase(name)){
+			this.attributesReader.endTag( name , content , context );
 		}
 	}
 

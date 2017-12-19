@@ -23,6 +23,9 @@ package org.matsim.facilities;
 import org.matsim.core.api.internal.MatsimWriter;
 import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.IdentityTransformation;
+import org.matsim.utils.objectattributes.AttributeConverter;
+
+import java.util.Map;
 
 /**
  * @author mrieser / Senozon AG
@@ -31,6 +34,7 @@ public class FacilitiesWriter implements MatsimWriter {
 
 	private final ActivityFacilities facilities;
 	private final CoordinateTransformation coordinateTransformation;
+	private Map<Class<?>, AttributeConverter<?>> converters;
 
 	/**
 	 * Creates a new FacilitiesWriter to write the specified facilities to the file.
@@ -64,7 +68,13 @@ public class FacilitiesWriter implements MatsimWriter {
 	}
 	
 	public final void writeV1(final String filename) {
-		new FacilitiesWriterV1( coordinateTransformation , facilities ).write(filename);
+		FacilitiesWriterV1 writer = new FacilitiesWriterV1( coordinateTransformation , facilities);
+		writer.putAttributeConverters(this.converters);
+		writer.write(filename);
+	}
+
+	public void putAttributeConverters(Map<Class<?>, AttributeConverter<?>> converters) {
+		this.converters.putAll(converters);
 	}
 
 

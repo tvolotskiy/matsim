@@ -23,6 +23,7 @@ package org.matsim.facilities;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.SortedSet;
 
 import org.matsim.api.core.v01.Coord;
@@ -31,6 +32,8 @@ import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.IdentityTransformation;
 import org.matsim.core.utils.io.MatsimXmlWriter;
 import org.matsim.core.utils.misc.Time;
+import org.matsim.utils.objectattributes.AttributeConverter;
+import org.matsim.utils.objectattributes.attributable.AttributesXmlWriterDelegate;
 
 /**
  * @author mrieser / Senozon AG
@@ -42,7 +45,8 @@ import org.matsim.core.utils.misc.Time;
 	private final ActivityFacilities facilities;
 
 	private final CoordinateTransformation coordinateTransformation;
-	
+	private AttributesXmlWriterDelegate attributesWriter = new AttributesXmlWriterDelegate();
+
 	public FacilitiesWriterV1(final ActivityFacilities facilities) {
 		this( new IdentityTransformation() , facilities );
 	}
@@ -142,7 +146,10 @@ import org.matsim.core.utils.misc.Time;
 		out.write(" x=\"" + coord.getX() + "\"");
 		out.write(" y=\"" + coord.getY() + "\"");
 		if (facility.getDesc() != null) { out.write(" desc=\"" + facility.getDesc() + "\""); }
-		out.write(">\n");
+		out.write(">\n\n");
+		//this.attributesWriter.writeAttributes("\t", out, facility.getAttributes());
+		this.attributesWriter.writeAttributes( "\t\t" , this.writer , facility.getAttributes() );
+		out.write("\n");
 	}
 
 	public void endFacility(final BufferedWriter out) throws IOException {
@@ -199,5 +206,9 @@ import org.matsim.core.utils.misc.Time;
 	public void writeSeparator(final BufferedWriter out) throws IOException {
 		out.write("<!-- =================================================" +
 							"===================== -->\n\n");
+	}
+
+	public void putAttributeConverters(Map<Class<?>, AttributeConverter<?>> converters) {
+		this.attributesWriter.putAttributeConverters(converters);
 	}
 }

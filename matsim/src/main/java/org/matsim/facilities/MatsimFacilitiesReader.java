@@ -20,6 +20,8 @@
 
 package org.matsim.facilities;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 
 import org.apache.log4j.Logger;
@@ -29,6 +31,7 @@ import org.matsim.core.utils.geometry.CoordinateTransformation;
 import org.matsim.core.utils.geometry.transformations.IdentityTransformation;
 import org.matsim.core.utils.io.MatsimXmlParser;
 import org.matsim.core.utils.io.UncheckedIOException;
+import org.matsim.utils.objectattributes.AttributeConverter;
 import org.xml.sax.Attributes;
 
 /**
@@ -63,6 +66,7 @@ public class MatsimFacilitiesReader extends MatsimXmlParser {
 	private final CoordinateTransformation coordinateTransformation;
 	private final Scenario scenario;
 	private MatsimXmlParser delegate = null;
+	private Map<Class<?>, AttributeConverter<?>> attributeConverters;
 
 	/**
 	 * Creates a new reader for MATSim facilities files.
@@ -84,6 +88,15 @@ public class MatsimFacilitiesReader extends MatsimXmlParser {
 			final Scenario scenario) {
 		this.coordinateTransformation = coordinateTransformation;
 		this.scenario = scenario;
+		this.attributeConverters = new HashMap();
+	}
+
+	public void putAttributeConverter(Class<?> clazz, AttributeConverter<?> converter) {
+		this.attributeConverters.put(clazz, converter);
+	}
+
+	public void putAttributeConverters(Map<Class<?>, AttributeConverter<?>> converters) {
+		this.attributeConverters.putAll(converters);
 	}
 
 	@Override
@@ -102,6 +115,7 @@ public class MatsimFacilitiesReader extends MatsimXmlParser {
 		// Currently the only facilities-type is v1
 		if (FACILITIES_V1.equals(doctype)) {
 			this.delegate = new FacilitiesReaderMatsimV1( coordinateTransformation , scenario );
+			((FacilitiesReaderMatsimV1)this.delegate).putAttributeConverters(this.attributeConverters);
 			log.info("using facilities_v1-reader.");
 		} else {
 			throw new IllegalArgumentException("Doctype \"" + doctype + "\" not known.");
